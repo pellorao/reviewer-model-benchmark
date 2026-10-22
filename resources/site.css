@@ -407,3 +407,25 @@ h2 {
   .summary-item span { font-size: 9px; }
   .page-footer { width: calc(100% - 32px); }
 }
+
+/* Segmented toggle for the speed chart (v2.0). */
+.segment-control {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  color: #665e52;
+  font-size: 12px;
+}
+.segment-control span { margin-right: 5px; }
+.segment-control button {
+  border: 1px solid #d6cbbd;
+  border-radius: 5px;
+  padding: 4px 9px;
+  background: #fffefa;
+  color: #62594d;
+  font: 600 12px/1.3 var(--font-body);
+  cursor: pointer;
+}
+.segment-control button[aria-pressed='true'] { background: #805e38; border-color: #805e38; color: #fff; }
+.segment-control button:focus-visible { outline: 2px solid #805e38; outline-offset: 2px; }

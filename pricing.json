@@ -1,68 +1,40 @@
 {
-  "schemaVersion": 1,
-  "checkedAt": "2026-09-29",
+  "schemaVersion": 2,
+  "checkedAt": "2026-10-22",
   "currency": "USD",
   "tokensPerUnit": 1000000,
-  "costBasis": "Reference API token cost, averaged over available reviewers; not actual billing",
-  "excludedCharges": ["cache writes", "tools", "regional processing premiums", "local hardware and electricity"],
-  "models": {
-    "gpt-6-astra": {
+  "costBasis": "Per-instance cost averaged within each scenario, then across the four scenarios; not actual billing",
+  "instanceCost": {
+    "deepseek": "Benchmark instance cost.usd: per-request official price list, peak / off-peak by request time",
+    "anthropic": "Benchmark instance cost.usd: Claude Code total_cost_usd, API-equivalent USD on a subscription run",
+    "openai": "Token counts priced at the rates below; the benchmark ran on a ChatGPT plan, so this is a reference API price",
+    "strata": "Local running cost from the instance work seconds and the localRunningCost settings below"
+  },
+  "openai": {
+    "gpt-6.1-sol": {
       "referenceProfile": "standard-short-context",
-      "rates": {"input": 10.0, "cachedInput": 1.0, "output": 50.0},
-      "cacheWriteRate": 12.5,
-      "longContext": {"inputTokensAbove": 272000, "rates": {"input": 20.0, "cachedInput": 2.0, "output": 75.0}, "cacheWriteRate": 25.0},
-      "processingMultipliers": {"batch": 0.5, "flex": 0.5, "fast": 2.0},
-      "source": "https://developers.openai.com/api/docs/models/gpt-6-astra"
-    },
-    "gpt-6-sol": {
-      "referenceProfile": "standard-short-context",
-      "rates": {"input": 2.0, "cachedInput": 0.2, "output": 10.0},
+      "rates": {"uncachedInput": 2.0, "cachedInput": 0.1, "output": 10.0},
       "cacheWriteRate": 2.5,
-      "longContext": {"inputTokensAbove": 272000, "rates": {"input": 4.0, "cachedInput": 0.4, "output": 15.0}, "cacheWriteRate": 5.0},
-      "processingMultipliers": {"batch": 0.5, "flex": 0.5, "fast": 2.0},
-      "source": "https://developers.openai.com/api/docs/models/gpt-6-sol"
-    },
-    "gpt-5.6-sol": {
-      "referenceProfile": "standard-short-context",
-      "rates": {"input": 4.0, "cachedInput": 0.4, "output": 20.0},
-      "cacheWriteRate": 5.0,
-      "longContext": {"inputTokensAbove": 272000, "rates": {"input": 8.0, "cachedInput": 0.8, "output": 30.0}, "cacheWriteRate": 10.0},
-      "promotionAvailableAtLeastThrough": "2026-11-21",
-      "source": "https://developers.openai.com/api/docs/models/gpt-5.6-sol"
+      "source": "https://developers.openai.com/api/docs/models/gpt-6.1-sol"
     },
     "gpt-6-luna": {
       "referenceProfile": "standard-short-context",
-      "rates": {"input": 0.1, "cachedInput": 0.01, "output": 0.5},
+      "rates": {"uncachedInput": 0.1, "cachedInput": 0.01, "output": 0.5},
       "cacheWriteRate": 0.125,
-      "longContext": {"inputTokensAbove": 272000, "rates": {"input": 0.2, "cachedInput": 0.02, "output": 0.75}, "cacheWriteRate": 0.25},
-      "processingMultipliers": {"batch": 0.5, "flex": 0.5, "fast": 2.0},
       "source": "https://developers.openai.com/api/docs/models/gpt-6-luna"
-    },
-    "gpt-5.6-luna": {
-      "referenceProfile": "standard-short-context",
-      "rates": {"input": 0.2, "cachedInput": 0.02, "output": 1.2},
-      "cacheWriteRate": 0.25,
-      "longContext": {"inputTokensAbove": 272000, "rates": {"input": 0.4, "cachedInput": 0.04, "output": 1.8}, "cacheWriteRate": 0.5},
-      "source": "https://developers.openai.com/api/docs/models/gpt-5.6-luna"
-    },
-    "deepseek-flash": {
-      "referenceProfile": "peak-offpeak-average",
-      "rates": {"input": 0.225, "cachedInput": 0.0045, "output": 0.9},
-      "peakRates": {"input": 0.3, "cachedInput": 0.006, "output": 1.2},
-      "offPeakRates": {"input": 0.15, "cachedInput": 0.003, "output": 0.6},
-      "referencePeakShare": 0.5,
-      "peakSchedule": {"timezone": "UTC", "weekdays": [1, 2, 3, 4, 5], "intervals": [["01:00", "04:00"], ["06:00", "10:00"]], "excludedHolidays": "Chinese public holidays", "allOtherTimes": "off-peak"},
-      "modelVersion": "DeepSeek-V4.1-Flash",
-      "source": "https://api-docs.deepseek.com/quick_start/pricing/"
-    },
-    "Ternary-Bonsai-2-27B-PQ2_0.gguf": {
-      "referenceProfile": "beijing-implicit-cache",
-      "rates": {"input": 0.424, "cachedInput": 0.085, "output": 1.696},
-      "billingModel": "qwen3.8-27b",
-      "localComparisonProxy": true,
-      "explicitCache": {"creationRate": 0.53, "readRate": 0.042},
-      "singapore": {"rates": {"input": 0.5, "cachedInput": 0.1, "output": 3.0}, "explicitCache": {"creationRate": 0.625, "readRate": 0.05}},
-      "source": "https://www.alibabacloud.com/help/en/model-studio/qwen3-8-27b"
+    }
+  },
+  "localRunningCost": {
+    "strata-iq3_xxs": {
+      "wallPowerWatts": 400,
+      "electricityUsdPerKwh": 0.174,
+      "maintenanceUsdPerHour": 0.02,
+      "excluded": ["hardware purchase", "setup", "idle time between instances"],
+      "notes": "Home PC with an RTX 3080 Ti 12 GB, i9-13900 and 64 GB RAM. 400 W is a rough whole-system load estimate (350 W GPU board limit; memory-bound decoding usually draws less). Electricity is the Q1 2026 world household average (country-weighted). Maintenance covers wear parts at about USD 50 a year over about 2,500 loaded hours.",
+      "sources": [
+        "https://www.globalpetrolprices.com/electricity_prices/",
+        "https://inventivehq.com/blog/gpu-power-limit-tokens-per-watt"
+      ]
     }
   }
 }
