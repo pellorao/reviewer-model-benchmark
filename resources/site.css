@@ -315,11 +315,6 @@ h2 {
 .reviewer-card-meta,
 .reviewer-card p { color: #60615e; }
 .reviewer-card-meta strong { color: #51422e; }
-.reviewer-guide-note {
-  margin: 9px 0 0;
-  color: #686761;
-  font-size: 13px;
-}
 
 .method-section .panel {
   padding: 0;

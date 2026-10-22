@@ -1058,7 +1058,7 @@ def page_copy():
             "score_kicker": "01 / QUALITY", "score_title": "Weighted score by reasoning effort",
             "score_desc": "Each model in one harness forms a group. Its bars show reasoning effort levels, ordered from highest to lowest. The light track behind each bar spans the full 0 to 100 scale, so bar height shows absolute ability; the whisker shows the 95% confidence interval.",
             "score_context": "Effort labels are requested settings, not equal compute across models. The tasks were calibrated on Claude Opus, which also judged the reports, so Opus may be placed too high. The benchmark's own report gives per-task results only; the weighted score is this page's summary of them.",
-            "score_strata": "Strata IQ3_XXS is a 3-bit quantization of Qwen3.8-Flash-Next run locally on one RTX 3080 Ti (12 GB).",
+            "score_models": "DeepSeek V4.1 Flash is the endpoint's deepseek-flash model, version DeepSeek-V4.1-Flash-1017. Strata IQ3_XXS is a 3-bit quantization of Qwen3.8-Flash-Next run locally on one RTX 3080 Ti (12 GB).",
             "score_read": "Each group is a model in one harness and each bar an effort setting. The number above a track is the weighted score; taller is better. A score falls below 0 when a report's false findings outweigh its correct ones. This result covers these review tasks, not general model ability.",
             "trade_kicker": "02 / TRADE-OFFS", "trade_title": "Quality, time and cost",
             "trade_intro": "Each point is one configuration. Lines join the effort levels of one model in one harness: circles mark Codex and diamonds Claude Code. A Pareto-front point has no other visible point that is at least as good on both plotted measures and better on one. Click Pareto Front in a legend to show those points and their connecting line. Hold Ctrl while scrolling over a chart to zoom.",
@@ -1093,7 +1093,6 @@ def page_copy():
             "reviewer_spec": "Checks whether code changes implement the requirements supplied for the task accurately and completely.",
             "reviewer_audit": "Audits a staged commit candidate: the selected files, required checks and coverage of the supplied requirements.",
             "reviewer_readiness": "Before implementation, checks whether requirement documents are complete, consistent, feasible and verifiable. Each run has two independent review threads.",
-            "review_read": "The label color identifies the model. Scroll horizontally to compare all configurations.",
             "method_kicker": "DATA NOTES", "method_title": "How scores and costs are calculated",
             "method_selection": "The data are the benchmark's per-run results. The page uses the runs the benchmark counts in its main statistics: 10 per task for Strata and 5 for other configurations. DeepSeek runs requested as medium count as high where the endpoint ran them as high under the same time limit, so DeepSeek high has 8 runs in Commit Audit. Invalid runs and the supplementary DeepSeek configuration requested as medium under a different time limit are excluded.",
             "method_score": f"A run's score (scoring {SCORING_VERSION}) credits the answer-key problems a report finds and deducts its false findings. It is not cut at 0, so it can be negative, and a run that produced no report scores 0. A task score is the mean of its runs, with a 95% interval from the t distribution. The weighted score is 100 × (0.20 Code Standards + 0.20 Code Spec + 0.25 Commit Audit + 0.35 Spec Readiness); its interval combines the four standard errors with Welch–Satterthwaite degrees of freedom.",
@@ -1129,7 +1128,7 @@ def page_copy():
             "score_kicker": "01 / 质量", "score_title": "按推理强度比较综合分数",
             "score_desc": "同一代理程序上的每个模型为一组, 组内柱子按推理强度从高到低排列. 每根柱子背后的浅色底槽代表 0 至 100 的完整刻度, 柱高直接表示绝对能力; 须线表示 95% 置信区间.",
             "score_context": "推理强度标签是请求设置, 不代表不同模型使用了相同的计算量. 这些任务以 Claude Opus 标定, 报告也由 Opus 裁决, 所以 Opus 的位置可能偏高. 基准自身的报告只给分任务结果; 综合分数是本页对它们的汇总.",
-            "score_strata": "Strata IQ3_XXS 是 Qwen3.8-Flash-Next 的 3 比特量化版本, 在一张 RTX 3080 Ti (12 GB) 上本地运行.",
+            "score_models": "DeepSeek V4.1 Flash 是 DeepSeek 端点的 deepseek-flash 模型, 版本为 DeepSeek-V4.1-Flash-1017. Strata IQ3_XXS 是 Qwen3.8-Flash-Next 的 3 比特量化版本, 在一张 RTX 3080 Ti (12 GB) 上本地运行.",
             "score_read": "每组是一个代理程序上的一个模型, 每根柱子是一档推理强度. 底槽上方的数字是综合分数, 越高越好. 报告中的错误发现多于正确发现时, 分数会低于 0. 此结果只反映这些审查任务, 不代表模型的通用能力.",
             "trade_kicker": "02 / 权衡", "trade_title": "质量, 耗时与费用",
             "trade_intro": "每个点代表一个配置. 连线连接同一代理程序上同一模型的不同推理强度: 圆点为 Codex, 菱形为 Claude Code. 对前沿上的点, 其他可见点无法在两项指标上都不差、且至少一项更好. 点击图例中的帕累托前沿, 即可显示这些点及其连线. 按住 Ctrl 并在图表上滚动滚轮可缩放.",
@@ -1164,7 +1163,6 @@ def page_copy():
             "reviewer_spec": "检查代码变更是否准确、完整地落实任务提供的要求.",
             "reviewer_audit": "审计暂存的提交候选: 选中的文件、必要检查和任务要求的覆盖情况.",
             "reviewer_readiness": "在实施前检查需求文档是否完整、一致、可实现且可验证. 每次运行有两个独立审查线程.",
-            "review_read": "标签颜色对应模型. 水平滚动可查看全部配置.",
             "method_kicker": "数据说明", "method_title": "分数与费用的计算方法",
             "method_selection": "数据是基准的逐次运行结果. 本页使用基准主统计计入的运行: Strata 每项任务 10 次, 其他配置 5 次. 在相同时限下由端点按 high 执行的 DeepSeek medium 请求并入 high, 因此 Commit Audit 中的 DeepSeek high 有 8 次. 无效运行, 以及时限不同而单列的 DeepSeek medium 请求补充配置, 都不计入.",
             "method_score": f"单次运行的分数 (评分 {SCORING_VERSION}) 按报告找到的答案键问题加分, 按错误发现扣分. 分数不在 0 处截断, 所以可以为负; 没有产出报告的运行记 0 分. 任务分数是各次运行的平均值, 95% 区间按 t 分布计算. 综合分数 = 100 × (0.20 Code Standards + 0.20 Code Spec + 0.25 Commit Audit + 0.35 Spec Readiness); 其区间合并四项的标准误, 自由度按 Welch–Satterthwaite 计算.",
@@ -1323,7 +1321,7 @@ def page(results):
 </aside>
 <main class="content"><div class="topbar">{phrase('topbar_context', 'span', 'topbar-context')}<div class="language-group" id="language-group" role="group" aria-label="Language"><button id="language-en" type="button" aria-pressed="true">English</button><button id="language-zh" type="button" aria-pressed="false">中文</button></div></div>
 <section class="hero" id="overview">{phrase('eyebrow', 'div', 'eyebrow')}{phrase('headline', 'h1')}{phrase('lead', 'p', 'lead')}<div class="version-note">{phrase('version_title', 'strong')} {phrase('version_summary')} {phrase('version_readme')} {readme_link}.</div><div class="summary-strip"><div class="summary-item">{icon('models', 'summary-mark')}<strong>{model_count}</strong>{phrase('stat_models')}</div><div class="summary-item">{icon('configurations', 'summary-mark')}<strong>{len(records)}</strong>{phrase('stat_configurations')}</div><div class="summary-item">{icon('benchmark', 'summary-mark')}<strong>{len(REVIEWERS)}</strong>{phrase('stat_benchmarks')}</div><div class="summary-item">{icon('benchmark', 'summary-mark')}<strong>{run_count}</strong>{phrase('stat_runs')}</div></div></section>
-<section class="chart-section" id="score"><div class="section-heading">{phrase('score_kicker', 'div', 'section-kicker')}{phrase('score_title', 'h2')}{phrase('score_desc', 'p')}<p class="section-context">{phrase('score_context')} {phrase('score_strata')} {phrase('readme_more')} {readme_link}.</p></div>
+<section class="chart-section" id="score"><div class="section-heading">{phrase('score_kicker', 'div', 'section-kicker')}{phrase('score_title', 'h2')}{phrase('score_desc', 'p')}<p class="section-context">{phrase('score_context')} {phrase('score_models')} {phrase('readme_more')} {readme_link}.</p></div>
 <article class="panel"><div class="bar-tooltip" id="benchmark-bar-tooltip-effort" hidden></div><div class="bar-viewport"><div class="bar-scroll" style="--groups:{series_count}">{effort_html}</div></div>{reading('score_read')}</article></section>
 <section class="chart-section" id="tradeoffs"><div class="section-heading">{phrase('trade_kicker', 'div', 'section-kicker')}{phrase('trade_title', 'h2')}{phrase('trade_intro', 'p')}</div>{''.join(scatter_sections)}</section>
 <section class="chart-section" id="reviewers"><div class="section-heading">{phrase('review_kicker', 'div', 'section-kicker')}{phrase('review_title', 'h2')}{phrase('review_desc', 'p')}</div>

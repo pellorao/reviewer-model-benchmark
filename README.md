@@ -44,6 +44,8 @@ There are 27 main configurations:
 
 The runs took place from 2026-10-19 to 2026-10-22 (UTC), and the page counts 666 scored runs. Effort labels are each model's requested setting, not equal compute. The tasks were calibrated on Claude Opus, which also judged the reports, so Opus may be placed too high. The results describe this fixed task set only and are not a general model ranking. The full scenarios, raw reports and hidden cases are not in this repository, so the charts can be recomputed from the snapshot but the measurement cannot be rerun from it.
 
+DeepSeek V4.1 Flash is the endpoint's `deepseek-flash` model, version DeepSeek-V4.1-Flash-1017.
+
 Strata IQ3_XXS is a 3-bit quantization of Qwen3.8-Flash-Next, run locally on a home PC (RTX 3080 Ti 12 GB, i9-13900, 64 GB RAM).
 
 ## Statistics
