@@ -2,7 +2,7 @@
 
 **[English](README.md)** · 简体中文
 
-[打开已发布的 Benchmark 页面](https://cybersoul.net/reviewer-model-benchmark/)
+[打开已发布的 Benchmark 页面](https://reviewer-model-benchmark.pages.dev/reviewer-model-benchmark/)
 
 本工具读取同目录的 `benchmark-results.json`（benchmark 的逐实例结果快照），生成可离线打开的 `charts.html`，比较不同模型、代理程序（harness）和推理强度在 4 项 Reviewer 任务中的分数、耗时、token 用量、费用和速度。页面先给综合分数，再给三张权衡散点图（可显示帕累托前沿），最后是分任务的分数、耗时、token、费用和速度明细。
 

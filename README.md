@@ -2,7 +2,7 @@
 
 English · **[简体中文](README.zh-CN.md)**
 
-[Open the published benchmark page](https://cybersoul.net/reviewer-model-benchmark/)
+[Open the published benchmark page](https://reviewer-model-benchmark.pages.dev/reviewer-model-benchmark/)
 
 This tool reads `benchmark-results.json` (a snapshot of the benchmark's per-run results) and builds `charts.html`, an offline page that compares models, agent harnesses and reasoning efforts on four reviewer tasks by score, work time, token usage, cost and speed. The page shows the weighted score first, then three trade-off scatter plots (with an optional Pareto front), then per-task score, time, token, cost and speed detail.
 
