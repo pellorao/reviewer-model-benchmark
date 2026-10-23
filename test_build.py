@@ -146,6 +146,13 @@ class ExtractTests(unittest.TestCase):
         self.assertEqual([cell["n"] for cell in record["cells"].values()], [2, 2, 2, 2])
         self.assertAlmostEqual(record["score"], 70.0)
 
+    def test_phase3_xhigh_configuration_is_plotted(self):
+        config = {**CONFIGS["openai"], "key": "codex/gpt-6-luna/xhigh", "model": "gpt-6-luna",
+                  "effort": "xhigh", "kind": "phase3"}
+        records = extract(results(full_config(CONFIGS["openai"]["key"]) + full_config(config["key"]),
+                                  configs=(CONFIGS["openai"], config)))
+        self.assertEqual(sorted(record["effort"] for record in records), ["low", "xhigh"])
+
     def test_main_instance_without_valid_score_is_rejected(self):
         bad = full_config(CONFIGS["openai"]["key"])
         bad[0]["validity"]["valid"] = False

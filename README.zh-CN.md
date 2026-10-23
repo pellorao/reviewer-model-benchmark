@@ -8,7 +8,11 @@
 
 这个页面是独立的比较视图。它不修改输入数据，也不替代 benchmark 自身的正式报告；benchmark 自己的报告只给分任务结果，综合分数是本页的汇总。
 
-## 版本 v2.0
+## 版本 v2.1
+
+v2.1 在 v2.0 的数据上加入 benchmark 第三阶段补测的 GPT-6 Luna xhigh 和 max 推理强度（Codex）。补测晚一天进行，服务端模型或路由可能已有变化；每格计入全部有效运行（每项任务 5 至 8 次），benchmark 本身不拿它们与其他配置比较。其余实例与 v2.0 相同。
+
+### v2.0
 
 v2.0 是一轮全新的测量，结果不能与 v1 直接比较：
 
@@ -18,7 +22,7 @@ v2.0 是一轮全新的测量，结果不能与 v1 直接比较：
 - 新增任务速度与引擎速度（tok/s）。
 - 费用按厂商分别取依据，本地模型改为本地运行成本（见下文）。
 
-`build.py` 只支持 v2.0 的数据；v1 页面和脚本保留在 Git 历史中。
+`build.py` 只支持 v2.x 的数据（结果文件 schema 1）；v1 页面和脚本保留在 Git 历史中。
 
 ## 测量范围
 
@@ -31,18 +35,19 @@ ARW 是提供这组开发审查任务的软件项目。Reviewer 是 ARW 开发�
 | Commit Audit | 审计暂存的提交候选：选中的文件、必要检查和要求的覆盖情况。 | 25% |
 | Spec Readiness | 实施前检查需求文档是否完整、一致、可实现且可验证；每次运行有两个独立审查线程。 | 35% |
 
-共 27 个主配置：
+共 29 个配置（27 个主配置和 2 个第三阶段补充配置）：
 
 | 代理程序 | 模型 | 推理强度 | 费用依据 |
 | --- | --- | --- | --- |
-| Codex | GPT-6.1 Sol、GPT-6 Luna | low、medium、high | 套餐运行，参考 API 价 |
+| Codex | GPT-6.1 Sol | low、medium、high | 套餐运行，参考 API 价 |
+| Codex | GPT-6 Luna | low、medium、high、xhigh、max（xhigh、max 为补测） | 套餐运行，参考 API 价 |
 | Codex | DeepSeek V4.1 Flash | low、high、max | DeepSeek 逐请求价格 |
 | Codex | Strata IQ3_XXS（本地） | low、medium、high | 本地运行成本 |
 | Claude Code | Claude Opus 5.5、Sonnet 5.5、Haiku 5.5 | low、medium、high | 套餐运行，参考 API 价 |
 | Claude Code | DeepSeek V4.1 Flash | low、high、max | DeepSeek 逐请求价格 |
 | Claude Code | Strata IQ3_XXS（本地） | low、medium、high | 本地运行成本 |
 
-测量于 2026-10-19 至 2026-10-22（UTC）进行，本页共计入 666 次计分运行。推理强度标签是各模型的请求设置，不代表相同的计算量。任务以 Claude Opus 标定、报告也由 Opus 裁决，所以 Opus 的位置可能偏高。结果只描述这组固定任务，不是通用模型排名。完整场景、原始报告与隐藏用例不在本仓库，因此可以从快照重算图表，不能仅靠快照重跑测量。
+测量于 2026-10-19 至 2026-10-22（UTC）进行，本页共计入 717 次计分运行。推理强度标签是各模型的请求设置，不代表相同的计算量。任务以 Claude Opus 标定、报告也由 Opus 裁决，所以 Opus 的位置可能偏高。结果只描述这组固定任务，不是通用模型排名。完整场景、原始报告与隐藏用例不在本仓库，因此可以从快照重算图表，不能仅靠快照重跑测量。
 
 DeepSeek V4.1 Flash 是 DeepSeek 端点的 `deepseek-flash` 模型，版本为 DeepSeek-V4.1-Flash-1017。
 
@@ -52,7 +57,7 @@ Strata IQ3_XXS 是 Qwen3.8-Flash-Next 的 3 比特量化版本，在一台家用
 
 ### 计入哪些运行
 
-只用 benchmark 主统计计入的实例（`selection.inMain` 为真且没有 `supplementaryNote`）：Strata 每项任务 10 次，其他配置 5 次。DeepSeek 请求为 medium、但端点在相同时限下按 high 执行的运行，按 benchmark 的口径并入 high 格，所以 Commit Audit 的两个 DeepSeek high 格各有 8 次。无效运行，以及时限不同而单列的“请求 medium”补充配置，都不进入页面。
+只用 benchmark 主统计计入的实例（`selection.inMain` 为真且没有 `supplementaryNote`）：Strata 每项任务 10 次，其他配置 5 次。GPT-6 Luna xhigh 和 max 是第三阶段补充配置（`kind` 为 `phase3`），按 benchmark 的口径取每格全部有效实例，每项任务 5 至 8 次。DeepSeek 请求为 medium、但端点在相同时限下按 high 执行的运行，按 benchmark 的口径并入 high 格，所以 Commit Audit 的两个 DeepSeek high 格各有 8 次。无效运行，以及时限不同而单列的“请求 medium”补充配置，都不进入页面。
 
 ### 分数
 

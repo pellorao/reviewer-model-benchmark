@@ -3,12 +3,12 @@
   "benchmarkName": "Reviewer Model Benchmark",
   "benchmarkVersion": "2.0",
   "schemaVersion": 1,
-  "generatedAt": "2026-10-22T09:29:14+00:00",
+  "generatedAt": "2026-10-23T02:34:07+00:00",
   "source": {
    "project": "qwen_strata",
-   "commit": "9c68c7e0451f9574cf2053937a7aa766a5540b2f",
+   "commit": "cf9b66e90006bc431f459b01d2edd4862f8c0f89",
    "treeDirty": false,
-   "summarySha256": "33062d7836bc98e9d71d843789a8cc0892ac12b5092c37e7004b5944829ee288"
+   "summarySha256": "3c55e80591c91daba30f19842d150939eff7a39683569e2fe72c32ec5d5fa6d3"
   },
   "scoring": {
    "version": "r8.4",
@@ -16,18 +16,26 @@
    "en": "Scoring r8.4: k-tier scoring without the cut at 0 (N / P for N >= 0, N / sum k for N < 0); one overall deduction d = max(pause 0.1, format penalty f, ARW residual 0.1): final = s - d |s|; a model failure scores 0."
   },
   "phase": {
-   "number": 2,
+   "number": 3,
    "complete": true,
    "final": true,
-   "zh": "第二阶段：按计划的全样本分析，Strata 各格取全部有效实例（至多 10 个），其余配置同第一阶段。",
-   "en": "Phase 2: the planned full-sample analysis; Strata cells use every valid instance (up to 10), other configurations as in phase 1.",
+   "zh": "第三阶段补充（三阶段合一）：第二阶段的全部实例与选取不变，另加 gpt-6-luna xhigh（配置 28）、max（配置 29）的补充实例（Codex，每格全部有效实例、不截取前 5 个，stage 为 phase3）；补充配置不进任何比较，见 caveats 的 phase3-supplement。",
+   "en": "Phase 3 supplement (all three phases in one file): every phase-2 instance and selection unchanged, plus the gpt-6-luna xhigh (configuration 28) and max (29) supplement instances (Codex, every valid instance per cell, no first-5 cut, stage phase3); the supplement configurations never enter a comparison, see the phase3-supplement caveat.",
    "phase1": {
     "summaryMd": "reports/v0.1.45/multi-model-benchmark/phase1/summary.md",
-    "summaryMdSha256": "982c21d881a4b5b476c46503c09f6eba3c5e1f65a7c95d08ceb19dc45347c03c",
+    "summaryMdSha256": "1c6dda97b9aef807b0baf130e2cad140e72aa64317ac3a8803ed046924168539",
     "summaryJson": "reports/v0.1.45/multi-model-benchmark/phase1/summary.json",
     "summaryJsonSha256": "47500e75334396c4d286ec7d8b86561db2350243885c64925414985c1a99cd6c",
     "zh": "用 selection.mainStatistic 可重算第一阶段全部统计；第一阶段敏感性变体只适用于第一阶段实例集，见第一阶段报告，本文件不带。",
     "en": "selection.mainStatistic recomputes every phase-1 statistic; the phase-1 sensitivity variants apply to the phase-1 instance set only and are in the phase-1 report, not in this file."
+   },
+   "phase2": {
+    "summaryMd": "reports/v0.1.45/multi-model-benchmark/phase2/summary.md",
+    "summaryMdSha256": "dc4930500d46000caee3be00f7c8baee975a562c596512dfcb5e3315ff6e94fb",
+    "summaryJson": "reports/v0.1.45/multi-model-benchmark/phase2/summary.json",
+    "summaryJsonSha256": "df67a68e7a7f06f3258bebfc2d44a47a1fc7ac1a711964ee4f74f8efda4fff51",
+    "zh": "去掉 configNumber 28、29 的实例即为第二阶段文件的实例集；inMain 与第二阶段相同。",
+    "en": "Without the configNumber 28 / 29 instances this is the phase-2 instance set; inMain as in phase 2."
    }
   },
   "parallelWindows": {
@@ -1069,14 +1077,69 @@
    "durationBasis": "claude-code",
    "costBasis": null,
    "inComparisons": true
+  },
+  {
+   "key": "codex/gpt-6-luna/xhigh",
+   "configNumber": 28,
+   "harness": "codex",
+   "harnessName": "Codex",
+   "harnessVersion": "0.163.0",
+   "model": "gpt-6-luna",
+   "modelName": "gpt-6-luna",
+   "modelId": null,
+   "modelIdsReturned": [
+    "gpt-6-luna"
+   ],
+   "vendor": "openai",
+   "vendorName": "OpenAI",
+   "effort": "xhigh",
+   "effectiveEffort": "xhigh",
+   "kind": "phase3",
+   "local": false,
+   "arm": "openai",
+   "tokenSource": {
+    "zh": "API usage，由本机回环 relay 从流式回复记录（只记 usage、模型、tier，不记头和正文）；未缓存输入 = input − cached。",
+    "en": "API usage recorded from the streamed replies by a local loopback relay (usage, model and tier only, no headers or bodies); uncached input = input - cached."
+   },
+   "durationBasis": "codex",
+   "costBasis": null,
+   "inComparisons": false
+  },
+  {
+   "key": "codex/gpt-6-luna/max",
+   "configNumber": 29,
+   "harness": "codex",
+   "harnessName": "Codex",
+   "harnessVersion": "0.163.0",
+   "model": "gpt-6-luna",
+   "modelName": "gpt-6-luna",
+   "modelId": null,
+   "modelIdsReturned": [
+    "codex-auto-review",
+    "gpt-6-luna"
+   ],
+   "vendor": "openai",
+   "vendorName": "OpenAI",
+   "effort": "max",
+   "effectiveEffort": "max",
+   "kind": "phase3",
+   "local": false,
+   "arm": "openai",
+   "tokenSource": {
+    "zh": "API usage，由本机回环 relay 从流式回复记录（只记 usage、模型、tier，不记头和正文）；未缓存输入 = input − cached。",
+    "en": "API usage recorded from the streamed replies by a local loopback relay (usage, model and tier only, no headers or bodies); uncached input = input - cached."
+   },
+   "durationBasis": "codex",
+   "costBasis": null,
+   "inComparisons": false
   }
  ],
  "selection": {
-  "phase": 2,
+  "phase": 3,
   "preregisteredN": 5,
   "strataExtraTarget": 10,
-  "zh": "有效实例按开始时刻排序得到 validRank。phase 1：未合并的格取 validRank ≤ 5（firstN）；DeepSeek 合并格（cellPooled，medium 请求并入 high）取全部有效实例。phase 2：Strata 的格取 validRank ≤ 10，其余同 phase 1。inMain 是本文件阶段的结果；主统计多于前 5 个的格另有一致性行（firstN 为 true 的实例）。",
-  "en": "Valid instances ordered by start give validRank. Phase 1: cells not pooled take validRank <= 5 (firstN); pooled DeepSeek cells (cellPooled, medium requests pooled into high) take every valid instance. Phase 2: Strata cells take validRank <= 10, others as in phase 1. inMain is the result for the phase of this file; a cell whose main statistic holds more than its first 5 also has a consistency row (the instances with firstN true)."
+  "zh": "有效实例按开始时刻排序得到 validRank。phase 1：未合并的格取 validRank ≤ 5（firstN）；DeepSeek 合并格（cellPooled，medium 请求并入 high）取全部有效实例。phase 2：Strata 的格取 validRank ≤ 10，其余同 phase 1。phase 3：同 phase 2，另加补充配置 28、29（gpt-6-luna xhigh、max），各格取全部有效实例（mainStatistic 为 true，不截取前 5 个，用户 2026-10-23），只给实例、不进比较，也没有一致性行。inMain 是本文件阶段的结果；主统计多于前 5 个的格另有一致性行（firstN 为 true 的实例）。",
+  "en": "Valid instances ordered by start give validRank. Phase 1: cells not pooled take validRank <= 5 (firstN); pooled DeepSeek cells (cellPooled, medium requests pooled into high) take every valid instance. Phase 2: Strata cells take validRank <= 10, others as in phase 1. Phase 3: as phase 2, plus the supplement configurations 28 / 29 (gpt-6-luna xhigh / max), every valid instance per cell (mainStatistic true, no first-5 cut, user 2026-10-23), instances only, never in a comparison and without a consistency row. inMain is the result for the phase of this file; a cell whose main statistic holds more than its first 5 also has a consistency row (the instances with firstN true)."
  },
  "comparisonDesign": {
   "familyPerScenario": true,
@@ -22068,6 +22131,1568 @@
    "parallelWindow": null
   },
   {
+   "id": "openai/code-spec-v5/luna-xhigh-a1",
+   "scenario": "code-spec-v5",
+   "configKey": "codex/gpt-6-luna/xhigh",
+   "configNumber": 28,
+   "arm": "openai",
+   "attempt": 1,
+   "supplementaryNote": null,
+   "requestedEffort": "xhigh",
+   "effectiveEffort": "xhigh",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-10-22T17:29:18.059633+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [
+     "h0: arw_pause",
+     "h0: user_pause",
+     "h0: limited",
+     "h0: harness_rejected"
+    ],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 1,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase3"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.6909154699499127,
+    "scoreR83": 0.6909154699499127,
+    "rawScore": 0.6909154699499127,
+    "scoreBeforePenalty": 0.6909154699499127,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 259.011,
+    "timeLimitSeconds": 647,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 231236,
+    "cachedInput": 1709440,
+    "output": 27806,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "source": "API usage (relay)",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 108.30622024641157,
+    "taskInput": 892.7651721355463,
+    "taskOutput": 107.354513900954,
+    "lowerBounds": [
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "API usage (relay) over the instance work seconds",
+     "engine": "API model: input unknown (no input-processing time); output = relay output tokens / request seconds, a lower bound (first-token latency and input processing included), 22 requests"
+    }
+   },
+   "toolCalls": 21,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gpt-6-luna"
+   ],
+   "serviceTiers": {
+    "default": 22
+   },
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 259.011,
+     "tokens": {
+      "uncachedInput": 231236,
+      "cachedInput": 1709440,
+      "output": 27806
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 21,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "openai/code-spec-v5/luna-xhigh-a2",
+   "scenario": "code-spec-v5",
+   "configKey": "codex/gpt-6-luna/xhigh",
+   "configNumber": 28,
+   "arm": "openai",
+   "attempt": 2,
+   "supplementaryNote": null,
+   "requestedEffort": "xhigh",
+   "effectiveEffort": "xhigh",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-10-22T17:33:53.281480+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [
+     "h0: arw_pause",
+     "h0: user_pause",
+     "h0: limited",
+     "h0: harness_rejected"
+    ],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 2,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase3"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.7074579293061766,
+    "scoreR83": 0.7074579293061766,
+    "rawScore": 0.7074579293061766,
+    "scoreBeforePenalty": 0.7074579293061766,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 144.226,
+    "timeLimitSeconds": 647,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 117190,
+    "cachedInput": 1003008,
+    "output": 14103,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "source": "API usage (relay)",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 95.49753933673651,
+    "taskInput": 812.544201461595,
+    "taskOutput": 97.7840333920375,
+    "lowerBounds": [
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "API usage (relay) over the instance work seconds",
+     "engine": "API model: input unknown (no input-processing time); output = relay output tokens / request seconds, a lower bound (first-token latency and input processing included), 14 requests"
+    }
+   },
+   "toolCalls": 13,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gpt-6-luna"
+   ],
+   "serviceTiers": {
+    "default": 14
+   },
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 144.226,
+     "tokens": {
+      "uncachedInput": 117190,
+      "cachedInput": 1003008,
+      "output": 14103
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 13,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "openai/code-spec-v5/luna-xhigh-a3",
+   "scenario": "code-spec-v5",
+   "configKey": "codex/gpt-6-luna/xhigh",
+   "configNumber": 28,
+   "arm": "openai",
+   "attempt": 3,
+   "supplementaryNote": null,
+   "requestedEffort": "xhigh",
+   "effectiveEffort": "xhigh",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-10-22T17:37:28.515042+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [],
+    "reminderInterrupts": 1,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 3,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase3"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.5803214151830521,
+    "scoreR83": 0.5803214151830521,
+    "rawScore": 0.5961005473179387,
+    "scoreBeforePenalty": 0.5961005473179387,
+    "formatPenalty": 0.02647058823529412,
+    "repairs": 0,
+    "overallDeduction": 0.02647058823529412,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 373.726,
+    "timeLimitSeconds": 647,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 137826,
+    "cachedInput": 2605824,
+    "output": 32895,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "source": "API usage (relay)",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 90.46206242265292,
+    "taskInput": 368.7888988189208,
+    "taskOutput": 88.01902998453413,
+    "lowerBounds": [
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "API usage (relay) over the instance work seconds",
+     "engine": "API model: input unknown (no input-processing time); output = relay output tokens / request seconds, a lower bound (first-token latency and input processing included), 30 requests"
+    }
+   },
+   "toolCalls": 29,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gpt-6-luna"
+   ],
+   "serviceTiers": {
+    "default": 30,
+    "not-returned": 1
+   },
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 373.726,
+     "tokens": {
+      "uncachedInput": 137826,
+      "cachedInput": 2605824,
+      "output": 32895
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 29,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "openai/code-spec-v5/luna-xhigh-a4",
+   "scenario": "code-spec-v5",
+   "configKey": "codex/gpt-6-luna/xhigh",
+   "configNumber": 28,
+   "arm": "openai",
+   "attempt": 4,
+   "supplementaryNote": null,
+   "requestedEffort": "xhigh",
+   "effectiveEffort": "xhigh",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-10-22T17:44:04.076638+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [],
+    "reminderInterrupts": 1,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 4,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase3"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.6198577478890573,
+    "scoreR83": 0.6198577478890573,
+    "rawScore": 0.6198577478890573,
+    "scoreBeforePenalty": 0.6198577478890573,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 400.575,
+    "timeLimitSeconds": 647,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 202901,
+    "cachedInput": 1868160,
+    "output": 40045,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "source": "API usage (relay)",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 105.73667137063478,
+    "taskInput": 506.5243712163765,
+    "taskOutput": 99.9687948573925,
+    "lowerBounds": [
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "API usage (relay) over the instance work seconds",
+     "engine": "API model: input unknown (no input-processing time); output = relay output tokens / request seconds, a lower bound (first-token latency and input processing included), 25 requests"
+    }
+   },
+   "toolCalls": 23,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gpt-6-luna"
+   ],
+   "serviceTiers": {
+    "default": 25,
+    "not-returned": 1
+   },
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 400.575,
+     "tokens": {
+      "uncachedInput": 202901,
+      "cachedInput": 1868160,
+      "output": 40045
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 23,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "openai/code-spec-v5/luna-xhigh-a5",
+   "scenario": "code-spec-v5",
+   "configKey": "codex/gpt-6-luna/xhigh",
+   "configNumber": 28,
+   "arm": "openai",
+   "attempt": 5,
+   "supplementaryNote": null,
+   "requestedEffort": "xhigh",
+   "effectiveEffort": "xhigh",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-10-22T17:50:59.741109+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [
+     "h0: arw_pause",
+     "h0: user_pause",
+     "h0: limited",
+     "h0: harness_rejected"
+    ],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 5,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase3"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.652081977620629,
+    "scoreR83": 0.652081977620629,
+    "rawScore": 0.652081977620629,
+    "scoreBeforePenalty": 0.652081977620629,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 229.306,
+    "timeLimitSeconds": 647,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 136417,
+    "cachedInput": 1200512,
+    "output": 25034,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "source": "API usage (relay)",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 109.61874347709728,
+    "taskInput": 594.9124750333615,
+    "taskOutput": 109.17289560674382,
+    "lowerBounds": [
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "API usage (relay) over the instance work seconds",
+     "engine": "API model: input unknown (no input-processing time); output = relay output tokens / request seconds, a lower bound (first-token latency and input processing included), 16 requests"
+    }
+   },
+   "toolCalls": 15,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gpt-6-luna"
+   ],
+   "serviceTiers": {
+    "default": 16
+   },
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 229.306,
+     "tokens": {
+      "uncachedInput": 136417,
+      "cachedInput": 1200512,
+      "output": 25034
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 15,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "openai/code-spec-v5/luna-xhigh-a6",
+   "scenario": "code-spec-v5",
+   "configKey": "codex/gpt-6-luna/xhigh",
+   "configNumber": 28,
+   "arm": "openai",
+   "attempt": 6,
+   "supplementaryNote": null,
+   "requestedEffort": "xhigh",
+   "effectiveEffort": "xhigh",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-10-22T17:55:05.166762+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [],
+    "reminderInterrupts": 1,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 6,
+    "firstN": false,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase3"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.7369967520898335,
+    "scoreR83": 0.7369967520898335,
+    "rawScore": 0.7369967520898335,
+    "scoreBeforePenalty": 0.7369967520898335,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 370.807,
+    "timeLimitSeconds": 647,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 160443,
+    "cachedInput": 2208384,
+    "output": 35427,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "source": "API usage (relay)",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 96.01645672856901,
+    "taskInput": 432.68600646697604,
+    "taskOutput": 95.54026757855164,
+    "lowerBounds": [
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "API usage (relay) over the instance work seconds",
+     "engine": "API model: input unknown (no input-processing time); output = relay output tokens / request seconds, a lower bound (first-token latency and input processing included), 23 requests"
+    }
+   },
+   "toolCalls": 22,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gpt-6-luna"
+   ],
+   "serviceTiers": {
+    "default": 23,
+    "not-returned": 1
+   },
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 370.807,
+     "tokens": {
+      "uncachedInput": 160443,
+      "cachedInput": 2208384,
+      "output": 35427
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 22,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "openai/code-spec-v5/luna-xhigh-a7",
+   "scenario": "code-spec-v5",
+   "configKey": "codex/gpt-6-luna/xhigh",
+   "configNumber": 28,
+   "arm": "openai",
+   "attempt": 7,
+   "supplementaryNote": null,
+   "requestedEffort": "xhigh",
+   "effectiveEffort": "xhigh",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-10-22T17:58:10.384163+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [],
+    "reminderInterrupts": 1,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 7,
+    "firstN": false,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase3"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.7170477015379124,
+    "scoreR83": 0.7170477015379124,
+    "rawScore": 0.7170477015379124,
+    "scoreBeforePenalty": 0.7170477015379124,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 354.236,
+    "timeLimitSeconds": 647,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 156327,
+    "cachedInput": 2236928,
+    "output": 36015,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "source": "API usage (relay)",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 104.92720455294833,
+    "taskInput": 441.30748992197294,
+    "taskOutput": 101.66950846328437,
+    "lowerBounds": [
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "API usage (relay) over the instance work seconds",
+     "engine": "API model: input unknown (no input-processing time); output = relay output tokens / request seconds, a lower bound (first-token latency and input processing included), 22 requests"
+    }
+   },
+   "toolCalls": 21,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gpt-6-luna"
+   ],
+   "serviceTiers": {
+    "default": 22,
+    "not-returned": 1
+   },
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 354.236,
+     "tokens": {
+      "uncachedInput": 156327,
+      "cachedInput": 2236928,
+      "output": 36015
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 21,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "openai/code-spec-v5/luna-xhigh-a8",
+   "scenario": "code-spec-v5",
+   "configKey": "codex/gpt-6-luna/xhigh",
+   "configNumber": 28,
+   "arm": "openai",
+   "attempt": 8,
+   "supplementaryNote": null,
+   "requestedEffort": "xhigh",
+   "effectiveEffort": "xhigh",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-10-22T18:01:25.639819+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [
+     "h0: arw_pause",
+     "h0: user_pause",
+     "h0: limited",
+     "h0: harness_rejected"
+    ],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 8,
+    "firstN": false,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase3"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.6245613515943202,
+    "scoreR83": 0.6245613515943202,
+    "rawScore": 0.6245613515943202,
+    "scoreBeforePenalty": 0.6245613515943202,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 292.671,
+    "timeLimitSeconds": 647,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 155171,
+    "cachedInput": 1892608,
+    "output": 31738,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "source": "API usage (relay)",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 108.81674368655754,
+    "taskInput": 530.1891885427665,
+    "taskOutput": 108.44258570203402,
+    "lowerBounds": [
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "API usage (relay) over the instance work seconds",
+     "engine": "API model: input unknown (no input-processing time); output = relay output tokens / request seconds, a lower bound (first-token latency and input processing included), 22 requests"
+    }
+   },
+   "toolCalls": 21,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gpt-6-luna"
+   ],
+   "serviceTiers": {
+    "default": 22
+   },
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 292.671,
+     "tokens": {
+      "uncachedInput": 155171,
+      "cachedInput": 1892608,
+      "output": 31738
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 21,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "openai/code-spec-v5/luna-max-a1",
+   "scenario": "code-spec-v5",
+   "configKey": "codex/gpt-6-luna/max",
+   "configNumber": 29,
+   "arm": "openai",
+   "attempt": 1,
+   "supplementaryNote": null,
+   "requestedEffort": "max",
+   "effectiveEffort": "max",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-10-22T17:29:33.090400+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [
+     "h0: arw_pause",
+     "h0: user_pause",
+     "h0: limited",
+     "h0: harness_rejected"
+    ],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 1,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase3"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.6997315163436445,
+    "scoreR83": 0.6997315163436445,
+    "rawScore": 0.6997315163436445,
+    "scoreBeforePenalty": 0.6997315163436445,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 297.835,
+    "timeLimitSeconds": 720,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 120440,
+    "cachedInput": 1229312,
+    "output": 34252,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "source": "API usage (relay)",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 115.12602777569981,
+    "taskInput": 404.38497825977475,
+    "taskOutput": 115.00327362465795,
+    "lowerBounds": [
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "API usage (relay) over the instance work seconds",
+     "engine": "API model: input unknown (no input-processing time); output = relay output tokens / request seconds, a lower bound (first-token latency and input processing included), 16 requests"
+    }
+   },
+   "toolCalls": 15,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gpt-6-luna"
+   ],
+   "serviceTiers": {
+    "default": 16
+   },
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 297.835,
+     "tokens": {
+      "uncachedInput": 120440,
+      "cachedInput": 1229312,
+      "output": 34252
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 15,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "openai/code-spec-v5/luna-max-a2",
+   "scenario": "code-spec-v5",
+   "configKey": "codex/gpt-6-luna/max",
+   "configNumber": 29,
+   "arm": "openai",
+   "attempt": 2,
+   "supplementaryNote": null,
+   "requestedEffort": "max",
+   "effectiveEffort": "max",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-10-22T17:29:48.154253+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [],
+    "reminderInterrupts": 1,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 2,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase3"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.7580980079853535,
+    "scoreR83": 0.7580980079853535,
+    "rawScore": 0.7580980079853535,
+    "scoreBeforePenalty": 0.7580980079853535,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 434.073,
+    "timeLimitSeconds": 720,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 162596,
+    "cachedInput": 3279232,
+    "output": 35474,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "source": "API usage (relay)",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 85.66249888664149,
+    "taskInput": 374.5821555360504,
+    "taskOutput": 81.72358105664254,
+    "lowerBounds": [
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "API usage (relay) over the instance work seconds",
+     "engine": "API model: input unknown (no input-processing time); output = relay output tokens / request seconds, a lower bound (first-token latency and input processing included), 37 requests"
+    }
+   },
+   "toolCalls": 36,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gpt-6-luna"
+   ],
+   "serviceTiers": {
+    "default": 37,
+    "not-returned": 1
+   },
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 434.073,
+     "tokens": {
+      "uncachedInput": 162596,
+      "cachedInput": 3279232,
+      "output": 35474
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 36,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "openai/code-spec-v5/luna-max-a3",
+   "scenario": "code-spec-v5",
+   "configKey": "codex/gpt-6-luna/max",
+   "configNumber": 29,
+   "arm": "openai",
+   "attempt": 3,
+   "supplementaryNote": null,
+   "requestedEffort": "max",
+   "effectiveEffort": "max",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-10-22T17:37:43.554866+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [
+     "h0: arw_pause",
+     "h0: user_pause",
+     "h0: limited",
+     "h0: harness_rejected"
+    ],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 3,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase3"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.6278327899811172,
+    "scoreR83": 0.6278327899811172,
+    "rawScore": 0.6278327899811172,
+    "scoreBeforePenalty": 0.6278327899811172,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 410.177,
+    "timeLimitSeconds": 720,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 155819,
+    "cachedInput": 3999616,
+    "output": 38955,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "source": "API usage (relay)",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 94.83330105216695,
+    "taskInput": 379.8823434761091,
+    "taskOutput": 94.97119536200225,
+    "lowerBounds": [
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "API usage (relay) over the instance work seconds",
+     "engine": "API model: input unknown (no input-processing time); output = relay output tokens / request seconds, a lower bound (first-token latency and input processing included), 44 requests"
+    }
+   },
+   "toolCalls": 43,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gpt-6-luna"
+   ],
+   "serviceTiers": {
+    "default": 44
+   },
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 410.177,
+     "tokens": {
+      "uncachedInput": 155819,
+      "cachedInput": 3999616,
+      "output": 38955
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 43,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "openai/code-spec-v5/luna-max-a4",
+   "scenario": "code-spec-v5",
+   "configKey": "codex/gpt-6-luna/max",
+   "configNumber": 29,
+   "arm": "openai",
+   "attempt": 4,
+   "supplementaryNote": null,
+   "requestedEffort": "max",
+   "effectiveEffort": "max",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-10-22T17:37:58.606255+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [
+     "h0: arw_pause",
+     "h0: user_pause",
+     "h0: limited",
+     "h0: harness_rejected"
+    ],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 4,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase3"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.7340572211399377,
+    "scoreR83": 0.7340572211399377,
+    "rawScore": 0.7340572211399377,
+    "scoreBeforePenalty": 0.7340572211399377,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 385.026,
+    "timeLimitSeconds": 720,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 154329,
+    "cachedInput": 2189184,
+    "output": 37325,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "source": "API usage (relay)",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 96.93079674475345,
+    "taskInput": 400.8274765859968,
+    "taskOutput": 96.94150524899617,
+    "lowerBounds": [
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "API usage (relay) over the instance work seconds",
+     "engine": "API model: input unknown (no input-processing time); output = relay output tokens / request seconds, a lower bound (first-token latency and input processing included), 25 requests"
+    }
+   },
+   "toolCalls": 24,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gpt-6-luna"
+   ],
+   "serviceTiers": {
+    "default": 25
+   },
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 385.026,
+     "tokens": {
+      "uncachedInput": 154329,
+      "cachedInput": 2189184,
+      "output": 37325
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 24,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "openai/code-spec-v5/luna-max-a5",
+   "scenario": "code-spec-v5",
+   "configKey": "codex/gpt-6-luna/max",
+   "configNumber": 29,
+   "arm": "openai",
+   "attempt": 5,
+   "supplementaryNote": null,
+   "requestedEffort": "max",
+   "effectiveEffort": "max",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-10-22T17:51:14.814644+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [
+     "h0: arw_pause",
+     "h0: user_pause",
+     "h0: limited",
+     "h0: harness_rejected"
+    ],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 5,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase3"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.599511496532948,
+    "scoreR83": 0.599511496532948,
+    "rawScore": 0.599511496532948,
+    "scoreBeforePenalty": 0.599511496532948,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 388.711,
+    "timeLimitSeconds": 720,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 141886,
+    "cachedInput": 2974464,
+    "output": 41168,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "source": "API usage (relay)",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 105.90326820824365,
+    "taskInput": 365.0166833457247,
+    "taskOutput": 105.90901723902847,
+    "lowerBounds": [
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "API usage (relay) over the instance work seconds",
+     "engine": "API model: input unknown (no input-processing time); output = relay output tokens / request seconds, a lower bound (first-token latency and input processing included), 32 requests"
+    }
+   },
+   "toolCalls": 31,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gpt-6-luna"
+   ],
+   "serviceTiers": {
+    "default": 32
+   },
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 388.711,
+     "tokens": {
+      "uncachedInput": 141886,
+      "cachedInput": 2974464,
+      "output": 41168
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 31,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "openai/code-spec-v5/luna-max-a6",
+   "scenario": "code-spec-v5",
+   "configKey": "codex/gpt-6-luna/max",
+   "configNumber": 29,
+   "arm": "openai",
+   "attempt": 6,
+   "supplementaryNote": null,
+   "requestedEffort": "max",
+   "effectiveEffort": "max",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-10-22T17:51:29.846598+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [
+     "h0: arw_pause",
+     "h0: user_pause",
+     "h0: limited",
+     "h0: harness_rejected"
+    ],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 6,
+    "firstN": false,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase3"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.6924503996490557,
+    "scoreR83": 0.6924503996490557,
+    "rawScore": 0.6924503996490557,
+    "scoreBeforePenalty": 0.6924503996490557,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 388.43,
+    "timeLimitSeconds": 720,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 175834,
+    "cachedInput": 2393728,
+    "output": 45181,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "source": "API usage (relay)",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 116.66220012540808,
+    "taskInput": 452.67873233272405,
+    "taskOutput": 116.3169683083181,
+    "lowerBounds": [
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "API usage (relay) over the instance work seconds",
+     "engine": "API model: input unknown (no input-processing time); output = relay output tokens / request seconds, a lower bound (first-token latency and input processing included), 23 requests"
+    }
+   },
+   "toolCalls": 22,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gpt-6-luna"
+   ],
+   "serviceTiers": {
+    "default": 23
+   },
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 388.43,
+     "tokens": {
+      "uncachedInput": 175834,
+      "cachedInput": 2393728,
+      "output": 45181
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 22,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
    "id": "openai/code-standards-v5.1/sol-low-a1",
    "scenario": "code-standards-v5.1",
    "configKey": "codex/gpt-6.1-sol/low",
@@ -42016,6 +43641,1786 @@
      "finalStatus": "ready",
      "continuationStop": null,
      "harnessReportedCostUsd": 1.8922814999999997
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "openai/code-standards-v5.1/luna-xhigh-a1",
+   "scenario": "code-standards-v5.1",
+   "configKey": "codex/gpt-6-luna/xhigh",
+   "configNumber": 28,
+   "arm": "openai",
+   "attempt": 1,
+   "supplementaryNote": null,
+   "requestedEffort": "xhigh",
+   "effectiveEffort": "xhigh",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-10-22T18:06:43.683502+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [
+     "h0: arw_pause",
+     "h0: user_pause",
+     "h0: limited",
+     "h0: harness_rejected"
+    ],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 1,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase3"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.7066347742252719,
+    "scoreR83": 0.7066347742252719,
+    "rawScore": 0.7066347742252719,
+    "scoreBeforePenalty": 0.7066347742252719,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 282.346,
+    "timeLimitSeconds": 573,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 100731,
+    "cachedInput": 1182208,
+    "output": 31853,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "source": "API usage (relay)",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 112.87277368865458,
+    "taskInput": 356.764395458055,
+    "taskOutput": 112.81548171392546,
+    "lowerBounds": [
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "API usage (relay) over the instance work seconds",
+     "engine": "API model: input unknown (no input-processing time); output = relay output tokens / request seconds, a lower bound (first-token latency and input processing included), 18 requests"
+    }
+   },
+   "toolCalls": 17,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gpt-6-luna"
+   ],
+   "serviceTiers": {
+    "default": 18
+   },
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 282.346,
+     "tokens": {
+      "uncachedInput": 100731,
+      "cachedInput": 1182208,
+      "output": 31853
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 17,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "openai/code-standards-v5.1/luna-xhigh-a2",
+   "scenario": "code-standards-v5.1",
+   "configKey": "codex/gpt-6-luna/xhigh",
+   "configNumber": 28,
+   "arm": "openai",
+   "attempt": 2,
+   "supplementaryNote": null,
+   "requestedEffort": "xhigh",
+   "effectiveEffort": "xhigh",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-10-22T18:11:39.372597+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [
+     "h0: arw_pause",
+     "h0: user_pause",
+     "h0: limited",
+     "h0: harness_rejected"
+    ],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 2,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase3"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.586713349496155,
+    "scoreR83": 0.586713349496155,
+    "rawScore": 0.586713349496155,
+    "scoreBeforePenalty": 0.586713349496155,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 232.036,
+    "timeLimitSeconds": 573,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 77940,
+    "cachedInput": 597248,
+    "output": 26429,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "source": "API usage (relay)",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 114.31903659285796,
+    "taskInput": 335.89615404506196,
+    "taskOutput": 113.90042924373805,
+    "lowerBounds": [
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "API usage (relay) over the instance work seconds",
+     "engine": "API model: input unknown (no input-processing time); output = relay output tokens / request seconds, a lower bound (first-token latency and input processing included), 13 requests"
+    }
+   },
+   "toolCalls": 12,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gpt-6-luna"
+   ],
+   "serviceTiers": {
+    "default": 13
+   },
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 232.036,
+     "tokens": {
+      "uncachedInput": 77940,
+      "cachedInput": 597248,
+      "output": 26429
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 12,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "openai/code-standards-v5.1/luna-xhigh-a3",
+   "scenario": "code-standards-v5.1",
+   "configKey": "codex/gpt-6-luna/xhigh",
+   "configNumber": 28,
+   "arm": "openai",
+   "attempt": 3,
+   "supplementaryNote": null,
+   "requestedEffort": "xhigh",
+   "effectiveEffort": "xhigh",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-10-22T18:15:44.753928+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [],
+    "reminderInterrupts": 1,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 3,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase3"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.5907685732673825,
+    "scoreR83": 0.5907685732673825,
+    "rawScore": 0.5907685732673825,
+    "scoreBeforePenalty": 0.5907685732673825,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 295.557,
+    "timeLimitSeconds": 573,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 85496,
+    "cachedInput": 794112,
+    "output": 30780,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "source": "API usage (relay)",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 105.05058719483495,
+    "taskInput": 289.27076672181676,
+    "taskOutput": 104.14234817649387,
+    "lowerBounds": [
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "API usage (relay) over the instance work seconds",
+     "engine": "API model: input unknown (no input-processing time); output = relay output tokens / request seconds, a lower bound (first-token latency and input processing included), 15 requests"
+    }
+   },
+   "toolCalls": 14,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gpt-6-luna"
+   ],
+   "serviceTiers": {
+    "default": 15,
+    "not-returned": 1
+   },
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 295.557,
+     "tokens": {
+      "uncachedInput": 85496,
+      "cachedInput": 794112,
+      "output": 30780
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 14,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "openai/code-standards-v5.1/luna-xhigh-a4",
+   "scenario": "code-standards-v5.1",
+   "configKey": "codex/gpt-6-luna/xhigh",
+   "configNumber": 28,
+   "arm": "openai",
+   "attempt": 4,
+   "supplementaryNote": null,
+   "requestedEffort": "xhigh",
+   "effectiveEffort": "xhigh",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-10-22T18:20:50.213702+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [
+     "h0: arw_pause",
+     "h0: user_pause",
+     "h0: limited",
+     "h0: harness_rejected"
+    ],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 4,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase3"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.7010153182664496,
+    "scoreR83": 0.7010153182664496,
+    "rawScore": 0.7010153182664496,
+    "scoreBeforePenalty": 0.7010153182664496,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 277.085,
+    "timeLimitSeconds": 573,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 90999,
+    "cachedInput": 834304,
+    "output": 32044,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "source": "API usage (relay)",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 116.14298574545552,
+    "taskInput": 328.41546817763503,
+    "taskOutput": 115.64682317700345,
+    "lowerBounds": [
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "API usage (relay) over the instance work seconds",
+     "engine": "API model: input unknown (no input-processing time); output = relay output tokens / request seconds, a lower bound (first-token latency and input processing included), 14 requests"
+    }
+   },
+   "toolCalls": 13,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gpt-6-luna"
+   ],
+   "serviceTiers": {
+    "default": 14
+   },
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 277.085,
+     "tokens": {
+      "uncachedInput": 90999,
+      "cachedInput": 834304,
+      "output": 32044
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 13,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "openai/code-standards-v5.1/luna-xhigh-a5",
+   "scenario": "code-standards-v5.1",
+   "configKey": "codex/gpt-6-luna/xhigh",
+   "configNumber": 28,
+   "arm": "openai",
+   "attempt": 5,
+   "supplementaryNote": null,
+   "requestedEffort": "xhigh",
+   "effectiveEffort": "xhigh",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-10-22T18:25:45.747782+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [],
+    "reminderInterrupts": 1,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 5,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase3"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.6403256748279375,
+    "scoreR83": 0.6403256748279375,
+    "rawScore": 0.6403256748279375,
+    "scoreBeforePenalty": 0.6403256748279375,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 297.4,
+    "timeLimitSeconds": 573,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 90916,
+    "cachedInput": 936064,
+    "output": 32738,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "source": "API usage (relay)",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 110.95705376267729,
+    "taskInput": 305.7027572293208,
+    "taskOutput": 110.08069939475455,
+    "lowerBounds": [
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "API usage (relay) over the instance work seconds",
+     "engine": "API model: input unknown (no input-processing time); output = relay output tokens / request seconds, a lower bound (first-token latency and input processing included), 17 requests"
+    }
+   },
+   "toolCalls": 16,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gpt-6-luna"
+   ],
+   "serviceTiers": {
+    "default": 17,
+    "not-returned": 1
+   },
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 297.4,
+     "tokens": {
+      "uncachedInput": 90916,
+      "cachedInput": 936064,
+      "output": 32738
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 16,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "openai/code-standards-v5.1/luna-xhigh-a6",
+   "scenario": "code-standards-v5.1",
+   "configKey": "codex/gpt-6-luna/xhigh",
+   "configNumber": 28,
+   "arm": "openai",
+   "attempt": 6,
+   "supplementaryNote": null,
+   "requestedEffort": "xhigh",
+   "effectiveEffort": "xhigh",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-10-22T18:30:51.417739+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [],
+    "reminderInterrupts": 1,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 6,
+    "firstN": false,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase3"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.5880124827099857,
+    "scoreR83": 0.5880124827099857,
+    "rawScore": 0.5983544107978498,
+    "scoreBeforePenalty": 0.5983544107978498,
+    "formatPenalty": 0.01728395061728395,
+    "repairs": 1,
+    "overallDeduction": 0.01728395061728395,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 306.846,
+    "timeLimitSeconds": 573,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 82296,
+    "cachedInput": 810368,
+    "output": 32336,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "source": "API usage (relay)",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 105.53752072849656,
+    "taskInput": 268.1996832287206,
+    "taskOutput": 105.38185278608813,
+    "lowerBounds": [
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "API usage (relay) over the instance work seconds",
+     "engine": "API model: input unknown (no input-processing time); output = relay output tokens / request seconds, a lower bound (first-token latency and input processing included), 14 requests"
+    }
+   },
+   "toolCalls": 13,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gpt-6-luna"
+   ],
+   "serviceTiers": {
+    "default": 14,
+    "not-returned": 1
+   },
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 306.846,
+     "tokens": {
+      "uncachedInput": 82296,
+      "cachedInput": 810368,
+      "output": 32336
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 13,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "openai/code-standards-v5.1/luna-xhigh-a7",
+   "scenario": "code-standards-v5.1",
+   "configKey": "codex/gpt-6-luna/xhigh",
+   "configNumber": 28,
+   "arm": "openai",
+   "attempt": 7,
+   "supplementaryNote": null,
+   "requestedEffort": "xhigh",
+   "effectiveEffort": "xhigh",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-10-22T18:32:41.604810+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [
+     "h0: arw_pause",
+     "h0: user_pause",
+     "h0: limited",
+     "h0: harness_rejected"
+    ],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 7,
+    "firstN": false,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase3"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.5926826116407343,
+    "scoreR83": 0.5926826116407343,
+    "rawScore": 0.6037312888217866,
+    "scoreBeforePenalty": 0.6037312888217866,
+    "formatPenalty": 0.018300653594771243,
+    "repairs": 1,
+    "overallDeduction": 0.018300653594771243,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 277.033,
+    "timeLimitSeconds": 573,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 94891,
+    "cachedInput": 684544,
+    "output": 31877,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "source": "API usage (relay)",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 115.30249589588017,
+    "taskInput": 342.5259806593438,
+    "taskOutput": 115.06571419289398,
+    "lowerBounds": [
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "API usage (relay) over the instance work seconds",
+     "engine": "API model: input unknown (no input-processing time); output = relay output tokens / request seconds, a lower bound (first-token latency and input processing included), 12 requests"
+    }
+   },
+   "toolCalls": 11,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gpt-6-luna"
+   ],
+   "serviceTiers": {
+    "default": 12
+   },
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 277.033,
+     "tokens": {
+      "uncachedInput": 94891,
+      "cachedInput": 684544,
+      "output": 31877
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 11,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "openai/code-standards-v5.1/luna-xhigh-a8",
+   "scenario": "code-standards-v5.1",
+   "configKey": "codex/gpt-6-luna/xhigh",
+   "configNumber": 28,
+   "arm": "openai",
+   "attempt": 8,
+   "supplementaryNote": null,
+   "requestedEffort": "xhigh",
+   "effectiveEffort": "xhigh",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-10-22T18:36:32.090569+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [],
+    "reminderInterrupts": 1,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 8,
+    "firstN": false,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase3"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.6917921068373557,
+    "scoreR83": 0.6917921068373557,
+    "rawScore": 0.6917921068373557,
+    "scoreBeforePenalty": 0.6917921068373557,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 349.492,
+    "timeLimitSeconds": 573,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 141172,
+    "cachedInput": 822656,
+    "output": 35460,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "source": "API usage (relay)",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 102.0719344288718,
+    "taskInput": 403.93485401668704,
+    "taskOutput": 101.46154990672176,
+    "lowerBounds": [
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "API usage (relay) over the instance work seconds",
+     "engine": "API model: input unknown (no input-processing time); output = relay output tokens / request seconds, a lower bound (first-token latency and input processing included), 14 requests"
+    }
+   },
+   "toolCalls": 13,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gpt-6-luna"
+   ],
+   "serviceTiers": {
+    "default": 14,
+    "not-returned": 1
+   },
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 349.492,
+     "tokens": {
+      "uncachedInput": 141172,
+      "cachedInput": 822656,
+      "output": 35460
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 13,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "openai/code-standards-v5.1/luna-max-a1",
+   "scenario": "code-standards-v5.1",
+   "configKey": "codex/gpt-6-luna/max",
+   "configNumber": 29,
+   "arm": "openai",
+   "attempt": 1,
+   "supplementaryNote": null,
+   "requestedEffort": "max",
+   "effectiveEffort": "max",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-10-22T18:06:58.776392+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [],
+    "reminderInterrupts": 1,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 1,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase3"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.7126861474372788,
+    "scoreR83": 0.7126861474372788,
+    "rawScore": 0.7126861474372788,
+    "scoreBeforePenalty": 0.7126861474372788,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 362.096,
+    "timeLimitSeconds": 643,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 124453,
+    "cachedInput": 1113728,
+    "output": 34162,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "source": "API usage (relay)",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 100.13597438956674,
+    "taskInput": 343.7016702752861,
+    "taskOutput": 94.34514603861959,
+    "lowerBounds": [
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "API usage (relay) over the instance work seconds",
+     "engine": "API model: input unknown (no input-processing time); output = relay output tokens / request seconds, a lower bound (first-token latency and input processing included), 19 requests"
+    }
+   },
+   "toolCalls": 18,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gpt-6-luna"
+   ],
+   "serviceTiers": {
+    "default": 19,
+    "not-returned": 1
+   },
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 362.096,
+     "tokens": {
+      "uncachedInput": 124453,
+      "cachedInput": 1113728,
+      "output": 34162
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 18,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "openai/code-standards-v5.1/luna-max-a2",
+   "scenario": "code-standards-v5.1",
+   "configKey": "codex/gpt-6-luna/max",
+   "configNumber": 29,
+   "arm": "openai",
+   "attempt": 2,
+   "supplementaryNote": null,
+   "requestedEffort": "max",
+   "effectiveEffort": "max",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-10-22T18:07:13.811556+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [
+     "h0: arw_pause",
+     "h0: user_pause",
+     "h0: limited",
+     "h0: harness_rejected"
+    ],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 2,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase3"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.6343303692285593,
+    "scoreR83": 0.6343303692285593,
+    "rawScore": 0.6343303692285593,
+    "scoreBeforePenalty": 0.6343303692285593,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 281.908,
+    "timeLimitSeconds": 643,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 85413,
+    "cachedInput": 1103360,
+    "output": 30293,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "source": "API usage (relay)",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 107.08851008284762,
+    "taskInput": 302.98182385742865,
+    "taskOutput": 107.4570427231579,
+    "lowerBounds": [
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "API usage (relay) over the instance work seconds",
+     "engine": "API model: input unknown (no input-processing time); output = relay output tokens / request seconds, a lower bound (first-token latency and input processing included), 20 requests"
+    }
+   },
+   "toolCalls": 19,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gpt-6-luna"
+   ],
+   "serviceTiers": {
+    "default": 20
+   },
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 281.908,
+     "tokens": {
+      "uncachedInput": 85413,
+      "cachedInput": 1103360,
+      "output": 30293
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 19,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "openai/code-standards-v5.1/luna-max-a3",
+   "scenario": "code-standards-v5.1",
+   "configKey": "codex/gpt-6-luna/max",
+   "configNumber": 29,
+   "arm": "openai",
+   "attempt": 3,
+   "supplementaryNote": null,
+   "requestedEffort": "max",
+   "effectiveEffort": "max",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-10-22T18:15:59.837097+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [
+     "h0: arw_pause",
+     "h0: user_pause",
+     "h0: limited",
+     "h0: harness_rejected"
+    ],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 3,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase3"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.5751096000530391,
+    "scoreR83": 0.5751096000530391,
+    "rawScore": 0.5751096000530391,
+    "scoreBeforePenalty": 0.5751096000530391,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 311.726,
+    "timeLimitSeconds": 643,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 93028,
+    "cachedInput": 989184,
+    "output": 36972,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "source": "API usage (relay)",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 118.86963824354066,
+    "taskInput": 298.4287483238485,
+    "taskOutput": 118.60415878046746,
+    "lowerBounds": [
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "API usage (relay) over the instance work seconds",
+     "engine": "API model: input unknown (no input-processing time); output = relay output tokens / request seconds, a lower bound (first-token latency and input processing included), 15 requests"
+    }
+   },
+   "toolCalls": 14,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gpt-6-luna"
+   ],
+   "serviceTiers": {
+    "default": 15
+   },
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 311.726,
+     "tokens": {
+      "uncachedInput": 93028,
+      "cachedInput": 989184,
+      "output": 36972
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 14,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "openai/code-standards-v5.1/luna-max-a4",
+   "scenario": "code-standards-v5.1",
+   "configKey": "codex/gpt-6-luna/max",
+   "configNumber": 29,
+   "arm": "openai",
+   "attempt": 4,
+   "supplementaryNote": null,
+   "requestedEffort": "max",
+   "effectiveEffort": "max",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-10-22T18:16:14.876905+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [],
+    "reminderInterrupts": 1,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 4,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase3"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.7136181488474098,
+    "scoreR83": 0.7136181488474098,
+    "rawScore": 0.7399266520307245,
+    "scoreBeforePenalty": 0.7399266520307245,
+    "formatPenalty": 0.035555555555555556,
+    "repairs": 2,
+    "overallDeduction": 0.035555555555555556,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 367.664,
+    "timeLimitSeconds": 643,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 105678,
+    "cachedInput": 952960,
+    "output": 40465,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "source": "API usage (relay)",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 120.15667039754499,
+    "taskInput": 287.43091518342834,
+    "taskOutput": 110.05972844771313,
+    "lowerBounds": [
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "API usage (relay) over the instance work seconds",
+     "engine": "API model: input unknown (no input-processing time); output = relay output tokens / request seconds, a lower bound (first-token latency and input processing included), 15 requests"
+    }
+   },
+   "toolCalls": 14,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gpt-6-luna"
+   ],
+   "serviceTiers": {
+    "default": 15,
+    "not-returned": 1
+   },
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 367.664,
+     "tokens": {
+      "uncachedInput": 105678,
+      "cachedInput": 952960,
+      "output": 40465
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 14,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "openai/code-standards-v5.1/luna-max-a5",
+   "scenario": "code-standards-v5.1",
+   "configKey": "codex/gpt-6-luna/max",
+   "configNumber": 29,
+   "arm": "openai",
+   "attempt": 5,
+   "supplementaryNote": null,
+   "requestedEffort": "max",
+   "effectiveEffort": "max",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-10-22T18:26:00.798204+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [
+     "h0: arw_pause",
+     "h0: user_pause",
+     "h0: limited",
+     "h0: harness_rejected"
+    ],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 5,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase3"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.5916266639343563,
+    "scoreR83": 0.5916266639343563,
+    "rawScore": 0.5916266639343563,
+    "scoreBeforePenalty": 0.5916266639343563,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 312.577,
+    "timeLimitSeconds": 643,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 96297,
+    "cachedInput": 751616,
+    "output": 37380,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "source": "API usage (relay)",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 119.81977140575125,
+    "taskInput": 308.0744904455542,
+    "taskOutput": 119.58653387805245,
+    "lowerBounds": [
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "API usage (relay) over the instance work seconds",
+     "engine": "API model: input unknown (no input-processing time); output = relay output tokens / request seconds, a lower bound (first-token latency and input processing included), 13 requests"
+    }
+   },
+   "toolCalls": 12,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gpt-6-luna"
+   ],
+   "serviceTiers": {
+    "default": 13
+   },
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 312.577,
+     "tokens": {
+      "uncachedInput": 96297,
+      "cachedInput": 751616,
+      "output": 37380
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 12,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "openai/code-standards-v5.1/luna-max-a6",
+   "scenario": "code-standards-v5.1",
+   "configKey": "codex/gpt-6-luna/max",
+   "configNumber": 29,
+   "arm": "openai",
+   "attempt": 6,
+   "supplementaryNote": null,
+   "requestedEffort": "max",
+   "effectiveEffort": "max",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-10-22T18:26:15.866599+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [],
+    "reminderInterrupts": 1,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 6,
+    "firstN": false,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase3"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.6450517900505994,
+    "scoreR83": 0.6450517900505994,
+    "rawScore": 0.6450517900505994,
+    "scoreBeforePenalty": 0.6450517900505994,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 361.467,
+    "timeLimitSeconds": 643,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 108404,
+    "cachedInput": 1194368,
+    "output": 40306,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "source": "API usage (relay)",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 118.40914802057596,
+    "taskInput": 299.90012919574957,
+    "taskOutput": 111.50672122213093,
+    "lowerBounds": [
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "API usage (relay) over the instance work seconds",
+     "engine": "API model: input unknown (no input-processing time); output = relay output tokens / request seconds, a lower bound (first-token latency and input processing included), 18 requests"
+    }
+   },
+   "toolCalls": 17,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gpt-6-luna"
+   ],
+   "serviceTiers": {
+    "default": 18,
+    "not-returned": 1
+   },
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 361.467,
+     "tokens": {
+      "uncachedInput": 108404,
+      "cachedInput": 1194368,
+      "output": 40306
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 17,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "openai/code-standards-v5.1/luna-max-a7",
+   "scenario": "code-standards-v5.1",
+   "configKey": "codex/gpt-6-luna/max",
+   "configNumber": 29,
+   "arm": "openai",
+   "attempt": 7,
+   "supplementaryNote": null,
+   "requestedEffort": "max",
+   "effectiveEffort": "max",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-10-22T18:31:26.509007+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [
+     "h0: arw_pause",
+     "h0: user_pause",
+     "h0: limited",
+     "h0: harness_rejected"
+    ],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 7,
+    "firstN": false,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase3"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.5605926957657728,
+    "scoreR83": 0.5605926957657728,
+    "rawScore": 0.6228807730730809,
+    "scoreBeforePenalty": 0.6228807730730809,
+    "formatPenalty": 0.1,
+    "repairs": 8,
+    "overallDeduction": 0.1,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 294.534,
+    "timeLimitSeconds": 643,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 109667,
+    "cachedInput": 894464,
+    "output": 34726,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "source": "API usage (relay)",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 118.23558065551795,
+    "taskInput": 372.34071448457564,
+    "taskOutput": 117.9014986385273,
+    "lowerBounds": [
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "API usage (relay) over the instance work seconds",
+     "engine": "API model: input unknown (no input-processing time); output = relay output tokens / request seconds, a lower bound (first-token latency and input processing included), 13 requests"
+    }
+   },
+   "toolCalls": 12,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gpt-6-luna"
+   ],
+   "serviceTiers": {
+    "default": 13
+   },
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 294.534,
+     "tokens": {
+      "uncachedInput": 109667,
+      "cachedInput": 894464,
+      "output": 34726
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 12,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "openai/code-standards-v5.1/luna-max-a8",
+   "scenario": "code-standards-v5.1",
+   "configKey": "codex/gpt-6-luna/max",
+   "configNumber": 29,
+   "arm": "openai",
+   "attempt": 8,
+   "supplementaryNote": null,
+   "requestedEffort": "max",
+   "effectiveEffort": "max",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-10-22T18:36:17.086392+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [
+     "h0: arw_pause",
+     "h0: user_pause",
+     "h0: limited",
+     "h0: harness_rejected"
+    ],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 8,
+    "firstN": false,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase3"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.2526910997499233,
+    "scoreR83": 0.2526910997499233,
+    "rawScore": 0.2526910997499233,
+    "scoreBeforePenalty": 0.2526910997499233,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 243.981,
+    "timeLimitSeconds": 643,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 79467,
+    "cachedInput": 1035392,
+    "output": 27809,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "source": "API usage (relay)",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 114.60913115356223,
+    "taskInput": 325.7097888770027,
+    "taskOutput": 113.98018698177317,
+    "lowerBounds": [
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "API usage (relay) over the instance work seconds",
+     "engine": "API model: input unknown (no input-processing time); output = relay output tokens / request seconds, a lower bound (first-token latency and input processing included), 19 requests"
+    }
+   },
+   "toolCalls": 18,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gpt-6-luna"
+   ],
+   "serviceTiers": {
+    "default": 19
+   },
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 243.981,
+     "tokens": {
+      "uncachedInput": 79467,
+      "cachedInput": 1035392,
+      "output": 27809
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 18,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
     }
    ],
    "parallelWindow": null
@@ -62085,6 +65490,1243 @@
      "finalStatus": "ready",
      "continuationStop": "delivered",
      "harnessReportedCostUsd": 2.5942230000000004
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "openai/commit-audit-v3/luna-xhigh-a1",
+   "scenario": "commit-audit-v3",
+   "configKey": "codex/gpt-6-luna/xhigh",
+   "configNumber": 28,
+   "arm": "openai",
+   "attempt": 1,
+   "supplementaryNote": null,
+   "requestedEffort": "xhigh",
+   "effectiveEffort": "xhigh",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-10-22T18:42:50.146999+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [
+     "h0: arw_pause",
+     "h0: user_pause",
+     "h0: limited",
+     "h0: harness_rejected"
+    ],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 1,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase3"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.8604511888399173,
+    "scoreR83": 0.8604511888399173,
+    "rawScore": 0.8604511888399173,
+    "scoreBeforePenalty": 0.8604511888399173,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 417.67,
+    "timeLimitSeconds": null,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 118352,
+    "cachedInput": 828800,
+    "output": 55643,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "source": "API usage (relay)",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 133.3947537856677,
+    "taskInput": 283.36246318864175,
+    "taskOutput": 133.22240045969306,
+    "lowerBounds": [
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "API usage (relay) over the instance work seconds",
+     "engine": "API model: input unknown (no input-processing time); output = relay output tokens / request seconds, a lower bound (first-token latency and input processing included), 14 requests"
+    }
+   },
+   "toolCalls": 12,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gpt-6-luna"
+   ],
+   "serviceTiers": {
+    "default": 14
+   },
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 417.67,
+     "tokens": {
+      "uncachedInput": 118352,
+      "cachedInput": 828800,
+      "output": 55643
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 12,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "openai/commit-audit-v3/luna-xhigh-a2",
+   "scenario": "commit-audit-v3",
+   "configKey": "codex/gpt-6-luna/xhigh",
+   "configNumber": 28,
+   "arm": "openai",
+   "attempt": 2,
+   "supplementaryNote": null,
+   "requestedEffort": "xhigh",
+   "effectiveEffort": "xhigh",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-10-22T18:49:25.925021+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [
+     "h0: arw_pause",
+     "h0: user_pause",
+     "h0: limited",
+     "h0: harness_rejected"
+    ],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 2,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase3"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.8290329008406435,
+    "scoreR83": 0.8290329008406435,
+    "rawScore": 0.8290329008406435,
+    "scoreBeforePenalty": 0.8290329008406435,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 600.371,
+    "timeLimitSeconds": null,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 133034,
+    "cachedInput": 2070912,
+    "output": 78729,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "source": "API usage (relay)",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 131.2466546761071,
+    "taskInput": 221.58631912600708,
+    "taskOutput": 131.13391552889797,
+    "lowerBounds": [
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "API usage (relay) over the instance work seconds",
+     "engine": "API model: input unknown (no input-processing time); output = relay output tokens / request seconds, a lower bound (first-token latency and input processing included), 25 requests"
+    }
+   },
+   "toolCalls": 22,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gpt-6-luna"
+   ],
+   "serviceTiers": {
+    "default": 25
+   },
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 600.371,
+     "tokens": {
+      "uncachedInput": 133034,
+      "cachedInput": 2070912,
+      "output": 78729
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 22,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "openai/commit-audit-v3/luna-xhigh-a3",
+   "scenario": "commit-audit-v3",
+   "configKey": "codex/gpt-6-luna/xhigh",
+   "configNumber": 28,
+   "arm": "openai",
+   "attempt": 3,
+   "supplementaryNote": null,
+   "requestedEffort": "xhigh",
+   "effectiveEffort": "xhigh",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-10-22T18:59:42.062245+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [
+     "h0: arw_pause",
+     "h0: user_pause",
+     "h0: limited",
+     "h0: harness_rejected"
+    ],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 3,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase3"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.809806366633468,
+    "scoreR83": 0.809806366633468,
+    "rawScore": 0.809806366633468,
+    "scoreBeforePenalty": 0.809806366633468,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 512.061,
+    "timeLimitSeconds": null,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 120095,
+    "cachedInput": 1156480,
+    "output": 52437,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "source": "API usage (relay)",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 102.55432079043835,
+    "taskInput": 234.53260451391532,
+    "taskOutput": 102.4038151704582,
+    "lowerBounds": [
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "API usage (relay) over the instance work seconds",
+     "engine": "API model: input unknown (no input-processing time); output = relay output tokens / request seconds, a lower bound (first-token latency and input processing included), 16 requests"
+    }
+   },
+   "toolCalls": 15,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gpt-6-luna"
+   ],
+   "serviceTiers": {
+    "default": 16
+   },
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 512.061,
+     "tokens": {
+      "uncachedInput": 120095,
+      "cachedInput": 1156480,
+      "output": 52437
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 15,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "openai/commit-audit-v3/luna-xhigh-a4",
+   "scenario": "commit-audit-v3",
+   "configKey": "codex/gpt-6-luna/xhigh",
+   "configNumber": 28,
+   "arm": "openai",
+   "attempt": 4,
+   "supplementaryNote": null,
+   "requestedEffort": "xhigh",
+   "effectiveEffort": "xhigh",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-10-22T19:08:18.036720+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [
+     "h0: arw_pause",
+     "h0: user_pause",
+     "h0: limited",
+     "h0: harness_rejected"
+    ],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 4,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase3"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.8578698560660954,
+    "scoreR83": 0.8578698560660954,
+    "rawScore": 0.8578698560660954,
+    "scoreBeforePenalty": 0.8578698560660954,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 457.827,
+    "timeLimitSeconds": null,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 190645,
+    "cachedInput": 1426560,
+    "output": 59697,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "source": "API usage (relay)",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 130.92250309842248,
+    "taskInput": 416.41274979413623,
+    "taskOutput": 130.39204765118703,
+    "lowerBounds": [
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "API usage (relay) over the instance work seconds",
+     "engine": "API model: input unknown (no input-processing time); output = relay output tokens / request seconds, a lower bound (first-token latency and input processing included), 21 requests"
+    }
+   },
+   "toolCalls": 20,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gpt-6-luna"
+   ],
+   "serviceTiers": {
+    "default": 21
+   },
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 457.827,
+     "tokens": {
+      "uncachedInput": 190645,
+      "cachedInput": 1426560,
+      "output": 59697
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 20,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "openai/commit-audit-v3/luna-xhigh-a5",
+   "scenario": "commit-audit-v3",
+   "configKey": "codex/gpt-6-luna/xhigh",
+   "configNumber": 28,
+   "arm": "openai",
+   "attempt": 5,
+   "supplementaryNote": null,
+   "requestedEffort": "xhigh",
+   "effectiveEffort": "xhigh",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-10-22T19:16:13.720138+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [],
+    "reminderInterrupts": 1,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 5,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase3"
+   },
+   "scoring": {
+    "status": "final",
+    "score": -0.18201153199741443,
+    "scoreR83": 0.0,
+    "rawScore": -0.07132113322782697,
+    "scoreBeforePenalty": -0.16546502908855856,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.1,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 3600.688,
+    "timeLimitSeconds": null,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 499290,
+    "cachedInput": 64167552,
+    "output": 101998,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "source": "API usage (relay log sum, 762 requests; lower bound: 1 request(s) without usage)",
+    "lowerBound": true
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 28.22807076967934,
+    "taskInput": 138.66516621267934,
+    "taskOutput": 28.327364103749062,
+    "lowerBounds": [
+     "taskInput",
+     "taskOutput",
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "API usage (relay log sum, 762 requests; lower bound: 1 request(s) without usage) over the instance work seconds (lower bound: tokens are)",
+     "engine": "API model: input unknown (no input-processing time); output = relay output tokens / request seconds, a lower bound (first-token latency and input processing included), 762 requests"
+    }
+   },
+   "toolCalls": 24,
+   "pauses": {
+    "known": true,
+    "count": 146,
+    "continueCount": 146
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gpt-6-luna"
+   ],
+   "serviceTiers": {
+    "default": 762,
+    "not-returned": 1
+   },
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 3600.688,
+     "tokens": null,
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 24,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "incomplete",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "openai/commit-audit-v3/luna-xhigh-a6",
+   "scenario": "commit-audit-v3",
+   "configKey": "codex/gpt-6-luna/xhigh",
+   "configNumber": 28,
+   "arm": "openai",
+   "attempt": 6,
+   "supplementaryNote": null,
+   "requestedEffort": "xhigh",
+   "effectiveEffort": "xhigh",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-10-22T20:16:35.893163+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [
+     "h0: arw_pause",
+     "h0: user_pause",
+     "h0: limited",
+     "h0: harness_rejected"
+    ],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 6,
+    "firstN": false,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase3"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.8556270237271358,
+    "scoreR83": 0.8556270237271358,
+    "rawScore": 0.8556270237271358,
+    "scoreBeforePenalty": 0.8556270237271358,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 421.057,
+    "timeLimitSeconds": null,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 110912,
+    "cachedInput": 1612416,
+    "output": 49863,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "source": "API usage (relay)",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 118.74817193718022,
+    "taskInput": 263.413267087354,
+    "taskOutput": 118.42339635726279,
+    "lowerBounds": [
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "API usage (relay) over the instance work seconds",
+     "engine": "API model: input unknown (no input-processing time); output = relay output tokens / request seconds, a lower bound (first-token latency and input processing included), 24 requests"
+    }
+   },
+   "toolCalls": 23,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gpt-6-luna"
+   ],
+   "serviceTiers": {
+    "default": 24
+   },
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 421.057,
+     "tokens": {
+      "uncachedInput": 110912,
+      "cachedInput": 1612416,
+      "output": 49863
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 23,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "openai/commit-audit-v3/luna-max-a1",
+   "scenario": "commit-audit-v3",
+   "configKey": "codex/gpt-6-luna/max",
+   "configNumber": 29,
+   "arm": "openai",
+   "attempt": 1,
+   "supplementaryNote": null,
+   "requestedEffort": "max",
+   "effectiveEffort": "max",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-10-22T18:43:05.202278+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [
+     "h0: arw_pause",
+     "h0: user_pause",
+     "h0: limited",
+     "h0: harness_rejected"
+    ],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 1,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase3"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.790625374670497,
+    "scoreR83": 0.790625374670497,
+    "rawScore": 0.790625374670497,
+    "scoreBeforePenalty": 0.790625374670497,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 366.447,
+    "timeLimitSeconds": null,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 110017,
+    "cachedInput": 667264,
+    "output": 47187,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "source": "API usage (relay)",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 129.22716147971263,
+    "taskInput": 300.22622643929407,
+    "taskOutput": 128.76896249662298,
+    "lowerBounds": [
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "API usage (relay) over the instance work seconds",
+     "engine": "API model: input unknown (no input-processing time); output = relay output tokens / request seconds, a lower bound (first-token latency and input processing included), 12 requests"
+    }
+   },
+   "toolCalls": 11,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gpt-6-luna"
+   ],
+   "serviceTiers": {
+    "default": 12
+   },
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 366.447,
+     "tokens": {
+      "uncachedInput": 110017,
+      "cachedInput": 667264,
+      "output": 47187
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 11,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "openai/commit-audit-v3/luna-max-a2",
+   "scenario": "commit-audit-v3",
+   "configKey": "codex/gpt-6-luna/max",
+   "configNumber": 29,
+   "arm": "openai",
+   "attempt": 2,
+   "supplementaryNote": null,
+   "requestedEffort": "max",
+   "effectiveEffort": "max",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-10-22T18:43:20.314081+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [
+     "h0: arw_pause",
+     "h0: user_pause",
+     "h0: limited",
+     "h0: harness_rejected"
+    ],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 2,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase3"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.6312464842659188,
+    "scoreR83": 0.6312464842659188,
+    "rawScore": 0.6998010706294316,
+    "scoreBeforePenalty": 0.6998010706294316,
+    "formatPenalty": 0.09796296296296296,
+    "repairs": 4,
+    "overallDeduction": 0.09796296296296296,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 383.749,
+    "timeLimitSeconds": null,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 100324,
+    "cachedInput": 754688,
+    "output": 49531,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "source": "API usage (relay)",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 129.3356869745751,
+    "taskInput": 261.43130014671044,
+    "taskOutput": 129.07134611425695,
+    "lowerBounds": [
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "API usage (relay) over the instance work seconds",
+     "engine": "API model: input unknown (no input-processing time); output = relay output tokens / request seconds, a lower bound (first-token latency and input processing included), 14 requests"
+    }
+   },
+   "toolCalls": 13,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gpt-6-luna"
+   ],
+   "serviceTiers": {
+    "default": 14
+   },
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 383.749,
+     "tokens": {
+      "uncachedInput": 100324,
+      "cachedInput": 754688,
+      "output": 49531
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 13,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "openai/commit-audit-v3/luna-max-a3",
+   "scenario": "commit-audit-v3",
+   "configKey": "codex/gpt-6-luna/max",
+   "configNumber": 29,
+   "arm": "openai",
+   "attempt": 3,
+   "supplementaryNote": null,
+   "requestedEffort": "max",
+   "effectiveEffort": "max",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-10-22T18:59:57.138564+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [
+     "h0: arw_pause",
+     "h0: user_pause",
+     "h0: limited",
+     "h0: harness_rejected"
+    ],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 3,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase3"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.8587421525676665,
+    "scoreR83": 0.8587421525676665,
+    "rawScore": 0.8587421525676665,
+    "scoreBeforePenalty": 0.8587421525676665,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 481.168,
+    "timeLimitSeconds": null,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 112195,
+    "cachedInput": 904960,
+    "output": 62864,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "source": "API usage (relay)",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 130.96136918863456,
+    "taskInput": 233.1721976523792,
+    "taskOutput": 130.6487546969042,
+    "lowerBounds": [
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "API usage (relay) over the instance work seconds",
+     "engine": "API model: input unknown (no input-processing time); output = relay output tokens / request seconds, a lower bound (first-token latency and input processing included), 14 requests"
+    }
+   },
+   "toolCalls": 12,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gpt-6-luna"
+   ],
+   "serviceTiers": {
+    "default": 14
+   },
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 481.168,
+     "tokens": {
+      "uncachedInput": 112195,
+      "cachedInput": 904960,
+      "output": 62864
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 12,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "openai/commit-audit-v3/luna-max-a4",
+   "scenario": "commit-audit-v3",
+   "configKey": "codex/gpt-6-luna/max",
+   "configNumber": 29,
+   "arm": "openai",
+   "attempt": 4,
+   "supplementaryNote": null,
+   "requestedEffort": "max",
+   "effectiveEffort": "max",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-10-22T19:00:12.196133+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [
+     "h0: arw_pause",
+     "h0: user_pause",
+     "h0: limited",
+     "h0: harness_rejected"
+    ],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 4,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase3"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.8681603539542806,
+    "scoreR83": 0.8681603539542806,
+    "rawScore": 0.8681603539542806,
+    "scoreBeforePenalty": 0.8681603539542806,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 521.6,
+    "timeLimitSeconds": null,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 137329,
+    "cachedInput": 1537792,
+    "output": 66773,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "source": "API usage (relay)",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 128.05675865161265,
+    "taskInput": 263.28412576687117,
+    "taskOutput": 128.0157208588957,
+    "lowerBounds": [
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "API usage (relay) over the instance work seconds",
+     "engine": "API model: input unknown (no input-processing time); output = relay output tokens / request seconds, a lower bound (first-token latency and input processing included), 19 requests"
+    }
+   },
+   "toolCalls": 17,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gpt-6-luna"
+   ],
+   "serviceTiers": {
+    "default": 19
+   },
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 521.6,
+     "tokens": {
+      "uncachedInput": 137329,
+      "cachedInput": 1537792,
+      "output": 66773
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 17,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "openai/commit-audit-v3/luna-max-a5",
+   "scenario": "commit-audit-v3",
+   "configKey": "codex/gpt-6-luna/max",
+   "configNumber": 29,
+   "arm": "openai",
+   "attempt": 5,
+   "supplementaryNote": null,
+   "requestedEffort": "max",
+   "effectiveEffort": "max",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-10-22T19:16:28.801832+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [
+     "h0: arw_pause",
+     "h0: user_pause",
+     "h0: limited",
+     "h0: harness_rejected"
+    ],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 5,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase3"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.8271157295187949,
+    "scoreR83": 0.8271157295187949,
+    "rawScore": 0.8271157295187949,
+    "scoreBeforePenalty": 0.8271157295187949,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 450.578,
+    "timeLimitSeconds": null,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 151652,
+    "cachedInput": 1105152,
+    "output": 60741,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "source": "API usage (relay)",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 135.0407882763223,
+    "taskInput": 336.572136233904,
+    "taskOutput": 134.80684809289403,
+    "lowerBounds": [
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "API usage (relay) over the instance work seconds",
+     "engine": "API model: input unknown (no input-processing time); output = relay output tokens / request seconds, a lower bound (first-token latency and input processing included), 16 requests"
+    }
+   },
+   "toolCalls": 15,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gpt-6-luna"
+   ],
+   "serviceTiers": {
+    "default": 16
+   },
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 450.578,
+     "tokens": {
+      "uncachedInput": 151652,
+      "cachedInput": 1105152,
+      "output": 60741
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 15,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
     }
    ],
    "parallelWindow": null
@@ -85064,6 +89706,1407 @@
     }
    ],
    "parallelWindow": null
+  },
+  {
+   "id": "openai/spec-readiness-v4.3/luna-xhigh-a1",
+   "scenario": "spec-readiness-v4.3",
+   "configKey": "codex/gpt-6-luna/xhigh",
+   "configNumber": 28,
+   "arm": "openai",
+   "attempt": 1,
+   "supplementaryNote": null,
+   "requestedEffort": "xhigh",
+   "effectiveEffort": "xhigh",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-10-22T20:24:13.710304+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [
+     "h0: arw_pause",
+     "h0: user_pause",
+     "h0: limited",
+     "h0: harness_rejected",
+     "h1: arw_pause",
+     "h1: user_pause",
+     "h1: limited",
+     "h1: harness_rejected"
+    ],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 1,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase3"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.4437675850719329,
+    "scoreR83": 0.4437675850719329,
+    "rawScore": 0.4437675850719329,
+    "scoreBeforePenalty": 0.4437675850719329,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 1485.976,
+    "timeLimitSeconds": null,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 371136,
+    "cachedInput": 6993408,
+    "output": 178190,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "source": "API usage (relay)",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 119.86111760888107,
+    "taskInput": 249.75908090036447,
+    "taskOutput": 119.914453530878,
+    "lowerBounds": [
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "API usage (relay) over the instance work seconds",
+     "engine": "API model: input unknown (no input-processing time); output = relay output tokens / request seconds, a lower bound (first-token latency and input processing included), 67 requests"
+    }
+   },
+   "toolCalls": 65,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gpt-6-luna"
+   ],
+   "serviceTiers": {
+    "default": 67
+   },
+   "handoffs": [
+    {
+     "subScenario": "runtime-migration",
+     "durationSeconds": 507.375,
+     "tokens": {
+      "uncachedInput": 136854,
+      "cachedInput": 1879424,
+      "output": 58857
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 23,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    },
+    {
+     "subScenario": "artifact-promotion",
+     "durationSeconds": 978.601,
+     "tokens": {
+      "uncachedInput": 234282,
+      "cachedInput": 5113984,
+      "output": 119333
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 42,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "openai/spec-readiness-v4.3/luna-xhigh-a2",
+   "scenario": "spec-readiness-v4.3",
+   "configKey": "codex/gpt-6-luna/xhigh",
+   "configNumber": 28,
+   "arm": "openai",
+   "attempt": 2,
+   "supplementaryNote": null,
+   "requestedEffort": "xhigh",
+   "effectiveEffort": "xhigh",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-10-22T20:49:20.889302+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [
+     "h0: arw_pause",
+     "h0: user_pause",
+     "h0: limited",
+     "h0: harness_rejected",
+     "h1: arw_pause",
+     "h1: user_pause",
+     "h1: limited",
+     "h1: harness_rejected"
+    ],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 2,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase3"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.5329914047305352,
+    "scoreR83": 0.5329914047305352,
+    "rawScore": 0.5329914047305352,
+    "scoreBeforePenalty": 0.5329914047305352,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 1357.326,
+    "timeLimitSeconds": null,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 341803,
+    "cachedInput": 7629312,
+    "output": 163310,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "source": "API usage (relay)",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 120.32125573814537,
+    "taskInput": 251.8208595429543,
+    "taskOutput": 120.31744768758574,
+    "lowerBounds": [
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "API usage (relay) over the instance work seconds",
+     "engine": "API model: input unknown (no input-processing time); output = relay output tokens / request seconds, a lower bound (first-token latency and input processing included), 76 requests"
+    }
+   },
+   "toolCalls": 74,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gpt-6-luna"
+   ],
+   "serviceTiers": {
+    "default": 76
+   },
+   "handoffs": [
+    {
+     "subScenario": "runtime-migration",
+     "durationSeconds": 450.511,
+     "tokens": {
+      "uncachedInput": 146204,
+      "cachedInput": 2170496,
+      "output": 54276
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 26,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    },
+    {
+     "subScenario": "artifact-promotion",
+     "durationSeconds": 906.815,
+     "tokens": {
+      "uncachedInput": 195599,
+      "cachedInput": 5458816,
+      "output": 109034
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 48,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "openai/spec-readiness-v4.3/luna-xhigh-a3",
+   "scenario": "spec-readiness-v4.3",
+   "configKey": "codex/gpt-6-luna/xhigh",
+   "configNumber": 28,
+   "arm": "openai",
+   "attempt": 3,
+   "supplementaryNote": null,
+   "requestedEffort": "xhigh",
+   "effectiveEffort": "xhigh",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-10-22T21:12:07.997606+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [
+     "h0: arw_pause",
+     "h0: user_pause",
+     "h0: limited",
+     "h0: harness_rejected",
+     "h1: arw_pause",
+     "h1: user_pause",
+     "h1: limited",
+     "h1: harness_rejected"
+    ],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 3,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase3"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.5288424634676004,
+    "scoreR83": 0.5288424634676004,
+    "rawScore": 0.5422039171399785,
+    "scoreBeforePenalty": 0.5422039171399785,
+    "formatPenalty": 0.024642857142857143,
+    "repairs": 0,
+    "overallDeduction": 0.024642857142857143,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 818.3879999999999,
+    "timeLimitSeconds": null,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 263019,
+    "cachedInput": 3203840,
+    "output": 97195,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "source": "API usage (relay)",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 118.77890278763654,
+    "taskInput": 321.38667722400623,
+    "taskOutput": 118.76396037087544,
+    "lowerBounds": [
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "API usage (relay) over the instance work seconds",
+     "engine": "API model: input unknown (no input-processing time); output = relay output tokens / request seconds, a lower bound (first-token latency and input processing included), 39 requests"
+    }
+   },
+   "toolCalls": 37,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gpt-6-luna"
+   ],
+   "serviceTiers": {
+    "default": 39
+   },
+   "handoffs": [
+    {
+     "subScenario": "runtime-migration",
+     "durationSeconds": 244.127,
+     "tokens": {
+      "uncachedInput": 103993,
+      "cachedInput": 775552,
+      "output": 25646
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 12,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    },
+    {
+     "subScenario": "artifact-promotion",
+     "durationSeconds": 574.261,
+     "tokens": {
+      "uncachedInput": 159026,
+      "cachedInput": 2428288,
+      "output": 71549
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 25,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "openai/spec-readiness-v4.3/luna-xhigh-a4",
+   "scenario": "spec-readiness-v4.3",
+   "configKey": "codex/gpt-6-luna/xhigh",
+   "configNumber": 28,
+   "arm": "openai",
+   "attempt": 4,
+   "supplementaryNote": null,
+   "requestedEffort": "xhigh",
+   "effectiveEffort": "xhigh",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-10-22T21:26:03.934505+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [
+     "h0: arw_pause",
+     "h0: user_pause",
+     "h0: limited",
+     "h0: harness_rejected",
+     "h1: arw_pause",
+     "h1: user_pause",
+     "h1: limited",
+     "h1: harness_rejected"
+    ],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 4,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase3"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.5854464376203505,
+    "scoreR83": 0.5854464376203505,
+    "rawScore": 0.5854464376203505,
+    "scoreBeforePenalty": 0.5854464376203505,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 912.551,
+    "timeLimitSeconds": null,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 293653,
+    "cachedInput": 3947904,
+    "output": 110163,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "source": "API usage (relay)",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 120.74892916601695,
+    "taskInput": 321.7935216771446,
+    "taskOutput": 120.71982826165332,
+    "lowerBounds": [
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "API usage (relay) over the instance work seconds",
+     "engine": "API model: input unknown (no input-processing time); output = relay output tokens / request seconds, a lower bound (first-token latency and input processing included), 47 requests"
+    }
+   },
+   "toolCalls": 45,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gpt-6-luna"
+   ],
+   "serviceTiers": {
+    "default": 47
+   },
+   "handoffs": [
+    {
+     "subScenario": "runtime-migration",
+     "durationSeconds": 178.167,
+     "tokens": {
+      "uncachedInput": 95612,
+      "cachedInput": 914304,
+      "output": 19772
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 15,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    },
+    {
+     "subScenario": "artifact-promotion",
+     "durationSeconds": 734.384,
+     "tokens": {
+      "uncachedInput": 198041,
+      "cachedInput": 3033600,
+      "output": 90391
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 30,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "openai/spec-readiness-v4.3/luna-xhigh-a5",
+   "scenario": "spec-readiness-v4.3",
+   "configKey": "codex/gpt-6-luna/xhigh",
+   "configNumber": 28,
+   "arm": "openai",
+   "attempt": 5,
+   "supplementaryNote": null,
+   "requestedEffort": "xhigh",
+   "effectiveEffort": "xhigh",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-10-22T21:48:10.625769+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [
+     "h0: arw_pause",
+     "h0: user_pause",
+     "h0: limited",
+     "h0: harness_rejected",
+     "h1: arw_pause",
+     "h1: user_pause",
+     "h1: limited",
+     "h1: harness_rejected"
+    ],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 5,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase3"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.6262575906168585,
+    "scoreR83": 0.6262575906168585,
+    "rawScore": 0.6262575906168585,
+    "scoreBeforePenalty": 0.6262575906168585,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 1433.3310000000001,
+    "timeLimitSeconds": null,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 362763,
+    "cachedInput": 6190848,
+    "output": 176710,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "source": "API usage (relay)",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 123.40291935793891,
+    "taskInput": 253.09087712468366,
+    "taskOutput": 123.28624721016986,
+    "lowerBounds": [
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "API usage (relay) over the instance work seconds",
+     "engine": "API model: input unknown (no input-processing time); output = relay output tokens / request seconds, a lower bound (first-token latency and input processing included), 61 requests"
+    }
+   },
+   "toolCalls": 58,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gpt-6-luna"
+   ],
+   "serviceTiers": {
+    "default": 61
+   },
+   "handoffs": [
+    {
+     "subScenario": "runtime-migration",
+     "durationSeconds": 212.121,
+     "tokens": {
+      "uncachedInput": 110502,
+      "cachedInput": 1046656,
+      "output": 24389
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 16,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    },
+    {
+     "subScenario": "artifact-promotion",
+     "durationSeconds": 1221.21,
+     "tokens": {
+      "uncachedInput": 252261,
+      "cachedInput": 5144192,
+      "output": 152321
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 42,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "openai/spec-readiness-v4.3/luna-max-a1",
+   "scenario": "spec-readiness-v4.3",
+   "configKey": "codex/gpt-6-luna/max",
+   "configNumber": 29,
+   "arm": "openai",
+   "attempt": 1,
+   "supplementaryNote": null,
+   "requestedEffort": "max",
+   "effectiveEffort": "max",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-10-22T20:24:28.747715+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [
+     "h0: arw_pause",
+     "h0: user_pause",
+     "h0: limited",
+     "h0: harness_rejected",
+     "h1: arw_pause",
+     "h1: user_pause",
+     "h1: limited",
+     "h1: harness_rejected"
+    ],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 1,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase3"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.6516164497622299,
+    "scoreR83": 0.6516164497622299,
+    "rawScore": 0.6516164497622299,
+    "scoreBeforePenalty": 0.6516164497622299,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 1715.915,
+    "timeLimitSeconds": null,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 394397,
+    "cachedInput": 5842048,
+    "output": 204963,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "source": "API usage (relay)",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 119.40982581040606,
+    "taskInput": 229.84646675388933,
+    "taskOutput": 119.44822441671062,
+    "lowerBounds": [
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "API usage (relay) over the instance work seconds",
+     "engine": "API model: input unknown (no input-processing time); output = relay output tokens / request seconds, a lower bound (first-token latency and input processing included), 57 requests"
+    }
+   },
+   "toolCalls": 55,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gpt-6-luna"
+   ],
+   "serviceTiers": {
+    "default": 57
+   },
+   "handoffs": [
+    {
+     "subScenario": "runtime-migration",
+     "durationSeconds": 442.974,
+     "tokens": {
+      "uncachedInput": 147235,
+      "cachedInput": 1441536,
+      "output": 47724
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 21,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    },
+    {
+     "subScenario": "artifact-promotion",
+     "durationSeconds": 1272.941,
+     "tokens": {
+      "uncachedInput": 247162,
+      "cachedInput": 4400512,
+      "output": 157239
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 34,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "openai/spec-readiness-v4.3/luna-max-a2",
+   "scenario": "spec-readiness-v4.3",
+   "configKey": "codex/gpt-6-luna/max",
+   "configNumber": 29,
+   "arm": "openai",
+   "attempt": 2,
+   "supplementaryNote": null,
+   "requestedEffort": "max",
+   "effectiveEffort": "max",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-10-22T20:24:43.833249+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [
+     "h0: arw_pause",
+     "h0: user_pause",
+     "h0: limited",
+     "h0: harness_rejected",
+     "h1: arw_pause",
+     "h1: user_pause",
+     "h1: limited",
+     "h1: harness_rejected"
+    ],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 2,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase3"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.5750624355079867,
+    "scoreR83": 0.5750624355079867,
+    "rawScore": 0.5750624355079867,
+    "scoreBeforePenalty": 0.5750624355079867,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 1564.002,
+    "timeLimitSeconds": null,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 357386,
+    "cachedInput": 5448320,
+    "output": 184961,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "source": "API usage (relay)",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 118.32293788017921,
+    "taskInput": 228.50738042534473,
+    "taskOutput": 118.26135772204896,
+    "lowerBounds": [
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "API usage (relay) over the instance work seconds",
+     "engine": "API model: input unknown (no input-processing time); output = relay output tokens / request seconds, a lower bound (first-token latency and input processing included), 49 requests"
+    }
+   },
+   "toolCalls": 47,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gpt-6-luna"
+   ],
+   "serviceTiers": {
+    "default": 49
+   },
+   "handoffs": [
+    {
+     "subScenario": "runtime-migration",
+     "durationSeconds": 366.729,
+     "tokens": {
+      "uncachedInput": 115877,
+      "cachedInput": 681088,
+      "output": 41921
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 11,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    },
+    {
+     "subScenario": "artifact-promotion",
+     "durationSeconds": 1197.273,
+     "tokens": {
+      "uncachedInput": 241509,
+      "cachedInput": 4767232,
+      "output": 143040
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 36,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "openai/spec-readiness-v4.3/luna-max-a3",
+   "scenario": "spec-readiness-v4.3",
+   "configKey": "codex/gpt-6-luna/max",
+   "configNumber": 29,
+   "arm": "openai",
+   "attempt": 3,
+   "supplementaryNote": null,
+   "requestedEffort": "max",
+   "effectiveEffort": "max",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-10-22T21:12:23.032364+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [
+     "h0: arw_pause",
+     "h0: user_pause",
+     "h0: limited",
+     "h0: harness_rejected",
+     "h1: arw_pause",
+     "h1: user_pause",
+     "h1: limited",
+     "h1: harness_rejected"
+    ],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 3,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase3"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.4097918862220922,
+    "scoreR83": 0.4097918862220922,
+    "rawScore": 0.4097918862220922,
+    "scoreBeforePenalty": 0.4097918862220922,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 1074.335,
+    "timeLimitSeconds": null,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 293054,
+    "cachedInput": 3698176,
+    "output": 131850,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "source": "API usage (relay)",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 122.73314287640994,
+    "taskInput": 272.7771132840315,
+    "taskOutput": 122.72708233465353,
+    "lowerBounds": [
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "API usage (relay) over the instance work seconds",
+     "engine": "API model: input unknown (no input-processing time); output = relay output tokens / request seconds, a lower bound (first-token latency and input processing included), 48 requests"
+    }
+   },
+   "toolCalls": 46,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gpt-6-luna"
+   ],
+   "serviceTiers": {
+    "default": 48
+   },
+   "handoffs": [
+    {
+     "subScenario": "runtime-migration",
+     "durationSeconds": 404.853,
+     "tokens": {
+      "uncachedInput": 126028,
+      "cachedInput": 1268736,
+      "output": 48005
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 20,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    },
+    {
+     "subScenario": "artifact-promotion",
+     "durationSeconds": 669.482,
+     "tokens": {
+      "uncachedInput": 167026,
+      "cachedInput": 2429440,
+      "output": 83845
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 26,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "openai/spec-readiness-v4.3/luna-max-a4",
+   "scenario": "spec-readiness-v4.3",
+   "configKey": "codex/gpt-6-luna/max",
+   "configNumber": 29,
+   "arm": "openai",
+   "attempt": 4,
+   "supplementaryNote": null,
+   "requestedEffort": "max",
+   "effectiveEffort": "max",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-10-22T21:12:38.086697+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [
+     "h0: arw_pause",
+     "h0: user_pause",
+     "h0: limited",
+     "h0: harness_rejected",
+     "h1: arw_pause",
+     "h1: user_pause",
+     "h1: limited",
+     "h1: harness_rejected"
+    ],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 4,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase3"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.5333223937188133,
+    "scoreR83": 0.5333223937188133,
+    "rawScore": 0.592580437465348,
+    "scoreBeforePenalty": 0.592580437465348,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.1,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 2119.1310000000003,
+    "timeLimitSeconds": null,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 495323,
+    "cachedInput": 14157568,
+    "output": 237985,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "source": "API usage (relay)",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 112.17727001439876,
+    "taskInput": 233.73873535897494,
+    "taskOutput": 112.30310915181741,
+    "lowerBounds": [
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "API usage (relay) over the instance work seconds",
+     "engine": "API model: input unknown (no input-processing time); output = relay output tokens / request seconds, a lower bound (first-token latency and input processing included), 140 requests"
+    }
+   },
+   "toolCalls": 96,
+   "pauses": {
+    "known": true,
+    "count": 6,
+    "continueCount": 6
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "codex-auto-review",
+    "gpt-6-luna"
+   ],
+   "serviceTiers": {
+    "default": 140
+   },
+   "handoffs": [
+    {
+     "subScenario": "runtime-migration",
+     "durationSeconds": 984.662,
+     "tokens": {
+      "uncachedInput": 263582,
+      "cachedInput": 8215424,
+      "output": 99786
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 51,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    },
+    {
+     "subScenario": "artifact-promotion",
+     "durationSeconds": 1134.469,
+     "tokens": {
+      "uncachedInput": 231741,
+      "cachedInput": 5942144,
+      "output": 138199
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 45,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "openai/spec-readiness-v4.3/luna-max-a5",
+   "scenario": "spec-readiness-v4.3",
+   "configKey": "codex/gpt-6-luna/max",
+   "configNumber": 29,
+   "arm": "openai",
+   "attempt": 5,
+   "supplementaryNote": null,
+   "requestedEffort": "max",
+   "effectiveEffort": "max",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-10-22T21:48:25.687344+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [
+     "h0: arw_pause",
+     "h0: user_pause",
+     "h0: limited",
+     "h0: harness_rejected",
+     "h1: arw_pause",
+     "h1: user_pause",
+     "h1: limited",
+     "h1: harness_rejected"
+    ],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 5,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase3"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.7111440349931399,
+    "scoreR83": 0.7111440349931399,
+    "rawScore": 0.7111440349931399,
+    "scoreBeforePenalty": 0.7111440349931399,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 1124.9830000000002,
+    "timeLimitSeconds": null,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 293573,
+    "cachedInput": 2580736,
+    "output": 141316,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "source": "API usage (relay)",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 125.8061748129064,
+    "taskInput": 260.95772113889717,
+    "taskOutput": 125.61612042137524,
+    "lowerBounds": [
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "API usage (relay) over the instance work seconds",
+     "engine": "API model: input unknown (no input-processing time); output = relay output tokens / request seconds, a lower bound (first-token latency and input processing included), 36 requests"
+    }
+   },
+   "toolCalls": 34,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gpt-6-luna"
+   ],
+   "serviceTiers": {
+    "default": 36
+   },
+   "handoffs": [
+    {
+     "subScenario": "runtime-migration",
+     "durationSeconds": 359.995,
+     "tokens": {
+      "uncachedInput": 119513,
+      "cachedInput": 1301376,
+      "output": 43108
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 19,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    },
+    {
+     "subScenario": "artifact-promotion",
+     "durationSeconds": 764.988,
+     "tokens": {
+      "uncachedInput": 174060,
+      "cachedInput": 1279360,
+      "output": 98208
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 15,
+     "apiSeconds": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": null,
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
   }
  ],
  "sensitivityVariants": [
@@ -85139,8 +91182,8 @@
   },
   {
    "id": "speeds",
-   "zh": "API 模型分不出输入处理时间：引擎输入速度未知，引擎输出速度按 API 请求时间算，是下限。多个实例的速度按总 token ÷ 总耗时汇总，不取各实例速度的算术平均（用户 2026-10-22）；Codex 上 API 模型的引擎输出按 relay 日志的 output token ÷ 请求秒数计算，这两个数没有保存、原始日志已删除，所以只有逐实例值，汇总记未知（待用户确认）。Codex 的 code mode 一次 exec 记 1 次工具调用，gpt-6.1-sol / gpt-6-luna 的工具调用数与其他臂不完全同义。",
-   "en": "API models give no input-processing time: engine input speed is unknown and engine output speed, timed by API request, is a lower bound. Speeds over several instances pool as total tokens / total seconds, never the arithmetic mean of instance speeds (user 2026-10-22); the engine output of API models on Codex is relay output tokens / request seconds, neither of which was kept (the raw logs are deleted), so it is given per instance only and its pooled value is unknown (pending the user). A Codex code-mode exec counts as one tool call, so gpt-6.1-sol / gpt-6-luna tool-call counts are not fully comparable with other arms."
+   "zh": "API 模型分不出输入处理时间：引擎输入速度未知，引擎输出速度按 API 请求时间算，是下限。多个实例的速度按总 token ÷ 总耗时汇总，不取各实例速度的算术平均（用户 2026-10-22）；Codex 上 API 模型的引擎输出按 relay 日志的 output token ÷ 请求秒数计算，请求秒数没有保存、原始日志已删除，所以汇总是近似值（用户 2026-10-22）：Σ`tokens.output` ÷ Σ(`tokens.output` ÷ `speeds.engineOutput`)，即用各实例的速度反推请求秒数，仍是下限。Codex 的 code mode 一次 exec 记 1 次工具调用，gpt-6.1-sol / gpt-6-luna 的工具调用数与其他臂不完全同义。",
+   "en": "API models give no input-processing time: engine input speed is unknown and engine output speed, timed by API request, is a lower bound. Speeds over several instances pool as total tokens / total seconds, never the arithmetic mean of instance speeds (user 2026-10-22); the engine output of API models on Codex is relay output tokens / request seconds; the request seconds were not kept (the raw logs are deleted), so its pooled value is approximate (user 2026-10-22): sum(tokens.output) / sum(tokens.output / speeds.engineOutput), the request seconds recovered from each instance speed, still a lower bound. A Codex code-mode exec counts as one tool call, so gpt-6.1-sol / gpt-6-luna tool-call counts are not fully comparable with other arms."
   },
   {
    "id": "unknown-not-zero",
@@ -85156,6 +91199,11 @@
    "id": "single-host",
    "zh": "Strata 结果只适用于单机单量化（rtx3080ti、IQ3_XXS，参数来自 v0.1.42 调参）。",
    "en": "Strata results hold for one host and one quantization only (rtx3080ti, IQ3_XXS, parameters from the v0.1.42 tuning)."
+  },
+  {
+   "id": "phase3-supplement",
+   "zh": "第三阶段只是补充（用户 2026-10-22）：gpt-6-luna xhigh（配置 28）、max（配置 29）在 Codex 上 4 个场景各格取全部有效实例（不截取前 5 个：并行调度多出的有效实例不是因分数加跑，与预登记实例效力相同，用户 2026-10-23），只给逐实例结果，不进预登记比较和 Holm 族，本工程也不拿它与其他配置比较。运行于 2026-10-23（JST 02:20–07:12），借用 ChatGPT 登录，条件与 v1 相同（同一 Codex 副本、场景冻结源、harness 补丁、搜索关闭、凭据 deny-read）；与前两阶段相隔一天，服务端模型或路由可能已有变化。",
+   "en": "Phase 3 is a supplement only (user 2026-10-22): gpt-6-luna xhigh (configuration 28) and max (29) on Codex, every valid instance of each cell in the 4 scenarios (no first-5 cut: the valid instances that parallel scheduling added were not run because of scores and count the same as preregistered ones, user 2026-10-23), per-instance results only, never in a preregistered comparison or the Holm family, and not compared with other configurations by this project. Run on 2026-10-23 (JST 02:20-07:12) on a borrowed ChatGPT login under the v1 conditions (same Codex copy, frozen scenario sources, harness patches, search off, credential deny-read); a day after the first two phases, so the served model or routing may have changed."
   }
  ]
 }

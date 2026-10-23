@@ -8,7 +8,11 @@ This tool reads `benchmark-results.json` (a snapshot of the benchmark's per-run 
 
 The page is an independent comparison view. It does not change the input data or replace the benchmark's own reports; those give per-task results only, and the weighted score is this page's summary of them.
 
-## Version v2.0
+## Version v2.1
+
+v2.1 adds the GPT-6 Luna xhigh and max efforts (Codex) from the benchmark's phase-3 supplement to the v2.0 data. The supplement ran a day later, so the served model or routing may have changed; each cell counts every valid run (5 to 8 per task), and the benchmark itself does not compare them with other configurations. All other instances are as in v2.0.
+
+### v2.0
 
 v2.0 is a new measurement, and its results are not comparable with v1:
 
@@ -18,7 +22,7 @@ v2.0 is a new measurement, and its results are not comparable with v1:
 - New task and engine speeds (tok/s).
 - Cost bases differ by vendor, and the local model uses a local running cost (see below).
 
-`build.py` supports v2.0 data only; the v1 page and script remain in the Git history.
+`build.py` supports v2.x data only (results file schema 1); the v1 page and script remain in the Git history.
 
 ## Scope
 
@@ -31,18 +35,19 @@ ARW is the software project that provides these development review tasks. A Revi
 | Commit Audit | Audits a staged commit candidate: the selected files, required checks and coverage of the requirements. | 25% |
 | Spec Readiness | Before implementation, checks whether requirement documents are complete, consistent, feasible and verifiable; each run has two independent review threads. | 35% |
 
-There are 27 main configurations:
+There are 29 configurations (27 main and 2 phase-3 supplement configurations):
 
 | Harness | Models | Efforts | Cost basis |
 | --- | --- | --- | --- |
-| Codex | GPT-6.1 Sol, GPT-6 Luna | low, medium, high | Subscription run, reference API price |
+| Codex | GPT-6.1 Sol | low, medium, high | Subscription run, reference API price |
+| Codex | GPT-6 Luna | low, medium, high, xhigh, max (xhigh and max in the supplement) | Subscription run, reference API price |
 | Codex | DeepSeek V4.1 Flash | low, high, max | DeepSeek price per request |
 | Codex | Strata IQ3_XXS (local) | low, medium, high | Local running cost |
 | Claude Code | Claude Opus 5.5, Sonnet 5.5, Haiku 5.5 | low, medium, high | Subscription run, reference API price |
 | Claude Code | DeepSeek V4.1 Flash | low, high, max | DeepSeek price per request |
 | Claude Code | Strata IQ3_XXS (local) | low, medium, high | Local running cost |
 
-The runs took place from 2026-10-19 to 2026-10-22 (UTC), and the page counts 666 scored runs. Effort labels are each model's requested setting, not equal compute. The tasks were calibrated on Claude Opus, which also judged the reports, so Opus may be placed too high. The results describe this fixed task set only and are not a general model ranking. The full scenarios, raw reports and hidden cases are not in this repository, so the charts can be recomputed from the snapshot but the measurement cannot be rerun from it.
+The runs took place from 2026-10-19 to 2026-10-22 (UTC), and the page counts 717 scored runs. Effort labels are each model's requested setting, not equal compute. The tasks were calibrated on Claude Opus, which also judged the reports, so Opus may be placed too high. The results describe this fixed task set only and are not a general model ranking. The full scenarios, raw reports and hidden cases are not in this repository, so the charts can be recomputed from the snapshot but the measurement cannot be rerun from it.
 
 DeepSeek V4.1 Flash is the endpoint's `deepseek-flash` model, version DeepSeek-V4.1-Flash-1017.
 
@@ -52,7 +57,7 @@ Strata IQ3_XXS is a 3-bit quantization of Qwen3.8-Flash-Next, run locally on a h
 
 ### Counted runs
 
-The page uses only the instances the benchmark counts in its main statistics (`selection.inMain` true and no `supplementaryNote`): 10 per task for Strata and 5 for other configurations. DeepSeek runs requested as medium that the endpoint ran as high under the same time limit count as high, following the benchmark, so the two DeepSeek high cells in Commit Audit have 8 runs each. Invalid runs and the supplementary "requested as medium" configuration, which ran under a different time limit, are excluded.
+The page uses only the instances the benchmark counts in its main statistics (`selection.inMain` true and no `supplementaryNote`): 10 per task for Strata and 5 for other configurations. GPT-6 Luna xhigh and max are phase-3 supplement configurations (`kind` `phase3`); following the benchmark, every valid instance of each cell counts, 5 to 8 per task. DeepSeek runs requested as medium that the endpoint ran as high under the same time limit count as high, following the benchmark, so the two DeepSeek high cells in Commit Audit have 8 runs each. Invalid runs and the supplementary "requested as medium" configuration, which ran under a different time limit, are excluded.
 
 ### Scores
 
