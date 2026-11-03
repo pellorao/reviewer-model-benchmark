@@ -933,7 +933,7 @@ def page_copy(pricing):
             "method_kicker": "DATA NOTES", "method_title": "How scores and costs are calculated",
             "method_selection": "The data are the benchmark's per-run results. The page uses the runs the benchmark counts in its main statistics: 10 per task for Strata and 5 for other configurations. GPT-6 Luna xhigh and max are a supplement run a day later with every valid run counted (5 to 8 per task); the benchmark does not compare them with other configurations. DeepSeek runs requested as medium count as high where the endpoint ran them as high under the same time limit, so DeepSeek high has 8 runs in Commit Audit. Invalid runs and the supplementary DeepSeek configuration requested as medium under a different time limit are excluded.",
             "method_score": f"A run's score (scoring {SCORING_VERSION}) credits the answer-key problems a report finds and deducts its false findings. It is not cut at 0, so it can be negative, and a run that produced no report scores 0. A task score is the mean of its runs, with a 95% interval from the t distribution. The weighted score is 100 × ({weights}); its interval combines the four standard errors with Welch–Satterthwaite degrees of freedom.",
-            "method_runtime": "Time and tokens average every counted run, including zero-score runs, which still used resources. A task's value is the mean over its runs with data; a configuration's value is the arithmetic mean of its four task values. Speeds are total tokens over total seconds, never a mean of speeds: a task's speed pools its runs, and a configuration's speed pools one average run of each task.",
+            "method_runtime": "Time and tokens average every counted run, including zero-score runs, which still used resources. A task's value is the mean over its runs with data; a configuration's value is the arithmetic mean of its four task values. Speeds are total tokens over total seconds, never a mean of speeds: a task's speed pools its runs.",
             "method_cost": f"Cost per run: DeepSeek uses the benchmark's per-request cost at official prices; Claude models use the API-equivalent cost reported by Claude Code (subscription run, reference API price); GPT models price their tokens at OpenAI Standard API rates (subscription run, reference API price) ({rates_en} per million non-cached input, cached input and output tokens); Strata uses work time × ({cost['watts']} W × {cost['electricity']} per kWh, the world household average, plus {cost['upkeep']} per hour of upkeep), excluding hardware purchase. Prices were checked on {cost['checked']}.",
             "method_missing": "Missing values are not zero: a task mean uses only the runs with data, and the notes under each chart list where that happens. Values marked ≥ are lower bounds, for example DeepSeek costs that miss requests dropped by a time-limit reminder.",
             "openai_prices": "OpenAI pricing", "deepseek_prices": "DeepSeek pricing",
@@ -1003,7 +1003,7 @@ def page_copy(pricing):
             "method_kicker": "数据说明", "method_title": "分数与费用的计算方法",
             "method_selection": "数据是基准的逐次运行结果. 本页使用基准主统计计入的运行: Strata 每项任务 10 次, 其他配置 5 次. GPT-6 Luna xhigh 和 max 是晚一天的补测, 计入全部有效运行 (每项任务 5 至 8 次), 基准本身不拿它们与其他配置比较. 在相同时限下由端点按 high 执行的 DeepSeek medium 请求并入 high, 因此 Commit Audit 中的 DeepSeek high 有 8 次. 无效运行, 以及时限不同而单列的 DeepSeek medium 请求补充配置, 都不计入.",
             "method_score": f"单次运行的分数 (评分 {SCORING_VERSION}) 按报告找到的答案键问题加分, 按错误发现扣分. 分数不在 0 处截断, 所以可以为负; 没有产出报告的运行记 0 分. 任务分数是各次运行的平均值, 95% 区间按 t 分布计算. 综合分数 = 100 × ({weights}); 其区间合并四项的标准误, 自由度按 Welch–Satterthwaite 计算.",
-            "method_runtime": "耗时和 token 对全部计入的运行求平均, 包括 0 分运行, 因为它们同样消耗了资源. 任务的值是有数据的运行的平均值; 配置的值是四项任务的值的算术平均. 速度是总 token 除以总耗时, 不对速度求平均: 任务速度合并该任务的各次运行, 配置速度合并每项任务的一次平均运行.",
+            "method_runtime": "耗时和 token 对全部计入的运行求平均, 包括 0 分运行, 因为它们同样消耗了资源. 任务的值是有数据的运行的平均值; 配置的值是四项任务的值的算术平均. 速度是总 token 除以总耗时, 不对速度求平均: 任务速度合并该任务的各次运行.",
             "method_cost": f"单次运行费用: DeepSeek 采用基准按官方价逐请求计算的费用; Claude 模型采用 Claude Code 报告的 API 等价费用 (套餐运行, 参考 API 价); GPT 模型按 OpenAI Standard API 单价换算 token (套餐运行, 参考 API 价) ({rates_zh}); Strata 按耗时 × ({cost['watts']} W × 全球家庭平均电价 {cost['electricity']}/kWh + 每小时维护费 {cost['upkeep']}) 计算, 不含硬件购置. 价格已于 {cost['checked']} 核对.",
             "method_missing": "缺失值不是 0: 任务均值只用有数据的运行, 各图下方的说明会列出这些情况. 标 ≥ 的值是下限, 例如 DeepSeek 有请求因时限提醒被丢弃而未计入的费用.",
             "openai_prices": "OpenAI 价格", "deepseek_prices": "DeepSeek 价格",
@@ -1106,9 +1106,9 @@ def page(results, pricing):
     source_links = "".join(
         f'<a href="{url}" target="_blank" rel="noopener noreferrer">{phrase(key)}'
         f'{icon("external", "external-mark")}</a>' for key, url in SOURCE_LINKS)
-    readme_link = ('<a href="https://github.com/Traveller23/reviewer-model-benchmark/blob/master/README.md" '
-                   'data-href-en="https://github.com/Traveller23/reviewer-model-benchmark/blob/master/README.md" '
-                   'data-href-zh="https://github.com/Traveller23/reviewer-model-benchmark/blob/master/README.zh-CN.md">README</a>')
+    readme_link = ('<a href="https://github.com/pellorao/reviewer-model-benchmark/blob/master/README.md" '
+                   'data-href-en="https://github.com/pellorao/reviewer-model-benchmark/blob/master/README.md" '
+                   'data-href-zh="https://github.com/pellorao/reviewer-model-benchmark/blob/master/README.zh-CN.md">README</a>')
     i18n_json = script_json(copy, ensure_ascii=False)
     speed_titles = {language: [SPEED_LABELS[key][index] for key in SPEED_KEYS]
                     for index, language in enumerate(("en", "zh"))}
