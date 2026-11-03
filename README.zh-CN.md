@@ -89,7 +89,7 @@ Strata IQ3_XXS 是 Qwen3.8-Flash-Next 的 3 比特量化版本，在一台家用
 
 ### 缺值
 
-缺失值不是 0：某项缺数据的运行只在该项中跳过，其余项照常计入，图下的说明列出这些格。标 ≥ 的值是下限，例如 DeepSeek 有请求因时限提醒被丢弃而未计入的费用。
+缺失值不是 0：某项缺数据的运行只在该项中跳过，其余项照常计入，图下的说明列出这些格；速度图的说明不列 API 模型的引擎输入速度，它按设计就是未知的。标 ≥ 的值是下限，例如 DeepSeek 有请求因时限提醒被丢弃而未计入的费用。
 
 ## 费用
 
@@ -109,6 +109,8 @@ OpenAI 单价（美元 / 百万 token）：
 | [GPT-6.1 Sol](https://developers.openai.com/api/docs/models/gpt-6.1-sol) | $2 | $0.10 | $10 |
 | [GPT-6 Luna](https://developers.openai.com/api/docs/models/gpt-6-luna) | $0.10 | $0.01 | $0.50 |
 
+缓存写入 token 不计价：`pricing.json` 中的 `cacheWriteRate` 仅作参考，OpenAI 实例若带有缓存写入 token，构建会报错停止。
+
 本地运行成本只算电费和维护，不含硬件购置、安装和实例之间的空闲时间，精度不高：
 
 | 项目 | 取值 | 说明 |
@@ -125,6 +127,7 @@ OpenAI 单价（美元 / 百万 token）：
 ```text
 ./
 ├── build.py
+├── stats.py
 ├── test_build.py
 ├── benchmark-results.json
 ├── pricing.json
@@ -138,7 +141,7 @@ OpenAI 单价（美元 / 百万 token）：
     └── fonts/
 ```
 
-`benchmark-results.json` 是输入数据的独立快照。维护者更新它时，先将 `.env.example` 复制为已忽略的 `.env`，再把可信来源文件的绝对路径填入 `BENCHMARK_SOURCE_RESULTS`。构建页面只读取已提交的快照，不读取 `.env`，也不会从其他目录自动同步数据。`charts.html` 是生成的本地文件，不提交到 Git；`resources/favicon.svg` 也由脚本生成，但保存在仓库中。`resources/site.css` 和 `resources/fonts/` 是页面所需的预下载资源，字体许可和来源见 `resources/fonts/README.md`。
+`benchmark-results.json` 是输入数据的独立快照。维护者更新它时，先将 `.env.example` 复制为已忽略的 `.env`，再把可信来源文件的绝对路径填入 `BENCHMARK_SOURCE_RESULTS`。构建页面只读取已提交的快照，不读取 `.env`，也不会从其他目录自动同步数据。`charts.html` 是生成的本地文件，不提交到 Git；`resources/favicon.svg` 也由脚本生成，但保存在仓库中。`stats.py` 保存统计与费用规则（纯 Python，不依赖 Plotly）；`build.py` 绘制图表并组装页面。`resources/site.css` 是页面唯一的样式表，`resources/fonts/` 是预下载的字体，字体许可和来源见 `resources/fonts/README.md`。
 
 在仓库根目录用 Bash 复制并核对新快照：
 
@@ -168,13 +171,13 @@ python3 -m venv .venv
 .venv/bin/python build.py path/to/benchmark-results.json path/to/charts.html
 ```
 
-输出页面通过相对路径加载 `resources/`，指定其他输出目录时，该目录也必须有对应的 `resources/`。用浏览器直接打开 `charts.html` 即可，查看图表不需要 Python、网络或 Web 服务器。页脚的“更新于”是页面构建日期，不代表测量或价格核对日期。
+输出页面通过相对路径加载 `resources/`，指定其他输出目录时，该目录也必须有对应的 `resources/`，构建不会替你创建。用浏览器直接打开 `charts.html` 即可，查看图表不需要 Python、网络或 Web 服务器。页脚的“更新于”是页面构建日期，不代表测量或价格核对日期。
 
 ## 实现和维护
 
-`build.py` 用 Python 读取 JSON 和计算指标，t 分布分位数用纯 Python 实现；Plotly 生成图表并嵌入 HTML。页面文字和图表坐标轴可在英文与中文之间切换，图表交互在浏览器本地运行。
+`stats.py` 用 Python 读取 JSON 和计算指标，t 分布分位数用纯 Python 实现，价格由调用方从 `pricing.json` 传入，`test_build.py` 不装 Plotly 也能检查它（缺少 Plotly 时跳过页面测试）；`build.py` 用 Plotly 生成图表并嵌入 HTML。页面文字和图表坐标轴可在英文与中文之间切换，图表交互在浏览器本地运行。
 
-模型顺序与颜色、代理程序、4 项 Reviewer 的权重和评分版本定义在 `build.py` 顶部。价格与本地成本参数保存在 `pricing.json`；调整后更新 `checkedAt`，重新生成页面，并同步更新本 README 的费用表。改动统计规则前先在 `AGENTS.md` 所述流程中确认，实现后同步更新两份 README。
+模型顺序与名称、代理程序、4 项 Reviewer 的权重定义在 `stats.py` 顶部，模型颜色和评分版本定义在 `build.py` 顶部。价格与本地成本参数保存在 `pricing.json`；页面方法说明中的价格、功率、电价和权重由 `pricing.json` 与 `REVIEWERS` 生成，调整后更新 `checkedAt`，重新生成页面，并同步更新两份 README 的费用表。改动统计规则前先在 `AGENTS.md` 所述流程中确认，实现后同步更新两份 README。
 
 本工具不运行 benchmark，也不修改输入 JSON。
 

@@ -89,7 +89,7 @@ Each run's seconds are the denominator of its own speed, which keeps the benchma
 
 ### Missing values
 
-Missing values are not zero: a run missing one measure is skipped for that measure only, and notes under the charts list the affected cells. Values marked ≥ are lower bounds, for example DeepSeek costs that miss requests dropped by a time-limit reminder.
+Missing values are not zero: a run missing one measure is skipped for that measure only, and notes under the charts list the affected cells. The speed chart's note leaves out the engine input speed of API models, which is unknown by design. Values marked ≥ are lower bounds, for example DeepSeek costs that miss requests dropped by a time-limit reminder.
 
 ## Cost
 
@@ -109,6 +109,8 @@ OpenAI rates (USD per million tokens):
 | [GPT-6.1 Sol](https://developers.openai.com/api/docs/models/gpt-6.1-sol) | $2 | $0.10 | $10 |
 | [GPT-6 Luna](https://developers.openai.com/api/docs/models/gpt-6-luna) | $0.10 | $0.01 | $0.50 |
 
+Cache-write tokens are not priced: `cacheWriteRate` in `pricing.json` is kept for reference only, and the build stops with an error if an OpenAI instance reports cache-write tokens.
+
 The local running cost covers electricity and upkeep only, excluding hardware purchase, setup and idle time between runs, and is a rough estimate:
 
 | Item | Value | Note |
@@ -125,6 +127,7 @@ The local cost is always above 0, so the log cost axis never meets 0. Because lo
 ```text
 ./
 ├── build.py
+├── stats.py
 ├── test_build.py
 ├── benchmark-results.json
 ├── pricing.json
@@ -138,7 +141,7 @@ The local cost is always above 0, so the log cost axis never meets 0. Because lo
     └── fonts/
 ```
 
-`benchmark-results.json` is an independent snapshot of the input data. To update it, a maintainer copies `.env.example` to the ignored `.env` and sets `BENCHMARK_SOURCE_RESULTS` to the absolute path of the trusted source file. The build reads only the committed snapshot; it does not read `.env` or sync data from other directories. `charts.html` is a generated local file and is not committed; `resources/favicon.svg` is also generated but kept in the repository. `resources/site.css` and `resources/fonts/` are pre-downloaded page assets; see `resources/fonts/README.md` for font licenses and sources.
+`benchmark-results.json` is an independent snapshot of the input data. To update it, a maintainer copies `.env.example` to the ignored `.env` and sets `BENCHMARK_SOURCE_RESULTS` to the absolute path of the trusted source file. The build reads only the committed snapshot; it does not read `.env` or sync data from other directories. `charts.html` is a generated local file and is not committed; `resources/favicon.svg` is also generated but kept in the repository. `stats.py` holds the statistics and cost rules (pure Python, no Plotly); `build.py` draws the charts and assembles the page. `resources/site.css` is the page's only stylesheet, and `resources/fonts/` holds pre-downloaded fonts; see `resources/fonts/README.md` for font licenses and sources.
 
 Copy and check a new snapshot with Bash from the repository root:
 
@@ -168,13 +171,13 @@ By default the script reads `benchmark-results.json` next to it and overwrites `
 .venv/bin/python build.py path/to/benchmark-results.json path/to/charts.html
 ```
 
-The page loads `resources/` by relative path, so another output directory needs its own `resources/`. Open `charts.html` directly in a browser; viewing it needs no Python, network or web server. The footer's "Updated" date is the build date, not the measurement or price-check date.
+The page loads `resources/` by relative path, so another output directory needs its own `resources/`; the build does not create it. Open `charts.html` directly in a browser; viewing it needs no Python, network or web server. The footer's "Updated" date is the build date, not the measurement or price-check date.
 
 ## Implementation and maintenance
 
-`build.py` reads the JSON and computes the measures in Python, including a pure-Python t-distribution quantile; Plotly draws the charts, which are embedded in the HTML. Page text and chart axes switch between English and Chinese, and chart interaction runs locally in the browser.
+`stats.py` reads the JSON and computes the measures in Python, including a pure-Python t-distribution quantile; the prices come from `pricing.json`, passed in by the caller. `test_build.py` checks it without Plotly (the page tests are skipped when Plotly is missing). `build.py` has Plotly draw the charts, which are embedded in the HTML. Page text and chart axes switch between English and Chinese, and chart interaction runs locally in the browser.
 
-Model order and colors, harnesses, the four reviewer weights and the scoring version are defined at the top of `build.py`. Prices and local cost settings live in `pricing.json`; after a change, update `checkedAt`, rebuild the page and update the cost tables in both READMEs. Agree any change to the statistics rules first, as `AGENTS.md` describes, and update both READMEs afterwards.
+Model order and names, harnesses and the four reviewer weights are defined at the top of `stats.py`; model colors and the scoring version at the top of `build.py`. Prices and local cost settings live in `pricing.json`; the page's method text reads the prices, power, electricity rate and weights from `pricing.json` and `REVIEWERS`, so after a change update `checkedAt`, rebuild the page and update the cost tables in both READMEs. Agree any change to the statistics rules first, as `AGENTS.md` describes, and update both READMEs afterwards.
 
 This tool does not run the benchmark or modify the input JSON.
 
