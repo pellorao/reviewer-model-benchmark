@@ -155,7 +155,7 @@ def summarize_cell(instances, config, pricing):
                   if all(finite_number(instance["tokens"].get(key)) for key in TOKEN_KEYS)]
     costs = [instance_cost(instance, config, pricing) for instance in instances]
     costs = [cost for cost in costs if cost[0] is not None]
-    speeds, speed_parts, speed_counts, speed_bounds = {}, {}, {}, {}
+    speeds, speed_counts, speed_bounds = {}, {}, {}
     for key in SPEED_KEYS:
         token_key = "output" if key.endswith("Output") else "uncachedInput"
         # A speed is total tokens over total seconds, never a mean of per-run rates. Each
@@ -166,7 +166,6 @@ def summarize_cell(instances, config, pricing):
         tokens = [instance["tokens"][token_key] for instance in used]
         seconds = [instance["tokens"][token_key] / instance["speeds"][key] for instance in used]
         speeds[key] = sum(tokens) / sum(seconds) if used and sum(seconds) > 0 else None
-        speed_parts[key] = (mean_of(tokens), mean_of(seconds)) if speeds[key] is not None else None
         speed_counts[key] = len(used)
         speed_bounds[key] = any(key in instance["speeds"].get("lowerBounds", []) for instance in used)
     return {
@@ -181,7 +180,7 @@ def summarize_cell(instances, config, pricing):
         "tokenLowerBound": any(tokens.get("lowerBound") for tokens in token_sets),
         "cost": mean_of([cost[0] for cost in costs]), "costCount": len(costs),
         "costLowerBound": any(cost[1] for cost in costs),
-        "speeds": speeds, "speedParts": speed_parts, "speedCounts": speed_counts,
+        "speeds": speeds, "speedCounts": speed_counts,
         "speedLowerBounds": speed_bounds,
     }
 
@@ -207,20 +206,12 @@ def composite(cells):
     minutes, time_count = average("minutes")
     cost, cost_count = average("cost")
     token_cells = [cells[key]["tokens"] for key, _, _ in REVIEWERS if cells[key]["tokens"]]
-    speeds = {}
-    for speed in SPEED_KEYS:
-        # Tokens and seconds of one average run per task, summed over the four tasks.
-        task_parts = [cells[key]["speedParts"][speed] for key, _, _ in REVIEWERS
-                      if cells[key]["speedParts"][speed] is not None]
-        speeds[speed] = (sum(part[0] for part in task_parts) / sum(part[1] for part in task_parts)
-                         if task_parts else None)
     return {
         "score": score, "half": half, "minutes": minutes, "timeCount": time_count,
         "cost": cost, "costCount": cost_count,
         "costLowerBound": any(cells[key]["costLowerBound"] for key, _, _ in REVIEWERS),
         "tokens": ({key: mean_of([tokens[key] for tokens in token_cells]) for key in TOKEN_KEYS}
                    if token_cells else None),
-        "speeds": speeds,
     }
 
 

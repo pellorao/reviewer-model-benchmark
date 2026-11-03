@@ -83,7 +83,6 @@ Time, tokens and cost average every counted run, including zero-score and model-
 A speed is always total tokens divided by total seconds, never a mean of per-run speeds:
 
 - A task's speed = the sum of its runs' tokens ÷ the sum of their seconds.
-- A configuration's speed = the tokens of one average run of each task, summed ÷ their seconds, summed.
 
 Each run's seconds are the denominator of its own speed, which keeps the benchmark's time basis: task speeds use work seconds (the speed a user perceives) and engine speeds use request or decode seconds (the model alone). Input speeds use non-cached input tokens and output speeds output tokens. API models cannot separate input processing, so their engine input speed is unknown and their engine output speed is a lower bound (≥); only Strata has an engine input speed.
 

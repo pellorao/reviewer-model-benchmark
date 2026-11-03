@@ -91,7 +91,7 @@ class StatisticsTests(unittest.TestCase):
                               CONFIGS["openai"], PRICING)
         self.assertAlmostEqual(cell["speeds"]["engineOutput"], 700 / (10 + 10))
 
-    def test_composite_score_interval_and_pooled_speed(self):
+    def test_composite_score_interval(self):
         record = extract(results(
             [instance(score, seconds=seconds, config=CONFIGS["openai"]["key"], scenario=scenario["id"],
                       tokens=(100, 0, output))
@@ -103,7 +103,6 @@ class StatisticsTests(unittest.TestCase):
         degrees = variance ** 2 / sum((weight ** 2 * 0.04) ** 2 / 1 for _, _, weight in REVIEWERS)
         self.assertAlmostEqual(record["half"], 100 * t_quantile(0.975, degrees) * math.sqrt(variance))
         self.assertAlmostEqual(record["minutes"], 25 / 60)
-        self.assertAlmostEqual(record["speeds"]["taskOutput"], 1000 / 100)
 
     def test_missing_values_skip_only_that_instance(self):
         cell = summarize_cell([instance(0.0, tokens=None, status="modelFailure"),
@@ -116,9 +115,7 @@ class StatisticsTests(unittest.TestCase):
 
     def test_composite_resource_values_average_available_tasks(self):
         cells = {key: {"mean": 0.5, "se": None, "n": 1, "minutes": minutes, "cost": None,
-                       "costLowerBound": False, "tokens": None,
-                       "speedParts": dict.fromkeys(("taskOutput", "taskInput", "engineOutput",
-                                                    "engineInput"))}
+                       "costLowerBound": False, "tokens": None}
                  for (key, _, _), minutes in zip(REVIEWERS, (1.0, None, 3.0, 5.0))}
         result = composite(cells)
         self.assertIsNone(result["half"])
