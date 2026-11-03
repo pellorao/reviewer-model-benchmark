@@ -1,4 +1,390 @@
-/* Disposable page design. Font faces are bundled in resources/fonts. */
+/* Page design. Font faces are bundled in resources/fonts. The base layout rules come first
+   (they used to be an inline <style> in build.py); later rules at the same selector add to or
+   override them. Keep .harness-name's color equal to HARNESS_COLOR in build.py. */
+:root {
+  color-scheme: light;
+}
+* {
+  box-sizing: border-box;
+}
+html {
+  scroll-behavior: smooth;
+}
+body {
+  margin: 0;
+}
+.app-shell {
+  display: grid;
+  width: calc(100% - 48px);
+  margin: 0 auto;
+}
+.sidebar {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  overflow-y: auto;
+  padding: 28px 0;
+  display: flex;
+  flex-direction: column;
+}
+.side-label {
+  margin: 0 0 10px 16px;
+  text-transform: uppercase;
+}
+.side-nav {
+  display: flex;
+  flex-direction: column;
+}
+.side-nav a {
+  position: relative;
+  display: block;
+  color: #52637c;
+  text-decoration: none;
+  font-size: 13px;
+  line-height: 1.25;
+  transition: color .2s;
+}
+.side-nav a::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  transform: translateY(-50%);
+}
+.side-nav a.active {
+  font-weight: 700;
+}
+.side-nav a.sub::before {
+  left: 12px;
+  width: 4px;
+  height: 4px;
+}
+.content {
+  min-width: 0;
+  width: 100%;
+  padding: 0 0 100px;
+}
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #dce3ec;
+}
+.topbar-context {
+  font-size: 12px;
+  font-weight: 650;
+}
+.language-group {
+  display: inline-flex;
+  gap: 2px;
+  border: 1px solid #d4deea;
+}
+.language-group button {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  transition: background .18s,color .18s,box-shadow .18s;
+}
+.language-group button[aria-pressed="true"] {
+  background: var(--surface);
+  color: #234f7f;
+  box-shadow: 0 1px 4px #1b365729;
+}
+.language-group button:focus-visible {
+  outline: 2px solid #4779b1;
+  outline-offset: 2px;
+}
+.hero {
+  scroll-margin-top: 24px;
+}
+.lead {
+  margin: 0;
+}
+.summary-strip {
+  display: flex;
+  align-items: stretch;
+  width: max-content;
+  max-width: 100%;
+}
+.summary-item {
+  display: flex;
+  border-right: 1px solid #e6ebf2;
+}
+.summary-item strong {
+  font-variant-numeric: tabular-nums;
+}
+.summary-item span {
+  font-weight: 700;
+}
+.chart-section,.method-section {
+  margin: 0 0 46px;
+  scroll-margin-top: 24px;
+}
+.section-heading p {
+  margin: 0;
+}
+.panel {
+  border: 1px solid #dce4ee;
+  scroll-margin-top: 24px;
+}
+h3 {
+  font: 700 20px/1.3 var(--font-display);
+  margin: 0 0 5px;
+}
+.reading-note {
+  border-top: 1px solid #e4eaf1;
+  margin: 2px 0 0;
+  padding: 11px 3px 1px;
+  line-height: 1.5;
+}
+.plot-frame {
+  position: relative;
+}
+.point-tooltip {
+  --point-divider: #e0e0e0;
+  position: absolute;
+  z-index: 20;
+  width: max-content;
+  white-space: pre-line;
+  transform: translate(-50%,-100%);
+  pointer-events: none;
+  padding: 6px 9px;
+  border: 1px solid #9eb0c6;
+  border-radius: 7px;
+  font: 12px/16px var(--font-data);
+}
+.point-tip-title {
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+}
+.point-tip-values {
+  margin-top: 5px;
+  white-space: pre-line;
+}
+.point-tip-values::before {
+  content: '';
+  display: block;
+  width: 75%;
+  margin: 0 auto 5px;
+  border-top: 1px solid var(--point-divider);
+}
+.point-tip-metrics {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+}
+.point-tip-metric {
+  min-width: 0;
+  white-space: nowrap;
+}
+.point-tip-metric + .point-tip-metric {
+  border-left: 1px solid var(--point-divider);
+  padding-left: 8px;
+}
+.point-tip-note {
+  margin-top: 4px;
+}
+.point-tooltip[hidden],.bar-tooltip[hidden] {
+  display: none;
+}
+.bar-tooltip {
+  position: fixed;
+  z-index: 100;
+  min-width: 210px;
+  max-width: 270px;
+  pointer-events: none;
+  padding: 10px 12px;
+  border: 1px solid #c8c5bd;
+  border-radius: 8px;
+  font: 12px/1.4 var(--font-body);
+  box-shadow: 0 6px 22px #0007;
+}
+.bar-tip-title {
+  display: block;
+  font-size: 13px;
+  margin-bottom: 3px;
+}
+.harness-name {
+  color: #9a958c;
+  font-weight: 400;
+}
+.bar-tip-meta {
+  border-bottom: 1px solid #cdd0d2;
+  padding-bottom: 5px;
+  margin-bottom: 5px;
+  white-space: pre-line;
+}
+.bar-tip-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0;
+}
+.bar-tip-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex: none;
+}
+.bar-tip-name {
+  flex: 1;
+}
+.bar-tip-value {
+  margin-left: 8px;
+}
+.js-plotly-plot .scatterlayer .trace .js-line {
+  transition: stroke-opacity .28s ease,stroke-width .28s ease;
+}
+.js-plotly-plot .scatterlayer .trace .point {
+  transition: opacity .28s ease,stroke .28s ease,stroke-width .28s ease;
+}
+.js-plotly-plot .modebar {
+  background: transparent!important;
+}
+.js-plotly-plot .modebar-group {
+  background-color: transparent!important;
+}
+.bar-scroll {
+  min-width: max(100%,calc(var(--groups) * 84px));
+}
+.bar-scroll > div {
+  margin-inline: auto;
+}
+#score .bar-scroll {
+  min-width: 0;
+  width: 100%;
+}
+.method-section .panel {
+  border-color: #dfe6ee;
+}
+.method-section p {
+  line-height: 1.7;
+}
+.source-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 12px;
+}
+.reviewer-guide {
+  margin: 0 0 16px;
+}
+.reviewer-grid {
+  display: grid;
+  grid-template-columns: repeat(4,minmax(0,1fr));
+}
+.reviewer-card {
+  min-height: 130px;
+  padding: 14px 15px;
+  border: 1px solid #dce4ee;
+}
+.reviewer-card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.reviewer-swatch {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  flex: none;
+}
+.reviewer-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px 12px;
+  margin-top: 7px;
+  color: #576c84;
+  font-size: 12px;
+  line-height: 1.35;
+}
+.reviewer-card-meta strong {
+  font-weight: 700;
+}
+.reviewer-card p {
+  margin: 8px 0 0;
+  color: #64758b;
+  font-size: 13px;
+  line-height: 1.5;
+}
+@media(max-width:1300px) {
+  .reviewer-grid {
+    grid-template-columns: repeat(2,minmax(0,1fr));
+  }
+}
+@media(max-width:900px) {
+  .app-shell {
+    display: block;
+    width: 100%;
+  }
+  .sidebar {
+    position: sticky;
+    z-index: 30;
+    top: 0;
+    height: auto;
+    display: block;
+    padding: 12px 16px;
+    border-bottom: 1px solid #dce3ec;
+  }
+  .brand {
+    display: none;
+  }
+  .side-label {
+    display: none;
+  }
+  .side-nav {
+    display: flex;
+    flex-direction: row;
+    overflow-x: auto;
+    white-space: nowrap;
+    gap: 4px;
+  }
+  .side-nav a,.side-nav a.sub {
+    padding: 7px 9px;
+    font-size: 12px;
+  }
+  .side-nav a::before {
+    display: none;
+  }
+  .side-nav a.active {
+    border-bottom: 2px solid #243b56;
+  }
+  .content {
+    padding: 0 16px 70px;
+  }
+  .hero {
+    padding-top: 25px;
+    scroll-margin-top: 64px;
+  }
+  .topbar {
+    height: 51px;
+  }
+  .chart-section,.method-section,.panel {
+    scroll-margin-top: 64px;
+  }
+  .summary-item {
+    padding: 11px 13px;
+    gap: 6px;
+  }
+  .summary-item strong {
+    font-size: 19px;
+  }
+  .summary-item span {
+    font-size: 9px;
+  }
+}
+@media(max-width:600px) {
+  .reviewer-grid {
+    grid-template-columns: 1fr;
+  }
+  .reviewer-card {
+    min-height: 0;
+  }
+}
+
+/* Theme: colors, fonts and refinements of the base layout above. */
 :root {
   --page: #f8f6f1;
   --surface: #fffefa;
@@ -236,15 +622,20 @@ h2 {
   margin-bottom: 8px;
 }
 .chart-panel-heading h3 { margin: 0; }
-.cost-scale-control {
+/* Toggle button groups: the cost axis scale and the speed chart's segmented control. */
+.cost-scale-control,
+.segment-control {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   color: #665e52;
   font-size: 12px;
 }
-.cost-scale-control span { margin-right: 5px; }
-.cost-scale-control button {
+.segment-control { flex-wrap: wrap; }
+.cost-scale-control span,
+.segment-control span { margin-right: 5px; }
+.cost-scale-control button,
+.segment-control button {
   border: 1px solid #d6cbbd;
   border-radius: 5px;
   padding: 4px 9px;
@@ -253,12 +644,14 @@ h2 {
   font: 600 12px/1.3 var(--font-body);
   cursor: pointer;
 }
-.cost-scale-control button[aria-pressed='true'] {
-  background: #805e38;
-  border-color: #805e38;
+.cost-scale-control button[aria-pressed='true'],
+.segment-control button[aria-pressed='true'] {
+  background: var(--accent);
+  border-color: var(--accent);
   color: #fff;
 }
-.cost-scale-control button:focus-visible { outline: 2px solid #805e38; outline-offset: 2px; }
+.cost-scale-control button:focus-visible,
+.segment-control button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .metric-missing-note {
   margin: 8px 3px 0;
   color: #666660;
@@ -311,7 +704,7 @@ h2 {
   box-shadow: 0 4px 15px #765b2a08;
 }
 .reviewer-card-title { color: #34332f; font-size: 14px; }
-.icon-reviewer-mark { width: 24px; height: 24px; color: #805e38; }
+.icon-reviewer-mark { width: 24px; height: 24px; color: var(--accent); }
 .reviewer-card-meta,
 .reviewer-card p { color: #60615e; }
 .reviewer-card-meta strong { color: #51422e; }
@@ -402,25 +795,3 @@ h2 {
   .summary-item span { font-size: 9px; }
   .page-footer { width: calc(100% - 32px); }
 }
-
-/* Segmented toggle for the speed chart (v2.0). */
-.segment-control {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px;
-  color: #665e52;
-  font-size: 12px;
-}
-.segment-control span { margin-right: 5px; }
-.segment-control button {
-  border: 1px solid #d6cbbd;
-  border-radius: 5px;
-  padding: 4px 9px;
-  background: #fffefa;
-  color: #62594d;
-  font: 600 12px/1.3 var(--font-body);
-  cursor: pointer;
-}
-.segment-control button[aria-pressed='true'] { background: #805e38; border-color: #805e38; color: #fff; }
-.segment-control button:focus-visible { outline: 2px solid #805e38; outline-offset: 2px; }
