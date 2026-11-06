@@ -4,29 +4,31 @@ English · **[简体中文](README.zh-CN.md)**
 
 [Open the published benchmark page](https://reviewer-model-benchmark.pages.dev/reviewer-model-benchmark/)
 
-This tool reads `benchmark-results.json` (a snapshot of the benchmark's per-run results) and builds `charts.html`, an offline page that compares models, agent harnesses and reasoning efforts on four reviewer tasks by score, work time, token usage, cost and speed. The page shows the weighted score first, then three trade-off scatter plots (with an optional Pareto front), then per-task score, time, token, cost and speed detail.
+When choosing an AI model, agent harness, and reasoning effort for code or specification review, you need to weigh review quality against work time, token usage, cost, and speed across all tasks at once. Because the benchmark's own reports give per-task results only, this tool reads `benchmark-results.json` (a snapshot of the benchmark's per-run results) and builds `charts.html`, an offline interactive page that brings every configuration into one comparison view.
 
-The page is an independent comparison view. It does not change the input data or replace the benchmark's own reports; those give per-task results only, and the weighted score is this page's summary of them.
+To let you move from the big picture to individual tasks, the page shows the overall weighted score first, then maps score against work time, token usage, and cost in three trade-off scatter plots (with an optional Pareto front), and finally breaks down per-task score, work time, token usage, cost, and speed. This page is an independent comparison view: it summarizes the per-task results into a weighted score without modifying the input data or replacing the benchmark's own reports.
 
 ## Version v2.1
 
-v2.1 adds the GPT-6 Luna xhigh and max efforts (Codex) from the benchmark's phase-3 supplement to the v2.0 data. The supplement ran a day later, so the served model or routing may have changed; each cell counts every valid run (5 to 8 per task), and the benchmark itself does not compare them with other configurations. All other instances are as in v2.0.
+Before reading the charts or building the page, it helps to know which dataset version is included and how it evolved.
+
+Version v2.1 takes the v2.0 data and adds the GPT-6 Luna `xhigh` and `max` efforts (run in Codex) from the benchmark's phase-3 supplement, while keeping all other instances unchanged from v2.0. Because the supplement ran a day later, the served model or routing may have changed; as a result, each cell counts every valid run (5 to 8 per task), and the benchmark itself does not compare these two configurations with the others.
 
 ### v2.0
 
-v2.0 is a new measurement, and its results are not comparable with v1:
+Underlying v2.1 is the v2.0 measurement, which was a complete redesign whose results are not comparable with v1:
 
-- A new set of models, run through two agent harnesses: Codex 0.163.0 and Claude Code 2.1.303.
-- Scoring r8.4: scores are not cut at 0 and can be negative; a model failure (no report) scores 0; diagnostic scores count as is, with no 0.9 discount.
-- Each configuration counts 5 runs per task (10 for the local Strata model), and score charts show 95% confidence intervals.
-- New task and engine speeds (tok/s).
+- It evaluates a new set of models run through two agent harnesses: Codex 0.163.0 and Claude Code 2.1.303.
+- It uses scoring r8.4: scores are not cut at 0 and can be negative; a model failure (no report) scores 0; and diagnostic scores count as is, with no 0.9 discount.
+- Each configuration counts 5 runs per task (10 for the local Strata model), and the score charts show 95% confidence intervals.
+- It adds task speeds and engine speeds (tok/s).
 - Cost bases differ by vendor, and the local model uses a local running cost (see below).
 
-`build.py` supports v2.x data only (results file schema 1); the v1 page and script remain in the Git history.
+Because of these changes, `build.py` supports v2.x data only (results file schema 1); the v1 page and script remain in the Git history.
 
 ## Scope
 
-ARW is the software project that provides these development review tasks. A Reviewer is an AI agent that performs one code or document review task in ARW's development process.
+The benchmark tasks come from ARW, the software project that provides these development review tasks. In ARW's development process, a Reviewer is an AI agent that performs one specific code or document review task. The page combines four Reviewers, weighted by their share in the overall score:
 
 | Reviewer | Work | Weight |
 | --- | --- | ---: |
@@ -35,7 +37,7 @@ ARW is the software project that provides these development review tasks. A Revi
 | Commit Audit | Audits a staged commit candidate: the selected files, required checks and coverage of the requirements. | 25% |
 | Spec Readiness | Before implementation, checks whether requirement documents are complete, consistent, feasible and verifiable; each run has two independent review threads. | 35% |
 
-There are 29 configurations (27 main and 2 phase-3 supplement configurations):
+Across those four tasks, the benchmark tests 29 configurations (27 main and 2 phase-3 supplement configurations):
 
 | Harness | Models | Efforts | Cost basis |
 | --- | --- | --- | --- |
@@ -47,21 +49,32 @@ There are 29 configurations (27 main and 2 phase-3 supplement configurations):
 | Claude Code | DeepSeek V4.1 Flash | low, high, max | DeepSeek price per request |
 | Claude Code | Strata IQ3_XXS (local) | low, medium, high | Local running cost |
 
-The runs took place from 2026-10-19 to 2026-10-22 (UTC), and the page counts 717 scored runs. Effort labels are each model's requested setting, not equal compute. The tasks were calibrated on Claude Opus, which also judged the reports, so Opus may be placed too high. The results describe this fixed task set only and are not a general model ranking. The full scenarios, raw reports and hidden cases are not in this repository, so the charts can be recomputed from the snapshot but the measurement cannot be rerun from it.
+In this table, DeepSeek V4.1 Flash is the endpoint's `deepseek-flash` model (version DeepSeek-V4.1-Flash-1017), and Strata IQ3_XXS is a 3-bit quantization of Qwen3.8-Flash-Next run locally on a home PC (RTX 3080 Ti 12 GB, i9-13900, 64 GB RAM). Effort labels are each model's requested setting, not equal compute across models.
 
-DeepSeek V4.1 Flash is the endpoint's `deepseek-flash` model, version DeepSeek-V4.1-Flash-1017.
+All runs took place from 2026-10-19 to 2026-10-22 (UTC), and the page counts 717 scored runs. When interpreting the results, keep three boundaries in mind:
 
-Strata IQ3_XXS is a 3-bit quantization of Qwen3.8-Flash-Next, run locally on a home PC (RTX 3080 Ti 12 GB, i9-13900, 64 GB RAM).
+- The tasks were calibrated on Claude Opus, which also judged the reports, so Opus may be placed too high.
+- The results describe this fixed task set only and are not a general model ranking.
+- The full scenarios, raw reports and hidden cases are not in this repository, so the charts can be recomputed from the snapshot, but the measurement cannot be rerun from it.
 
 ## Statistics
 
+To turn those raw runs into the numbers plotted on the page, the build filters the snapshot and aggregates scores, resource usage, and speeds using the rules below.
+
 ### Counted runs
 
-The page uses only the instances the benchmark counts in its main statistics (`selection.inMain` true and no `supplementaryNote`): 10 per task for Strata and 5 for other configurations. GPT-6 Luna xhigh and max are phase-3 supplement configurations (`kind` `phase3`); following the benchmark, every valid instance of each cell counts, 5 to 8 per task. DeepSeek runs requested as medium that the endpoint ran as high under the same time limit count as high, following the benchmark, so the two DeepSeek high cells in Commit Audit have 8 runs each. Invalid runs and the supplementary "requested as medium" configuration, which ran under a different time limit, are excluded.
+First, the page filters the snapshot so that it uses only the instances the benchmark counts in its main statistics (`selection.inMain` true and no `supplementaryNote`), plus the phase-3 supplement:
+
+- Standard configurations count 5 runs per task, while Strata counts 10 per task.
+- GPT-6 Luna xhigh and max are phase-3 supplement configurations (`kind` `phase3`); following the benchmark, every valid instance of each cell counts, giving 5 to 8 runs per task.
+- DeepSeek runs requested as medium that the endpoint ran as high under the same time limit count as high, following the benchmark, so the two DeepSeek high cells in Commit Audit have 8 runs each.
+- Invalid runs and the supplementary "requested as medium" configuration, which ran under a different time limit, are excluded.
 
 ### Scores
 
-A run's score (r8.4) credits the answer-key problems a report finds and deducts its false findings, without a cut at 0. A task score is the mean of the cell's runs, with a 95% interval from the t distribution (half-width = t₀.₉₇₅,ₙ₋₁ × SD / √n). The weighted score is:
+Next, for all counted runs, scores are calculated at the run level and then rolled up to each task and to the overall weighted score.
+
+A single run's score (r8.4) credits the answer-key problems a report finds and deducts its false findings, without a cut at 0. A task score is the mean of the cell's runs, paired with a 95% confidence interval from the t distribution (half-width = t₀.₉₇₅,ₙ₋₁ × SD / √n). From the four task means, the page computes the overall weighted score:
 
 ```text
 weighted score = 100 × (
@@ -76,23 +89,25 @@ Its 95% half-width is t × √Σ(wᵢ² · SEᵢ²), with Welch–Satterthwaite 
 
 ### Time, tokens and cost
 
-Time, tokens and cost average every counted run, including zero-score and model-failure runs, which still used resources. A task's value is the mean over its runs with data; a configuration's value is the arithmetic mean of its four task values. Time is work seconds, excluding setup and loading: Codex counts the agent's accumulated work time and Claude Code the session's wall time; Spec Readiness adds its two threads.
+While scores measure review quality, time, tokens, and cost measure the resources spent. Because zero-score and model-failure runs still consumed resources, these three measures average every counted run.
+
+For each measure, a task's value is the mean over its runs with data, and a configuration's overall value is the arithmetic mean of its four task values. Time is measured in work seconds, excluding setup and loading: Codex counts the agent's accumulated work time and Claude Code counts the session's wall time. Because Spec Readiness runs two independent review threads, its time adds both threads together.
 
 ### Speed
 
-A speed is always total tokens divided by total seconds, never a mean of per-run speeds:
+Using the token and time totals, the page also computes processing speeds. To reflect true throughput across runs, a speed is always total tokens divided by total seconds, never a mean of per-run speeds:
 
 - A task's speed = the sum of its runs' tokens ÷ the sum of their seconds.
 
-Each run's seconds are the denominator of its own speed, which keeps the benchmark's time basis: task speeds use work seconds (the speed a user perceives) and engine speeds use request or decode seconds (the model alone). Input speeds use non-cached input tokens and output speeds output tokens. API models cannot separate input processing, so their engine input speed is unknown and their engine output speed is a lower bound (≥); only Strata has an engine input speed.
+Each run's seconds are the denominator of its own speed, which preserves the benchmark's two time bases: task speeds use work seconds (the speed a user perceives) and engine speeds use request or decode seconds (the model alone). On the token side, input speeds use non-cached input tokens and output speeds use output tokens. Because API models cannot separate input processing time from output decoding, their engine input speed is unknown and their engine output speed is a lower bound (≥); only the local Strata model has an engine input speed.
 
 ### Missing values
 
-Missing values are not zero: a run missing one measure is skipped for that measure only, and notes under the charts list the affected cells. The speed chart's note leaves out the engine input speed of API models, which is unknown by design. Values marked ≥ are lower bounds, for example DeepSeek costs that miss requests dropped by a time-limit reminder.
+Finally, some runs lack a specific measurement. Missing values are never treated as zero: a run missing one measure is skipped for that measure only, and notes under the charts list the affected cells. The speed chart's note leaves out the engine input speed of API models, since that is unknown by design. Where a value is only partially captured—for example, DeepSeek costs that miss requests dropped by a time-limit reminder—it is marked with ≥ to indicate a lower bound.
 
 ## Cost
 
-No cost is an actual bill. Prices were checked on **2026-10-22**, and the rules live in `pricing.json`.
+Among the metrics above, cost requires special handling because configurations ran under different billing methods—subscription plans, per-request API billing, and local hardware. Consequently, no cost on the page is an actual bill. Instead, prices were checked on **2026-10-22**, and the rules in `pricing.json` put each vendor on a defined cost basis:
 
 | Vendor | Basis |
 | --- | --- |
@@ -101,7 +116,7 @@ No cost is an actual bill. Prices were checked on **2026-10-22**, and the rules 
 | DeepSeek | Instance `cost.usd`: official prices per request, peak or off-peak |
 | Strata (local) | Local running cost: work seconds × hourly cost |
 
-OpenAI rates (USD per million tokens):
+For OpenAI models, token counts are multiplied by these OpenAI Standard API rates (USD per million tokens):
 
 | Model | Non-cached input | Cached input | Output |
 | --- | ---: | ---: | ---: |
@@ -110,7 +125,7 @@ OpenAI rates (USD per million tokens):
 
 Cache-write tokens are not priced: `cacheWriteRate` in `pricing.json` is kept for reference only, and the build stops with an error if an OpenAI instance reports cache-write tokens.
 
-The local running cost covers electricity and upkeep only, excluding hardware purchase, setup and idle time between runs, and is a rough estimate:
+For the local Strata model, the running cost is a rough estimate that covers electricity and upkeep during active work only, excluding hardware purchase, setup, and idle time between runs:
 
 | Item | Value | Note |
 | --- | ---: | --- |
@@ -119,9 +134,11 @@ The local running cost covers electricity and upkeep only, excluding hardware pu
 | Upkeep | $0.02 / hour | Fans, power supply and other wear parts, about $50 a year over about 2,500 loaded hours |
 | Total | about $0.09 / hour | |
 
-The local cost is always above 0, so the log cost axis never meets 0. Because local runs are much slower than API runs, Strata costs about $0.011–0.026 per task run, the same order as GPT-6 Luna low.
+Because this local cost is always above 0, the logarithmic cost axis on the charts never meets 0. And because local runs are much slower than API runs, Strata works out to about $0.011–0.026 per task run, putting it in the same order of magnitude as GPT-6 Luna low.
 
 ## Files
+
+Once you understand what the page shows and how its metrics are defined, you can inspect the repository or build the page yourself. The project contains these files:
 
 ```text
 ./
@@ -140,9 +157,13 @@ The local cost is always above 0, so the log cost axis never meets 0. Because lo
     └── fonts/
 ```
 
-`benchmark-results.json` is an independent snapshot of the input data. To update it, a maintainer copies `.env.example` to the ignored `.env` and sets `BENCHMARK_SOURCE_RESULTS` to the absolute path of the trusted source file. The build reads only the committed snapshot; it does not read `.env` or sync data from other directories. `charts.html` is a generated local file and is not committed; `resources/favicon.svg` is also generated but kept in the repository. `stats.py` holds the statistics and cost rules (pure Python, no Plotly); `build.py` draws the charts and assembles the page. `resources/site.css` is the page's only stylesheet, and `resources/fonts/` holds pre-downloaded fonts; see `resources/fonts/README.md` for font licenses and sources.
+Each file has a distinct role in turning the data snapshot into the finished page:
 
-Copy and check a new snapshot with Bash from the repository root:
+- **Code and rules**: `stats.py` holds the statistics and cost rules (pure Python, no Plotly), `build.py` draws the charts and assembles the page, `test_build.py` tests them, and `pricing.json` stores the pricing parameters.
+- **Styles, fonts, and generated outputs**: `resources/site.css` is the page's only stylesheet, and `resources/fonts/` holds pre-downloaded fonts (see `resources/fonts/README.md` for font licenses and sources). `resources/favicon.svg` is generated by the script and kept in the repository, whereas `charts.html` is a generated local file and is not committed.
+- **Data snapshot**: `benchmark-results.json` is an independent snapshot of the input data. The build reads only this committed snapshot; it does not read `.env` or sync data from other directories.
+
+To update `benchmark-results.json` when new benchmark data is ready, a maintainer copies `.env.example` to the ignored `.env`, sets `BENCHMARK_SOURCE_RESULTS` to the absolute path of the trusted source file, and runs these Bash commands from the repository root to copy and verify the snapshot:
 
 ```bash
 . ./.env
@@ -153,7 +174,7 @@ cmp -- "$BENCHMARK_SOURCE_RESULTS" benchmark-results.json
 
 ## Usage
 
-Building the page needs Python and Plotly; it has been checked with Python 3.14 and Plotly 6.9.0. Run these commands in this directory:
+With the snapshot in place, you can run the tests and generate `charts.html` locally. Building the page requires Python and Plotly (checked with Python 3.14 and Plotly 6.9.0). Run these commands in this directory:
 
 ```bash
 python3 -m venv .venv
@@ -162,27 +183,36 @@ python3 -m venv .venv
 .venv/bin/python build.py
 ```
 
-If the system Python lacks `venv` or `pip`, use [uv](https://docs.astral.sh/uv/) instead: `uv venv .venv`, then `uv pip install --python .venv/bin/python plotly==6.9.0`. On Windows, use `py -m venv .venv` and `.venv\Scripts\python`.
+If the system Python lacks `venv` or `pip`, use [uv](https://docs.astral.sh/uv/) instead: run `uv venv .venv`, then `uv pip install --python .venv/bin/python plotly==6.9.0`. On Windows, use `py -m venv .venv` and `.venv\Scripts\python`.
 
-By default the script reads `benchmark-results.json` next to it and overwrites `charts.html` there; other paths can be given:
+By default, `build.py` reads `benchmark-results.json` next to it and overwrites `charts.html` in the same directory. If you want to use different input or output paths, pass them as arguments:
 
 ```bash
 .venv/bin/python build.py path/to/benchmark-results.json path/to/charts.html
 ```
 
-The page loads `resources/` by relative path, so another output directory needs its own `resources/`; the build does not create it. Open `charts.html` directly in a browser; viewing it needs no Python, network or web server. The footer's "Updated" date is the build date, not the measurement or price-check date.
+Because the page loads `resources/` by relative path, any custom output directory needs its own `resources/`; the build does not create it for you.
+
+Once `charts.html` is built, open it directly in a browser—viewing it needs no Python, network, or web server. Note that the footer's "Updated" date is the build date, not the measurement or price-check date.
 
 ## Implementation and maintenance
 
-`stats.py` reads the JSON and computes the measures in Python, including a pure-Python t-distribution quantile; the prices come from `pricing.json`, passed in by the caller. `test_build.py` checks it without Plotly (the page tests are skipped when Plotly is missing). `build.py` has Plotly draw the charts, which are embedded in the HTML. Page text and chart axes switch between English and Chinese, and chart interaction runs locally in the browser.
+If you are modifying the code or updating prices, keep in mind that this tool only processes the snapshot: it does not run the benchmark or modify the input JSON.
 
-Model order and names, harnesses and the four reviewer weights are defined at the top of `stats.py`; model colors and the scoring version at the top of `build.py`. Prices and local cost settings live in `pricing.json`; the page's method text reads the prices, power, electricity rate and weights from `pricing.json` and `REVIEWERS`, so after a change update `checkedAt`, rebuild the page and update the cost tables in both READMEs. Agree any change to the statistics rules first, as `AGENTS.md` describes, and update both READMEs afterwards.
+Computation and rendering are split between two modules so that the statistical logic can be tested on its own:
 
-This tool does not run the benchmark or modify the input JSON.
+- `stats.py` reads the JSON and computes all measures in Python, including a pure-Python t-distribution quantile, using prices passed in by the caller from `pricing.json`. Because it does not depend on Plotly, `test_build.py` can check `stats.py` even without Plotly installed (the page tests are skipped when Plotly is missing).
+- `build.py` uses Plotly to draw the charts and embeds them in the HTML. Page text and chart axes switch between English and Chinese, and all chart interaction runs locally in the browser.
+
+When maintaining configuration values or rules, update the matching files together:
+
+- **Models, weights, and visual settings**: Model order and names, harnesses, and the four reviewer weights are defined at the top of `stats.py`; model colors and the scoring version are at the top of `build.py`.
+- **Pricing**: Prices and local cost settings live in `pricing.json`. Because the page's method text reads the prices, power, electricity rate, and weights directly from `pricing.json` and `REVIEWERS`, after any pricing change you must update `checkedAt`, rebuild the page, and update the cost tables in both READMEs.
+- **Statistical rules**: Agree on any change to the statistics rules first, as `AGENTS.md` describes, and update both READMEs afterwards.
 
 ## Publishing
 
-Cloudflare Pages is connected to this GitHub repository and builds the page from the `master` branch with Python 3.12 and Plotly 6.9.0, into the `_site` output directory:
+When changes land on the `master` branch, Cloudflare Pages (which is connected to this GitHub repository) automatically builds and deploys the public site using Python 3.12 and Plotly 6.9.0 into the `_site` output directory:
 
 ```bash
 python3 -m venv .venv
@@ -192,4 +222,4 @@ cp -R resources/. _site/reviewer-model-benchmark/resources/
 .venv/bin/python build.py benchmark-results.json _site/reviewer-model-benchmark/index.html
 ```
 
-Page assets use relative paths, so the page works under that subpath. The local `charts.html` and `_site/` are not committed. The custom domain is configured outside the repository.
+Because page assets use relative paths, the published page works under that `/reviewer-model-benchmark/` subpath. Neither the local `charts.html` nor `_site/` is committed to Git, and the custom domain is configured outside the repository.
