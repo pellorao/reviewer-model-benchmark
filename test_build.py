@@ -49,7 +49,7 @@ def instance(score, seconds=100.0, tokens=(1000, 9000, 200), speeds=None, cost=N
 
 
 def results(instances, configs=(CONFIGS["openai"],)):
-    return {"meta": {"schemaVersion": 1}, "scenarios": SCENARIOS, "configs": list(configs),
+    return {"meta": {"schemaVersion": 1, "scoring": {"version": "r8.4"}}, "scenarios": SCENARIOS, "configs": list(configs),
             "instances": instances}
 
 
@@ -188,6 +188,15 @@ class ExtractTests(unittest.TestCase):
         bad[0]["validity"]["valid"] = False
         with self.assertRaises(ValueError):
             extract(results(bad), PRICING)
+
+    def test_scoring_and_pricing_versions_are_checked(self):
+        data = results(full_config(CONFIGS["openai"]["key"]))
+        data["meta"]["scoring"] = {"version": "r9.0"}
+        with self.assertRaisesRegex(ValueError, "scoring version"):
+            extract(data, PRICING)
+        data["meta"]["scoring"] = {"version": "r8.4"}
+        with self.assertRaisesRegex(ValueError, "pricing file"):
+            extract(data, {**PRICING, "schemaVersion": 99})
 
     def test_missing_task_is_rejected(self):
         partial = [item for item in full_config(CONFIGS["openai"]["key"])

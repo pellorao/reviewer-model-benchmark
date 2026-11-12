@@ -1,6 +1,6 @@
-# 原型离线字体
+# 页面离线字体
 
-本目录的 `fonts.css` 包含可直接用于本地页面的完整 `@font-face` 声明. 从 `resources/site.css` 可使用 `@import url('./fonts/fonts.css');`. 字体请求只指向本目录文件, 页面加载不需要连接字体服务.
+本目录的 `fonts.css` 包含可直接用于本地页面的完整 `@font-face` 声明. `build.py` 生成的页面通过 `<link>` 引用它. 字体请求只指向本目录文件, 页面加载不需要连接字体服务.
 
 | CSS 字体名 | 文件与官方来源 | 字重与字形 | 许可证 |
 | --- | --- | --- | --- |
@@ -9,4 +9,4 @@
 | `Source Han Serif` | [简体中文区域可变 WOFF2](https://raw.githubusercontent.com/adobe-fonts/source-han-serif/release/Variable/WOFF2/TTF/Subset/SourceHanSerifCN-VF.ttf.woff2) | `250 900`, 正体 | [SIL OFL 1.1](LICENSE-source-han-serif.txt) |
 | `Source Han Sans` | [简体中文区域可变 WOFF2](https://raw.githubusercontent.com/adobe-fonts/source-han-sans/release/Variable/WOFF2/TTF/Subset/SourceHanSansCN-VF.ttf.woff2) | `250 900`, 正体 | [SIL OFL 1.1](LICENSE-source-han-sans.txt) |
 
-两套 `Source Han` 字体选用 Adobe 发布的 `CN` 区域子集, 适合此原型的简体中文内容; 它们并非完整泛中日韩字符集. 本地字形检查确认两套字体都覆盖 `build.py` 和 `demo-data.json` 中的 254 个不同汉字. 六个 WOFF2 文件合计约 19.8 MB.
+两套 `Source Han` 字体选用 Adobe 发布的 `CN` 区域子集, 适合本页的简体中文内容; 它们并非完整泛中日韩字符集. 六个 WOFF2 文件合计约 19.8 MB.

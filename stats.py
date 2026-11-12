@@ -10,6 +10,8 @@ from pathlib import Path
 
 
 RESULTS_SCHEMA_VERSION = 1
+PRICING_SCHEMA_VERSION = 2
+SCORING_VERSION = "r8.4"
 REVIEWERS = (
     ("code-standards-reviewer", "Code Standards", 0.20),
     ("code-spec-reviewer", "Code Spec", 0.20),
@@ -219,6 +221,10 @@ def extract(results, pricing):
     """Group the benchmark's main-statistic instances into configuration records."""
     if not isinstance(results, dict) or results.get("meta", {}).get("schemaVersion") != RESULTS_SCHEMA_VERSION:
         raise ValueError(f"Expected a schema-version-{RESULTS_SCHEMA_VERSION} benchmark results file.")
+    if results["meta"].get("scoring", {}).get("version") != SCORING_VERSION:
+        raise ValueError(f"Expected scoring version {SCORING_VERSION} in the benchmark results.")
+    if pricing.get("schemaVersion") != PRICING_SCHEMA_VERSION:
+        raise ValueError(f"Expected a schema-version-{PRICING_SCHEMA_VERSION} pricing file.")
     scenario_reviewers = {scenario["id"]: scenario["reviewerId"] for scenario in results["scenarios"]}
     if sorted(scenario_reviewers.values()) != sorted(key for key, _, _ in REVIEWERS):
         raise ValueError("The results must contain exactly the four weighted reviewers.")

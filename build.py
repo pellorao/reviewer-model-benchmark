@@ -11,12 +11,12 @@ from pathlib import Path
 import plotly.graph_objects as go
 import plotly.io as pio
 
-from stats import (EFFORTS, HARNESS_NAMES, MODEL_NAMES, REVIEWERS, SPEED_KEYS, TOKEN_KEYS,
+from stats import (EFFORTS, HARNESS_NAMES, MODEL_NAMES, REVIEWERS, SCORING_VERSION, SPEED_KEYS,
+                   TOKEN_KEYS,
                    extract, load_pricing)
 
 
 PAGE_VERSION = "2.1"
-SCORING_VERSION = "r8.4"
 # Model colors in MODEL_NAMES order (stats.py); series follow harness order, then this model order.
 MODEL_COLORS = {
     "gpt-6.1-sol": "#4c78b8",
@@ -221,16 +221,14 @@ def chart(records, xkey, ykey, chart_id):
                                 visible="legendonly", hoverinfo="skip",
                                 marker={"size": 11, "color": "rgba(0,0,0,0)",
                                         "line": {"color": PARETO_COLOR, "width": 2.5}}))
-    figure.update_layout(template="plotly_white", height=600, autosize=True,
-                         margin={"l": 75, "r": 32, "t": 60, "b": 70},
-                         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor=CHART_PLOT,
-                         font={"color": CHART_TEXT, "family": CHART_FONT},
-                         legend={"orientation": "h", "y": 1.02, "yanchor": "bottom", "x": 0,
-                                 "font": {"size": 11}, "groupclick": "togglegroup",
-                                 # Fixed slots: measured widths overlap for long model · harness names.
-                                 "entrywidth": 200, "entrywidthmode": "pixels"},
-                         xaxis_title=METRICS[xkey][0], yaxis_title=METRICS[ykey][0],
-                         hovermode="closest", dragmode="pan")
+    base_layout(figure, height=600, autosize=True,
+                margin={"l": 75, "r": 32, "t": 60, "b": 70},
+                legend={"orientation": "h", "y": 1.02, "yanchor": "bottom", "x": 0,
+                        "font": {"size": 11}, "groupclick": "togglegroup",
+                        # Fixed slots: measured widths overlap for long model · harness names.
+                        "entrywidth": 200, "entrywidthmode": "pixels"},
+                xaxis_title=METRICS[xkey][0], yaxis_title=METRICS[ykey][0],
+                hovermode="closest")
     for axis in (figure.update_xaxes, figure.update_yaxes):
         axis(gridcolor=CHART_GRID, zerolinecolor="#c7bbaa",
              tickfont={"family": CHART_FONT, "size": 11})
@@ -585,11 +583,15 @@ def score_bars(figure, x, values, halves, colors, track_text, **position):
                             **position))
 
 
-def score_layout(figure, y_range, **layout):
+def base_layout(figure, **layout):
+    """Shared Plotly look: transparent paper, tinted plot area, chart font, panning."""
     figure.update_layout(template="plotly_white", paper_bgcolor="rgba(0,0,0,0)",
                          plot_bgcolor=CHART_PLOT, dragmode="pan",
-                         font={"color": CHART_TEXT, "family": CHART_FONT},
-                         yaxis_title="Score", yaxis_range=y_range, **layout)
+                         font={"color": CHART_TEXT, "family": CHART_FONT}, **layout)
+
+
+def score_layout(figure, y_range, **layout):
+    base_layout(figure, yaxis_title="Score", yaxis_range=y_range, **layout)
     figure.update_yaxes(gridcolor=CHART_GRID, zeroline=True, zerolinecolor="#8f8577",
                         zerolinewidth=1.5, tickfont={"family": CHART_FONT, "size": 11})
 
@@ -762,14 +764,11 @@ def detail_bar_chart(records, metric):
                                         visible=kind_index == 0, hoverinfo="none"))
     title = {"minutes": METRICS["minutes"][0], "tokens": "Tokens per run",
              "cost": METRICS["cost"][0], "speed": SPEED_LABELS[SPEED_KEYS[0]][0]}[metric]
-    figure.update_layout(barmode="stack" if metric == "tokens" else "group", bargap=0.18,
-                         bargroupgap=0.10, template="plotly_white", height=600,
-                         width=max(1200, len(xlabels) * 84),
-                         margin={"l": 75, "r": 25, "t": 95, "b": 110},
-                         paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor=CHART_PLOT,
-                         font={"color": CHART_TEXT, "family": CHART_FONT},
-                         legend={"orientation": "h", "y": 1.02, "yanchor": "bottom"},
-                         yaxis_title=title, dragmode="pan")
+    base_layout(figure, barmode="stack" if metric == "tokens" else "group", bargap=0.18,
+                bargroupgap=0.10, height=600, width=max(1200, len(xlabels) * 84),
+                margin={"l": 75, "r": 25, "t": 95, "b": 110},
+                legend={"orientation": "h", "y": 1.02, "yanchor": "bottom"},
+                yaxis_title=title)
     figure.update_xaxes(categoryorder="array", categoryarray=xlabels,
                         tickmode="array", tickvals=xlabels, ticktext=ticktext,
                         tickangle=0, tickfont={"size": 11})
@@ -1080,9 +1079,8 @@ def page(results, pricing):
         elif metric == "speed":
             control = segment_control(
                 "speed-control",
-                [(index, f"speed_{key.replace('Output', '_output').replace('Input', '_input').lower()}",
-                  en[f"speed_{key.replace('Output', '_output').replace('Input', '_input').lower()}"])
-                 for index, key in enumerate(SPEED_KEYS)],
+                [(index, speed_key, en[speed_key]) for index, key in enumerate(SPEED_KEYS)
+                 for speed_key in [f"speed_{key.replace('Output', '_output').replace('Input', '_input').lower()}"]],
                 "speed", "speed_label", en["speed_label"])
         note = missing(f"missing_{metric}_note")
         detail_panels.append(
