@@ -28,10 +28,11 @@ MODEL_NAMES = {
     "opus": "Claude Opus 5.5",
     "sonnet": "Claude Sonnet 5.5",
     "haiku": "Claude Haiku 5.5",
+    "gemini-4-hydrogen": "Gemini 4 Hydrogen",
     "deepseek-flash": "DeepSeek V4.1 Flash",
     "strata-iq3_xxs": "Strata IQ3_XXS",
 }
-HARNESS_NAMES = {"codex": "Codex", "claude-code": "Claude Code"}
+HARNESS_NAMES = {"codex": "Codex", "claude-code": "Claude Code", "antigravity": "Antigravity"}
 PRICING_PATH = Path(__file__).with_name("pricing.json")
 
 
@@ -98,14 +99,21 @@ def _recorded_cost(instance, config, pricing):
     return (usd, bool(cost.get("lowerBound"))) if finite_number(usd) else (None, False)
 
 
-def _openai_cost(instance, config, pricing):
+def _token_cost(section):
+    """Cost rule for plan-run vendors: token counts at the reference API rates of `section` in pricing.json."""
+    def rule_cost(instance, config, pricing):
+        return _priced_tokens(instance, config, pricing, section)
+    return rule_cost
+
+
+def _priced_tokens(instance, config, pricing, section):
     tokens = instance["tokens"]
     if tokens.get("cacheWriteInput"):
         # pricing.json has no cache-write rule in use; failing beats silently under-pricing.
         raise ValueError(f"OpenAI instance with cache-write tokens is not priced: {instance['id']}")
     if not all(finite_number(tokens.get(key)) for key in TOKEN_KEYS):
         return None, False
-    rule = pricing_rule(pricing, "openai", config)
+    rule = pricing_rule(pricing, section, config)
     return (sum(tokens[key] * rule["rates"][key] for key in TOKEN_KEYS)
             / pricing["tokensPerUnit"], bool(tokens.get("lowerBound")))
 
@@ -121,7 +129,7 @@ def _local_cost(instance, config, pricing):
 
 
 COST_RULES = {"deepseek": _recorded_cost, "anthropic": _recorded_cost,
-              "openai": _openai_cost, "strata": _local_cost}
+              "openai": _token_cost("openai"), "google": _token_cost("google"), "strata": _local_cost}
 
 
 def pricing_rule(pricing, section, config):
@@ -217,8 +225,29 @@ def composite(cells):
     }
 
 
-def extract(results, pricing):
+def merge_supplements(results, supplements):
+    """The main results file plus supplement-only files (benchmark phase 4): same schema, scoring and scenarios;
+    their configurations and instances are added, a configuration or instance in two files is an error."""
+    merged = dict(results, configs=list(results["configs"]), instances=list(results["instances"]))
+    for extra in supplements:
+        if (extra.get("meta", {}).get("schemaVersion") != RESULTS_SCHEMA_VERSION
+                or extra["meta"].get("scoring", {}).get("version") != SCORING_VERSION):
+            raise ValueError("A supplement file must have the same schema and scoring version as the main file.")
+        if [s["id"] for s in extra["scenarios"]] != [s["id"] for s in results["scenarios"]]:
+            raise ValueError("A supplement file must have the same scenarios as the main file.")
+        keys = {config["key"] for config in merged["configs"]}
+        ids = {instance["id"] for instance in merged["instances"]}
+        if keys & {config["key"] for config in extra["configs"]} or ids & {i["id"] for i in extra["instances"]}:
+            raise ValueError("A supplement file repeats a configuration or instance of the main file.")
+        merged["configs"] += extra["configs"]
+        merged["instances"] += extra["instances"]
+    return merged
+
+
+def extract(results, pricing, supplements=()):
     """Group the benchmark's main-statistic instances into configuration records."""
+    if supplements:
+        results = merge_supplements(results, supplements)
     if not isinstance(results, dict) or results.get("meta", {}).get("schemaVersion") != RESULTS_SCHEMA_VERSION:
         raise ValueError(f"Expected a schema-version-{RESULTS_SCHEMA_VERSION} benchmark results file.")
     if results["meta"].get("scoring", {}).get("version") != SCORING_VERSION:
@@ -228,8 +257,8 @@ def extract(results, pricing):
     scenario_reviewers = {scenario["id"]: scenario["reviewerId"] for scenario in results["scenarios"]}
     if sorted(scenario_reviewers.values()) != sorted(key for key, _, _ in REVIEWERS):
         raise ValueError("The results must contain exactly the four weighted reviewers.")
-    # Phase-3 supplement configurations (GPT-6 Luna xhigh / max) are plotted like main ones.
-    configs = {config["key"]: config for config in results["configs"] if config["kind"] in ("main", "phase3")}
+    # Supplement configurations (phase 3: GPT-6 Luna xhigh / max; phase 4: Gemini 4 Hydrogen) are plotted like main ones.
+    configs = {config["key"]: config for config in results["configs"] if config["kind"] in ("main", "phase3", "phase4")}
     for config in configs.values():
         if (config["model"] not in MODEL_NAMES or config["harness"] not in HARNESS_NAMES
                 or config["effort"] not in EFFORTS):

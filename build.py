@@ -16,7 +16,7 @@ from stats import (EFFORTS, HARNESS_NAMES, MODEL_NAMES, REVIEWERS, SCORING_VERSI
                    extract, load_pricing)
 
 
-PAGE_VERSION = "2.1"
+PAGE_VERSION = "2.2"
 # Model colors in MODEL_NAMES order (stats.py); series follow harness order, then this model order.
 MODEL_COLORS = {
     "gpt-6.1-sol": "#4c78b8",
@@ -24,12 +24,13 @@ MODEL_COLORS = {
     "opus": "#8659b9",
     "sonnet": "#bb5272",
     "haiku": "#198f76",
+    "gemini-4-hydrogen": "#6b7fd7",
     "deepseek-flash": "#d07849",
     "strata-iq3_xxs": "#2f8fa9",
 }
 TOKEN_COLORS = {"uncachedInput": "#6388b7", "cachedInput": "#5f9e98", "output": "#b3935e"}
 # Marker symbols per harness (names in stats.py); all effort lines are solid.
-HARNESS_SYMBOLS = {"codex": "circle", "claude-code": "diamond"}
+HARNESS_SYMBOLS = {"codex": "circle", "claude-code": "diamond", "antigravity": "square"}
 HARNESS_COLOR = "#9a958c"
 ROLE_COLORS = ("#6388b7", "#5f9e98", "#b3935e", "#9b7fb5")
 CHART_TEXT = "#5c5e5c"
@@ -121,6 +122,7 @@ SPEED_LABELS = {
 }
 COST_BASIS = {
     "openai": ("Subscription run, reference API price", "套餐运行, 参考 API 价"),
+    "google": ("Plan run, reference API price", "套餐运行, 参考 API 价"),
     "deepseek": ("DeepSeek price per request", "DeepSeek 逐请求价格"),
     "anthropic": ("Subscription run, reference API price", "套餐运行, 参考 API 价"),
     "strata": ("Local running cost", "本地运行成本"),
@@ -801,7 +803,8 @@ def partial_note(records, metric, language):
                 # API models have no engine input speed at all (see README); that is not a gap.
                 counts = [(f" · {SPEED_LABELS[speed][0 if en else 1].split(' (')[0]}",
                            cell["speedCounts"][speed]) for speed in SPEED_KEYS
-                          if speed != "engineInput" or record["vendor"] == "strata"]
+                          if (speed != "engineInput" or record["vendor"] == "strata")
+                          and not (record["harness"] == "antigravity" and speed.startswith("engine"))]
             else:
                 counts = [("", cell[DETAIL_METRICS[metric]["count"]])]
             for speed_name, count in counts:
@@ -857,8 +860,10 @@ def cost_method_values(pricing):
         raise ValueError("The method text says per million tokens; update it for a new unit.")
     rates = [(MODEL_NAMES[model], " / ".join(usd(rule["rates"][key]) for key in TOKEN_KEYS))
              for model, rule in pricing["openai"].items()]
+    google = [(MODEL_NAMES[model], " / ".join(usd(rule["rates"][key]) for key in TOKEN_KEYS))
+              for model, rule in pricing["google"].items()]
     local = pricing["localRunningCost"]["strata-iq3_xxs"]
-    return {"rates": rates, "watts": f"{local['wallPowerWatts']:g}",
+    return {"rates": rates, "google_rates": google, "watts": f"{local['wallPowerWatts']:g}",
             "electricity": usd(local["electricityUsdPerKwh"]),
             "upkeep": usd(local["maintenanceUsdPerHour"]), "checked": pricing["checkedAt"]}
 
@@ -870,6 +875,8 @@ def page_copy(pricing):
     rates_zh = ", ".join(
         f"{name} 每百万未缓存输入、缓存输入、输出 token 为 {rate}" if index == 0 else f"{name} 为 {rate}"
         for index, (name, rate) in enumerate(cost["rates"]))
+    google_en = join_and([f"{name} {rate}" for name, rate in cost["google_rates"]])
+    google_zh = ", ".join(f"{name} 为 {rate}" for name, rate in cost["google_rates"])
     return {
         "en": {
             "brand": "Reviewer Model\nBenchmark",
@@ -886,7 +893,7 @@ def page_copy(pricing):
             "headline": "Comparing AI models for software review",
             "lead": "A Reviewer is an AI agent assigned a software review task. Here, {model_count} models run four such tasks through two agent harnesses, Codex and Claude Code, at different reasoning effort settings; the charts compare their task performance, time and cost.",
             "version_title": f"Benchmark v{PAGE_VERSION}",
-            "version_summary": f"Adds GPT-6 Luna at xhigh and max effort, a supplement run one day later, to the v2.0 run (new models, two harnesses, scoring {SCORING_VERSION} with scores that can be negative, 5 to 10 scored runs per task). Results are not comparable with v1.",
+            "version_summary": f"Adds GPT-6 Luna at xhigh and max effort (a supplement run one day later) and Gemini 4 Hydrogen at medium, high and xhigh effort (a supplement run about three weeks later, in the Antigravity harness) to the v2.0 run (new models, two harnesses, scoring {SCORING_VERSION} with scores that can be negative, 5 to 10 scored runs per task). Results are not comparable with v1.",
             "version_readme": "For the measurement rules, see the project",
             "stat_models": "MODELS", "stat_configurations": "CONFIGURATIONS",
             "stat_benchmarks": "REVIEWER TASKS", "stat_runs": "SCORED RUNS",
@@ -899,7 +906,7 @@ def page_copy(pricing):
             "trade_kicker": "02 / TRADE-OFFS", "trade_title": "Quality, time and cost",
             "trade_intro": "Each point is one configuration. Lines join the effort levels of one model in one harness: circles mark Codex and diamonds Claude Code. A Pareto-front point has no other visible point that is at least as good on both plotted measures and better on one. Click Pareto Front in a legend to show those points and their connecting line. Hold Ctrl while scrolling over a chart to zoom.",
             "cost_score_title": "Cost per run vs. score",
-            "cost_score_desc": "Cost per run averages each task's per-run cost, then the four tasks. The bases differ by vendor and none is an actual bill: DeepSeek per-request prices; for Claude models, the API-equivalent cost Claude Code reports (subscription run, reference API price); for GPT models, token counts at OpenAI API list prices (subscription run, reference API price); and estimated electricity and upkeep for the local Strata model.",
+            "cost_score_desc": "Cost per run averages each task's per-run cost, then the four tasks. The bases differ by vendor and none is an actual bill: DeepSeek per-request prices; for Claude models, the API-equivalent cost Claude Code reports (subscription run, reference API price); for GPT models, token counts at OpenAI API list prices (subscription run, reference API price); for Gemini models, token counts at Google Gemini API list prices (plan run, reference API price); and estimated electricity and upkeep for the local Strata model.",
             "cost_score_read": "Higher score is better; farther left is a lower cost per run. Hover a point for its cost basis. Use Linear / Log above the chart to switch the cost axis: Linear shows absolute differences; Log helps compare costs across a wide range.",
             "time_score_title": "Work time vs. score",
             "time_score_desc": "Compare the weighted score with the average work time of one review run.",
@@ -930,12 +937,12 @@ def page_copy(pricing):
             "reviewer_audit": "Audits a staged commit candidate: the selected files, required checks and coverage of the supplied requirements.",
             "reviewer_readiness": "Before implementation, checks whether requirement documents are complete, consistent, feasible and verifiable. Each run has two independent review threads.",
             "method_kicker": "DATA NOTES", "method_title": "How scores and costs are calculated",
-            "method_selection": "The data are the benchmark's per-run results. The page uses the runs the benchmark counts in its main statistics: 10 per task for Strata and 5 for other configurations. GPT-6 Luna xhigh and max are a supplement run a day later with every valid run counted (5 to 8 per task); the benchmark does not compare them with other configurations. DeepSeek runs requested as medium count as high where the endpoint ran them as high under the same time limit, so DeepSeek high has 8 runs in Commit Audit. Invalid runs and the supplementary DeepSeek configuration requested as medium under a different time limit are excluded.",
+            "method_selection": "The data are the benchmark's per-run results. The page uses the runs the benchmark counts in its main statistics: 10 per task for Strata and 5 for other configurations. GPT-6 Luna xhigh and max are a supplement run a day later with every valid run counted (5 to 8 per task); the benchmark does not compare them with other configurations. Gemini 4 Hydrogen medium, high and xhigh are a supplement run about three weeks later in a different harness (Antigravity; its version was 1.5.8 for some runs and 1.5.9 for others), with every valid run counted (5 per task); the benchmark does not compare them with other configurations either. DeepSeek runs requested as medium count as high where the endpoint ran them as high under the same time limit, so DeepSeek high has 8 runs in Commit Audit. Invalid runs and the supplementary DeepSeek configuration requested as medium under a different time limit are excluded.",
             "method_score": f"A run's score (scoring {SCORING_VERSION}) credits the answer-key problems a report finds and deducts its false findings. It is not cut at 0, so it can be negative, and a run that produced no report scores 0. A task score is the mean of its runs, with a 95% interval from the t distribution. The weighted score is 100 × ({weights}); its interval combines the four standard errors with Welch–Satterthwaite degrees of freedom.",
             "method_runtime": "Time and tokens average every counted run, including zero-score runs, which still used resources. A task's value is the mean over its runs with data; a configuration's value is the arithmetic mean of its four task values. Speeds are total tokens over total seconds, never a mean of speeds: a task's speed pools its runs.",
-            "method_cost": f"Cost per run: DeepSeek uses the benchmark's per-request cost at official prices; Claude models use the API-equivalent cost reported by Claude Code (subscription run, reference API price); GPT models price their tokens at OpenAI Standard API rates (subscription run, reference API price) ({rates_en} per million non-cached input, cached input and output tokens); Strata uses work time × ({cost['watts']} W × {cost['electricity']} per kWh, the world household average, plus {cost['upkeep']} per hour of upkeep), excluding hardware purchase. Prices were checked on {cost['checked']}.",
+            "method_cost": f"Cost per run: DeepSeek uses the benchmark's per-request cost at official prices; Claude models use the API-equivalent cost reported by Claude Code (subscription run, reference API price); GPT models price their tokens at OpenAI Standard API rates (subscription run, reference API price) ({rates_en} per million non-cached input, cached input and output tokens); Gemini models price their tokens at Google Gemini API rates (plan run, reference API price; output includes thinking) ({google_en} per million, same order); Strata uses work time × ({cost['watts']} W × {cost['electricity']} per kWh, the world household average, plus {cost['upkeep']} per hour of upkeep), excluding hardware purchase. Prices were checked on {cost['checked']}.",
             "method_missing": "Missing values are not zero: a task mean uses only the runs with data, and the notes under each chart list where that happens. Values marked ≥ are lower bounds, for example DeepSeek costs that miss requests dropped by a time-limit reminder.",
-            "openai_prices": "OpenAI pricing", "deepseek_prices": "DeepSeek pricing",
+            "google_prices": "Google pricing", "openai_prices": "OpenAI pricing", "deepseek_prices": "DeepSeek pricing",
             "anthropic_prices": "Anthropic pricing", "electricity_prices": "Electricity prices",
             "footer_name": "Reviewer Model Benchmark",
             "footer_copyright": "© 2026 Tranzvision",
@@ -956,7 +963,7 @@ def page_copy(pricing):
             "headline": "AI 软件审查模型对比",
             "lead": "Reviewer 是负责一项软件审查任务的 AI 代理. 这里让 {model_count} 个模型通过 Codex 和 Claude Code 两种代理程序, 以不同推理强度完成四类任务, 比较完成任务的能力、耗时和费用.",
             "version_title": f"基准版本 v{PAGE_VERSION}",
-            "version_summary": f"在 v2.0 测量 (新的模型、两种代理程序、评分 {SCORING_VERSION} 且分数可为负、每项任务计入 5 至 10 次运行) 上, 加入晚一天补测的 GPT-6 Luna xhigh 和 max 推理强度. 结果不能与 v1 直接比较.",
+            "version_summary": f"在 v2.0 测量 (新的模型、两种代理程序、评分 {SCORING_VERSION} 且分数可为负、每项任务计入 5 至 10 次运行) 上, 加入晚一天补测的 GPT-6 Luna xhigh 和 max 推理强度, 以及晚约三周补测的 Gemini 4 Hydrogen medium、high 和 xhigh 推理强度 (在 Antigravity 代理程序中运行). 结果不能与 v1 直接比较.",
             "version_readme": "测量规则请见项目",
             "stat_models": "模型", "stat_configurations": "模型配置",
             "stat_benchmarks": "REVIEWER 任务", "stat_runs": "计分运行",
@@ -969,7 +976,7 @@ def page_copy(pricing):
             "trade_kicker": "02 / 权衡", "trade_title": "质量, 耗时与费用",
             "trade_intro": "每个点代表一个配置. 连线连接同一代理程序上同一模型的不同推理强度: 圆点为 Codex, 菱形为 Claude Code. 对前沿上的点, 其他可见点无法在两项指标上都不差、且至少一项更好. 点击图例中的帕累托前沿, 即可显示这些点及其连线. 按住 Ctrl 并在图表上滚动滚轮可缩放.",
             "cost_score_title": "单次运行费用与分数",
-            "cost_score_desc": "单次运行费用先对每项任务的单次费用求平均, 再对四项任务求平均. 各厂商的计费依据不同, 都不是实际账单: DeepSeek 按逐请求价格; Claude 模型按 Claude Code 报告的 API 等价费用 (套餐运行, 参考 API 价); GPT 模型按 OpenAI API 标价换算 token (套餐运行, 参考 API 价); 本地 Strata 模型按估算的电费和维护费.",
+            "cost_score_desc": "单次运行费用先对每项任务的单次费用求平均, 再对四项任务求平均. 各厂商的计费依据不同, 都不是实际账单: DeepSeek 按逐请求价格; Claude 模型按 Claude Code 报告的 API 等价费用 (套餐运行, 参考 API 价); GPT 模型按 OpenAI API 标价换算 token (套餐运行, 参考 API 价); Gemini 模型按 Google Gemini API 标价换算 token (套餐运行, 参考 API 价); 本地 Strata 模型按估算的电费和维护费.",
             "cost_score_read": "分数越高越好; 越靠左表示单次运行费用越低. 悬停在点上可查看计费依据. 可用图表上方的线性 / 对数切换费用坐标: 线性便于比较绝对费用差异, 对数便于查看跨数量级的费用.",
             "time_score_title": "耗时与分数",
             "time_score_desc": "比较各配置的综合分数与单次审查运行的平均耗时.",
@@ -1000,12 +1007,12 @@ def page_copy(pricing):
             "reviewer_audit": "审计暂存的提交候选: 选中的文件、必要检查和任务要求的覆盖情况.",
             "reviewer_readiness": "在实施前检查需求文档是否完整、一致、可实现且可验证. 每次运行有两个独立审查线程.",
             "method_kicker": "数据说明", "method_title": "分数与费用的计算方法",
-            "method_selection": "数据是基准的逐次运行结果. 本页使用基准主统计计入的运行: Strata 每项任务 10 次, 其他配置 5 次. GPT-6 Luna xhigh 和 max 是晚一天的补测, 计入全部有效运行 (每项任务 5 至 8 次), 基准本身不拿它们与其他配置比较. 在相同时限下由端点按 high 执行的 DeepSeek medium 请求并入 high, 因此 Commit Audit 中的 DeepSeek high 有 8 次. 无效运行, 以及时限不同而单列的 DeepSeek medium 请求补充配置, 都不计入.",
+            "method_selection": "数据是基准的逐次运行结果. 本页使用基准主统计计入的运行: Strata 每项任务 10 次, 其他配置 5 次. GPT-6 Luna xhigh 和 max 是晚一天的补测, 计入全部有效运行 (每项任务 5 至 8 次), 基准本身不拿它们与其他配置比较. Gemini 4 Hydrogen medium、high 和 xhigh 是晚约三周的补测, 使用另一种代理程序 (Antigravity, 部分运行为 1.5.8 版, 部分为 1.5.9 版), 计入全部有效运行 (每项任务 5 次), 基准同样不拿它们与其他配置比较. 在相同时限下由端点按 high 执行的 DeepSeek medium 请求并入 high, 因此 Commit Audit 中的 DeepSeek high 有 8 次. 无效运行, 以及时限不同而单列的 DeepSeek medium 请求补充配置, 都不计入.",
             "method_score": f"单次运行的分数 (评分 {SCORING_VERSION}) 按报告找到的答案键问题加分, 按错误发现扣分. 分数不在 0 处截断, 所以可以为负; 没有产出报告的运行记 0 分. 任务分数是各次运行的平均值, 95% 区间按 t 分布计算. 综合分数 = 100 × ({weights}); 其区间合并四项的标准误, 自由度按 Welch–Satterthwaite 计算.",
             "method_runtime": "耗时和 token 对全部计入的运行求平均, 包括 0 分运行, 因为它们同样消耗了资源. 任务的值是有数据的运行的平均值; 配置的值是四项任务的值的算术平均. 速度是总 token 除以总耗时, 不对速度求平均: 任务速度合并该任务的各次运行.",
-            "method_cost": f"单次运行费用: DeepSeek 采用基准按官方价逐请求计算的费用; Claude 模型采用 Claude Code 报告的 API 等价费用 (套餐运行, 参考 API 价); GPT 模型按 OpenAI Standard API 单价换算 token (套餐运行, 参考 API 价) ({rates_zh}); Strata 按耗时 × ({cost['watts']} W × 全球家庭平均电价 {cost['electricity']}/kWh + 每小时维护费 {cost['upkeep']}) 计算, 不含硬件购置. 价格已于 {cost['checked']} 核对.",
+            "method_cost": f"单次运行费用: DeepSeek 采用基准按官方价逐请求计算的费用; Claude 模型采用 Claude Code 报告的 API 等价费用 (套餐运行, 参考 API 价); GPT 模型按 OpenAI Standard API 单价换算 token (套餐运行, 参考 API 价) ({rates_zh}); Gemini 模型按 Google Gemini API 单价换算 token (套餐运行, 参考 API 价, 输出含思考) ({google_zh}, 顺序同上); Strata 按耗时 × ({cost['watts']} W × 全球家庭平均电价 {cost['electricity']}/kWh + 每小时维护费 {cost['upkeep']}) 计算, 不含硬件购置. 价格已于 {cost['checked']} 核对.",
             "method_missing": "缺失值不是 0: 任务均值只用有数据的运行, 各图下方的说明会列出这些情况. 标 ≥ 的值是下限, 例如 DeepSeek 有请求因时限提醒被丢弃而未计入的费用.",
-            "openai_prices": "OpenAI 价格", "deepseek_prices": "DeepSeek 价格",
+            "google_prices": "Google 价格", "openai_prices": "OpenAI 价格", "deepseek_prices": "DeepSeek 价格",
             "anthropic_prices": "Anthropic 价格", "electricity_prices": "电价",
             "footer_name": "Reviewer 模型基准",
             "footer_copyright": "© 2026 Tranzvision",
@@ -1015,6 +1022,7 @@ def page_copy(pricing):
 
 
 SOURCE_LINKS = (
+    ("google_prices", "https://ai.google.dev/gemini-api/docs/pricing"),
     ("openai_prices", "https://developers.openai.com/api/docs/pricing"),
     ("deepseek_prices", "https://api-docs.deepseek.com/quick_start/pricing/"),
     ("anthropic_prices", "https://www.anthropic.com/pricing"),
@@ -1022,8 +1030,8 @@ SOURCE_LINKS = (
 )
 
 
-def page(results, pricing):
-    records = extract(results, pricing)
+def page(results, pricing, supplements=()):
+    records = extract(results, pricing, supplements)
     copy = page_copy(pricing)
     model_count = len({record["model"] for record in records})
     run_count = sum(cell["n"] for record in records for cell in record["cells"].values())
@@ -1299,9 +1307,14 @@ if __name__ == "__main__":
                         default=Path(__file__).with_name("benchmark-results.json"))
     parser.add_argument("output", nargs="?", type=Path,
                         default=Path(__file__).with_name("charts.html"))
+    parser.add_argument("--supplement", type=Path, action="append", default=None,
+                        help="supplement-only results file (default: benchmark-results-phase4.json next to build.py)")
     args = parser.parse_args()
-    args.output.write_text(page(json.loads(args.results_json.read_text(encoding="utf-8")),
-                                load_pricing()), encoding="utf-8")
+    supplements = args.supplement if args.supplement is not None else [
+        path for path in [Path(__file__).with_name("benchmark-results-phase4.json")] if path.is_file()]
+    args.output.write_text(page(json.loads(args.results_json.read_text(encoding="utf-8")), load_pricing(),
+                                [json.loads(path.read_text(encoding="utf-8")) for path in supplements]),
+                           encoding="utf-8")
     favicon_path = args.output.parent / "resources" / "favicon.svg"
     if favicon_path.parent.is_dir():  # the default output has resources/; elsewhere it is not created
         favicon_path.write_text(favicon_svg(), encoding="utf-8")

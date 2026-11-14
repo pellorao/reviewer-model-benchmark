@@ -8,9 +8,13 @@ When choosing an AI model, agent harness, and reasoning effort for code or speci
 
 To let you move from the big picture to individual tasks, the page shows the overall weighted score first, then maps score against work time, token usage, and cost in three trade-off scatter plots (with an optional Pareto front), and finally breaks down per-task score, work time, token usage, cost, and speed. This page is an independent comparison view: it summarizes the per-task results into a weighted score without modifying the input data or replacing the benchmark's own reports.
 
-## Version v2.1
+## Version v2.2
 
 Before reading the charts or building the page, it helps to know which dataset version is included and how it evolved.
+
+Version v2.2 adds Gemini 4 Hydrogen at `medium`, `high` and `xhigh` effort, from the benchmark's phase-4 supplement, and leaves every other instance unchanged from v2.1. As data-source facts: the supplement ran about three weeks after the v2.0 runs, so the served model or routing may have changed; it ran in a different harness, Antigravity (`agy`), which brings its own system prompt, tools and context management, and its version was 1.5.8 for some runs and 1.5.9 for others (each instance records its version); the Antigravity work time is the `agy` process wall time summed over a run's sessions, which includes about 7 seconds of start-up per session, and the benchmark gives no engine speeds for it (only task speeds). As for the earlier supplement, each cell counts every valid run (5 per task here), and the benchmark itself does not compare these three configurations with the others. The page draws and compares them like every other configuration.
+
+### v2.1
 
 Version v2.1 takes the v2.0 data and adds the GPT-6 Luna `xhigh` and `max` efforts (run in Codex) from the benchmark's phase-3 supplement, while keeping all other instances unchanged from v2.0. Because the supplement ran a day later, the served model or routing may have changed; as a result, each cell counts every valid run (5 to 8 per task), and the benchmark itself does not compare these two configurations with the others.
 
@@ -37,7 +41,7 @@ The benchmark tasks come from ARW, the software project that provides these deve
 | Commit Audit | Audits a staged commit candidate: the selected files, required checks and coverage of the requirements. | 25% |
 | Spec Readiness | Before implementation, checks whether requirement documents are complete, consistent, feasible and verifiable; each run has two independent review threads. | 35% |
 
-Across those four tasks, the benchmark tests 29 configurations (27 main and 2 phase-3 supplement configurations):
+Across those four tasks, the benchmark tests 32 configurations (27 main, 2 phase-3 and 3 phase-4 supplement configurations):
 
 | Harness | Models | Efforts | Cost basis |
 | --- | --- | --- | --- |
@@ -48,6 +52,7 @@ Across those four tasks, the benchmark tests 29 configurations (27 main and 2 ph
 | Claude Code | Claude Opus 5.5, Sonnet 5.5, Haiku 5.5 | low, medium, high | Subscription run, reference API price |
 | Claude Code | DeepSeek V4.1 Flash | low, high, max | DeepSeek price per request |
 | Claude Code | Strata IQ3_XXS (local) | low, medium, high | Local running cost |
+| Antigravity | Gemini 4 Hydrogen | medium, high, xhigh (all in the phase-4 supplement) | Plan run, reference API price |
 
 In this table, DeepSeek V4.1 Flash is the endpoint's `deepseek-flash` model (version DeepSeek-V4.1-Flash-1017), and Strata IQ3_XXS is a 3-bit quantization of Qwen3.8-Flash-Next run locally on a home PC (RTX 3080 Ti 12 GB, i9-13900, 64 GB RAM). Effort labels are each model's requested setting, not equal compute across models.
 
@@ -63,10 +68,11 @@ To turn those raw runs into the numbers plotted on the page, the build filters t
 
 ### Counted runs
 
-First, the page filters the snapshot so that it uses only the instances the benchmark counts in its main statistics (`selection.inMain` true and no `supplementaryNote`), plus the phase-3 supplement:
+First, the page filters the snapshot so that it uses only the instances the benchmark counts in its main statistics (`selection.inMain` true and no `supplementaryNote`), plus the phase-3 and phase-4 supplements (the latter comes from a second snapshot file, `benchmark-results-phase4.json`, merged by the build):
 
 - Standard configurations count 5 runs per task, while Strata counts 10 per task.
 - GPT-6 Luna xhigh and max are phase-3 supplement configurations (`kind` `phase3`); following the benchmark, every valid instance of each cell counts, giving 5 to 8 runs per task.
+- Gemini 4 Hydrogen medium, high and xhigh are phase-4 supplement configurations (`kind` `phase4`); every valid instance of each cell counts, giving 5 runs per task.
 - DeepSeek runs requested as medium that the endpoint ran as high under the same time limit count as high, following the benchmark, so the two DeepSeek high cells in Commit Audit have 8 runs each.
 - Invalid runs and the supplementary "requested as medium" configuration, which ran under a different time limit, are excluded.
 
@@ -99,11 +105,11 @@ Using the token and time totals, the page also computes processing speeds. To re
 
 - A task's speed = the sum of its runs' tokens ÷ the sum of their seconds.
 
-Each run's seconds are the denominator of its own speed, which preserves the benchmark's two time bases: task speeds use work seconds (the speed a user perceives) and engine speeds use request or decode seconds (the model alone). On the token side, input speeds use non-cached input tokens and output speeds use output tokens. Because API models cannot separate input processing time from output decoding, their engine input speed is unknown and their engine output speed is a lower bound (≥); only the local Strata model has an engine input speed.
+Each run's seconds are the denominator of its own speed, which preserves the benchmark's two time bases: task speeds use work seconds (the speed a user perceives) and engine speeds use request or decode seconds (the model alone). On the token side, input speeds use non-cached input tokens and output speeds use output tokens. Because API models cannot separate input processing time from output decoding, their engine input speed is unknown and their engine output speed is a lower bound (≥); only the local Strata model has an engine input speed. Antigravity runs have no engine speeds at all (the benchmark gives none, since its stream has no rule for turning per-response seconds into one), only task speeds; their work seconds are the `agy` process wall time, including about 7 seconds of start-up per session.
 
 ### Missing values
 
-Finally, some runs lack a specific measurement. Missing values are never treated as zero: a run missing one measure is skipped for that measure only, and notes under the charts list the affected cells. The speed chart's note leaves out the engine input speed of API models, since that is unknown by design. Where a value is only partially captured—for example, DeepSeek costs that miss requests dropped by a time-limit reminder—it is marked with ≥ to indicate a lower bound.
+Finally, some runs lack a specific measurement. Missing values are never treated as zero: a run missing one measure is skipped for that measure only, and notes under the charts list the affected cells. The speed chart's note leaves out the engine input speed of API models and both engine speeds of Antigravity, since those are unknown by design. Where a value is only partially captured—for example, DeepSeek costs that miss requests dropped by a time-limit reminder—it is marked with ≥ to indicate a lower bound.
 
 ## Cost
 
@@ -112,6 +118,7 @@ Among the metrics above, cost requires special handling because configurations r
 | Vendor | Basis |
 | --- | --- |
 | OpenAI | Subscription run, reference API price: tokens × OpenAI Standard API rates |
+| Google | Plan run, reference API price: tokens × Google Gemini API rates (output includes thinking) |
 | Anthropic | Subscription run, reference API price: the API-equivalent cost Claude Code reports (instance `cost.usd`) |
 | DeepSeek | Instance `cost.usd`: official prices per request, peak or off-peak |
 | Strata (local) | Local running cost: work seconds × hourly cost |
@@ -122,6 +129,12 @@ For OpenAI models, token counts are multiplied by these OpenAI Standard API rate
 | --- | ---: | ---: | ---: |
 | [GPT-6.1 Sol](https://developers.openai.com/api/docs/models/gpt-6.1-sol) | $2 | $0.10 | $10 |
 | [GPT-6 Luna](https://developers.openai.com/api/docs/models/gpt-6-luna) | $0.10 | $0.01 | $0.50 |
+
+For Gemini models, token counts are multiplied by these Google Gemini API rates (USD per million tokens; source [Google AI pricing](https://ai.google.dev/gemini-api/docs/pricing), as given for this update and not re-fetched when it was added); the output count already includes thinking tokens:
+
+| Model | Non-cached input | Cached input | Output |
+| --- | ---: | ---: | ---: |
+| Gemini 4 Hydrogen | $1.50 | $0.075 | $7.50 |
 
 Cache-write tokens are not priced: `cacheWriteRate` in `pricing.json` is kept for reference only, and the build stops with an error if an OpenAI instance reports cache-write tokens.
 
@@ -146,6 +159,7 @@ Once you understand what the page shows and how its metrics are defined, you can
 ├── stats.py
 ├── test_build.py
 ├── benchmark-results.json
+├── benchmark-results-phase4.json
 ├── pricing.json
 ├── README.md
 ├── README.zh-CN.md
@@ -161,7 +175,7 @@ Each file has a distinct role in turning the data snapshot into the finished pag
 
 - **Code and rules**: `stats.py` holds the statistics and cost rules (pure Python, no Plotly), `build.py` draws the charts and assembles the page, `test_build.py` tests them, and `pricing.json` stores the pricing parameters.
 - **Styles, fonts, and generated outputs**: `resources/site.css` is the page's only stylesheet, and `resources/fonts/` holds pre-downloaded fonts (see `resources/fonts/README.md` for font licenses and sources). `resources/favicon.svg` is generated by the script and kept in the repository, whereas `charts.html` is a generated local file and is not committed.
-- **Data snapshot**: `benchmark-results.json` is an independent snapshot of the input data. The build reads only this committed snapshot; it does not read `.env` or sync data from other directories.
+- **Data snapshot**: `benchmark-results.json` is an independent snapshot of the input data, and `benchmark-results-phase4.json` is the supplement-only snapshot of the phase-4 Gemini 4 Hydrogen runs (same schema, merged by the build). The build reads only these committed snapshots; it does not read `.env` or sync data from other directories.
 
 To update `benchmark-results.json` when new benchmark data is ready, a maintainer copies `.env.example` to the ignored `.env`, sets `BENCHMARK_SOURCE_RESULTS` to the absolute path of the trusted source file, and runs these Bash commands from the repository root to copy and verify the snapshot:
 
@@ -171,6 +185,8 @@ To update `benchmark-results.json` when new benchmark data is ready, a maintaine
 cp -- "$BENCHMARK_SOURCE_RESULTS" benchmark-results.json
 cmp -- "$BENCHMARK_SOURCE_RESULTS" benchmark-results.json
 ```
+
+The phase-4 snapshot is updated the same way from `BENCHMARK_SOURCE_SUPPLEMENT_PHASE4` into `benchmark-results-phase4.json`.
 
 ## Usage
 

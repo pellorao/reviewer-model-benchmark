@@ -183,6 +183,20 @@ class ExtractTests(unittest.TestCase):
                                   configs=(CONFIGS["openai"], config)), PRICING)
         self.assertEqual(sorted(record["effort"] for record in records), ["low", "xhigh"])
 
+    def test_phase4_supplement_file_is_merged_and_priced_at_google_rates(self):
+        google = {"key": "antigravity/gemini-4-hydrogen/high", "harness": "antigravity",
+                  "model": "gemini-4-hydrogen", "effort": "high", "vendor": "google", "kind": "phase4"}
+        extra = results(full_config(google["key"], tokens=(1_000_000, 2_000_000, 100_000)), configs=(google,))
+        main = results(full_config(CONFIGS["openai"]["key"]))
+        records = extract(main, PRICING, [extra])
+        hydrogen = next(record for record in records if record["vendor"] == "google")
+        self.assertEqual((hydrogen["label"], hydrogen["harness"]), ("Gemini 4 Hydrogen · high · Antigravity", "antigravity"))
+        self.assertAlmostEqual(hydrogen["cost"], 1.5 + 2 * 0.075 + 0.1 * 7.5)
+        with self.assertRaisesRegex(ValueError, "repeats"):
+            extract(main, PRICING, [extra, extra])
+        with self.assertRaisesRegex(ValueError, "same scenarios"):
+            extract(main, PRICING, [{**extra, "scenarios": extra["scenarios"][:2]}])
+
     def test_main_instance_without_valid_score_is_rejected(self):
         bad = full_config(CONFIGS["openai"]["key"])
         bad[0]["validity"]["valid"] = False

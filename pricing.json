@@ -8,18 +8,27 @@
     "deepseek": "Benchmark instance cost.usd: per-request official price list, peak / off-peak by request time",
     "anthropic": "Benchmark instance cost.usd: Claude Code total_cost_usd, API-equivalent USD on a subscription run",
     "openai": "Token counts priced at the rates below; the benchmark ran on a ChatGPT plan, so this is a reference API price",
-    "strata": "Local running cost from the instance work seconds and the localRunningCost settings below"
+    "strata": "Local running cost from the instance work seconds and the localRunningCost settings below",
+    "google": "Token counts priced at the rates below (output includes thinking); the benchmark ran on a Google plan login, so this is a reference API price"
   },
   "openai": {
     "gpt-6.1-sol": {
       "referenceProfile": "standard-short-context",
-      "rates": {"uncachedInput": 2.0, "cachedInput": 0.1, "output": 10.0},
+      "rates": {
+        "uncachedInput": 2.0,
+        "cachedInput": 0.1,
+        "output": 10.0
+      },
       "cacheWriteRate": 2.5,
       "source": "https://developers.openai.com/api/docs/models/gpt-6.1-sol"
     },
     "gpt-6-luna": {
       "referenceProfile": "standard-short-context",
-      "rates": {"uncachedInput": 0.1, "cachedInput": 0.01, "output": 0.5},
+      "rates": {
+        "uncachedInput": 0.1,
+        "cachedInput": 0.01,
+        "output": 0.5
+      },
       "cacheWriteRate": 0.125,
       "source": "https://developers.openai.com/api/docs/models/gpt-6-luna"
     }
@@ -29,12 +38,29 @@
       "wallPowerWatts": 400,
       "electricityUsdPerKwh": 0.174,
       "maintenanceUsdPerHour": 0.02,
-      "excluded": ["hardware purchase", "setup", "idle time between instances"],
+      "excluded": [
+        "hardware purchase",
+        "setup",
+        "idle time between instances"
+      ],
       "notes": "Home PC with an RTX 3080 Ti 12 GB, i9-13900 and 64 GB RAM. 400 W is a rough whole-system load estimate (350 W GPU board limit; memory-bound decoding usually draws less). Electricity is the Q1 2026 world household average (country-weighted). Maintenance covers wear parts at about USD 50 a year over about 2,500 loaded hours.",
       "sources": [
         "https://www.globalpetrolprices.com/electricity_prices/",
         "https://inventivehq.com/blog/gpu-power-limit-tokens-per-watt"
       ]
+    }
+  },
+  "google": {
+    "gemini-4-hydrogen": {
+      "referenceProfile": "standard",
+      "rates": {
+        "uncachedInput": 1.5,
+        "cachedInput": 0.075,
+        "output": 7.5
+      },
+      "outputIncludesThinking": true,
+      "source": "https://ai.google.dev/gemini-api/docs/pricing",
+      "checkedAt": "2026-11-14"
     }
   }
 }

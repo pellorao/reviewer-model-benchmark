@@ -8,9 +8,13 @@
 
 为了让读者从整体结论逐步深入到具体任务，页面先展示汇总四项任务的综合分数，再用三张权衡散点图（可显示帕累托前沿）对比分数与耗时、token 用量及费用的关系，最后列出分任务的分数、耗时、token、费用和速度明细。这个页面是独立的比较视图：它把分任务结果汇总为综合分数，不修改输入数据，也不替代 benchmark 自身的正式报告。
 
-## 版本 v2.1
+## 版本 v2.2
 
 在查看图表或构建页面前，需要先了解当前数据集的版本背景及其与早期版本的区别。
+
+v2.2 在 v2.1 的基础上，加入 benchmark 第四阶段补测的 Gemini 4 Hydrogen `medium`、`high` 和 `xhigh` 推理强度，其余实例与 v2.1 完全相同。以下是数据源的事实：补测比 v2.0 的运行晚约三周，服务端模型或路由可能已有变化；它使用另一种代理程序 Antigravity（`agy`），该程序自带系统提示、工具集和上下文管理，其版本在部分运行中为 1.5.8、部分为 1.5.9（每个实例都记录了版本）；Antigravity 的工作时间是 `agy` 进程墙钟时间按一次运行的各会话相加，每个会话含约 7 秒启动，benchmark 也不给它引擎速度（只有任务速度）。与上一次补测相同，每格计入全部有效运行（这里每项任务 5 次），benchmark 本身也不将这三个配置与其他配置直接比较。本页则与其他配置一样绘制并比较它们。
+
+### v2.1
 
 v2.1 在 v2.0 数据的基础上，加入了 benchmark 第三阶段补测的 GPT-6 Luna `xhigh` 和 `max` 推理强度（通过 Codex 运行），其余实例与 v2.0 完全相同。由于补测晚一天进行，服务端模型或路由可能已有变化；因此每格计入全部有效运行（每项任务 5 至 8 次），benchmark 本身也不将这两个配置与其他配置直接比较。
 
@@ -37,7 +41,7 @@ v2.1 在 v2.0 数据的基础上，加入了 benchmark 第三阶段补测的 GPT
 | Commit Audit | 审计暂存的提交候选：选中的文件、必要检查和要求的覆盖情况。 | 25% |
 | Spec Readiness | 实施前检查需求文档是否完整、一致、可实现且可验证；每次运行有两个独立审查线程。 | 35% |
 
-围绕这 4 项任务，benchmark 共测试了 29 个配置（27 个主配置和 2 个第三阶段补充配置）：
+围绕这 4 项任务，benchmark 共测试了 32 个配置（27 个主配置、2 个第三阶段和 3 个第四阶段补充配置）：
 
 | 代理程序 | 模型 | 推理强度 | 费用依据 |
 | --- | --- | --- | --- |
@@ -48,6 +52,7 @@ v2.1 在 v2.0 数据的基础上，加入了 benchmark 第三阶段补测的 GPT
 | Claude Code | Claude Opus 5.5、Sonnet 5.5、Haiku 5.5 | low、medium、high | 套餐运行，参考 API 价 |
 | Claude Code | DeepSeek V4.1 Flash | low、high、max | DeepSeek 逐请求价格 |
 | Claude Code | Strata IQ3_XXS（本地） | low、medium、high | 本地运行成本 |
+| Antigravity | Gemini 4 Hydrogen | medium、high、xhigh（均为第四阶段补测） | 套餐运行，参考 API 价 |
 
 表中 DeepSeek V4.1 Flash 是 DeepSeek 端点的 `deepseek-flash` 模型（版本 DeepSeek-V4.1-Flash-1017）；Strata IQ3_XXS 是 Qwen3.8-Flash-Next 的 3 比特量化版本，在一台家用电脑（RTX 3080 Ti 12 GB、i9-13900、64 GB 内存）上本地运行。各配置的推理强度标签仅代表向模型请求的参数设置，不同模型间的同一标签并不代表相同的计算量。
 
@@ -63,10 +68,11 @@ v2.1 在 v2.0 数据的基础上，加入了 benchmark 第三阶段补测的 GPT
 
 ### 计入哪些运行
 
-首先，页面筛选快照中的运行记录，只采用 benchmark 主统计计入的实例（`selection.inMain` 为真且没有 `supplementaryNote`）以及第三阶段补测实例：
+首先，页面筛选快照中的运行记录，只采用 benchmark 主统计计入的实例（`selection.inMain` 为真且没有 `supplementaryNote`）以及第三、第四阶段补测实例（后者来自第二份快照文件 `benchmark-results-phase4.json`，由构建脚本合并）：
 
 - 常规配置每项任务计入 5 次运行，本地模型 Strata 每项任务计入 10 次。
 - GPT-6 Luna xhigh 和 max 属于第三阶段补充配置（`kind` 为 `phase3`），按 benchmark 的口径计入每格的全部有效实例，每项任务 5 至 8 次。
+- Gemini 4 Hydrogen medium、high 和 xhigh 属于第四阶段补充配置（`kind` 为 `phase4`），计入每格的全部有效实例，每项任务 5 次。
 - DeepSeek 请求设为 medium、但端点在相同时限下实际按 high 执行的运行，按 benchmark 口径并入 high 格；因此 Commit Audit 中的两个 DeepSeek high 格各有 8 次运行。
 - 无效运行，以及因时限不同而单列的“请求 medium”补充配置，均不进入页面。
 
@@ -99,11 +105,11 @@ v2.1 在 v2.0 数据的基础上，加入了 benchmark 第三阶段补测的 GPT
 
 - 任务的速度 = 该格各次运行的 token 之和 ÷ 秒数之和。
 
-每次运行计入分母的秒数取其自身速度对应的时间口径，从而保留 benchmark 的两套时间基准：任务速度用工作秒数（代表用户实际感受到的速度），引擎速度用请求或解码秒数（代表模型本身的速度）。在 token 口径上，输入速度用未缓存输入 token，输出速度用输出 token。由于远程 API 模型无法把输入处理时间从解码时间中拆出来，其引擎输入速度未知，引擎输出速度也只是下限（≥）；只有本地运行的 Strata 具有引擎输入速度。
+每次运行计入分母的秒数取其自身速度对应的时间口径，从而保留 benchmark 的两套时间基准：任务速度用工作秒数（代表用户实际感受到的速度），引擎速度用请求或解码秒数（代表模型本身的速度）。在 token 口径上，输入速度用未缓存输入 token，输出速度用输出 token。由于远程 API 模型无法把输入处理时间从解码时间中拆出来，其引擎输入速度未知，引擎输出速度也只是下限（≥）；只有本地运行的 Strata 具有引擎输入速度。Antigravity 的运行没有任何引擎速度（benchmark 不给，因为其数据流没有把每次响应秒数换算成引擎速度的规则），只有任务速度；其工作秒数是 `agy` 进程墙钟时间，每个会话含约 7 秒启动。
 
 ### 缺值
 
-最后，部分运行缺少某项具体指标的数据。缺失值一律不当作 0 处理：某次运行缺少某项数据时，只在该项指标中跳过，其余指标照常计入，并在图下方的说明中列出受影响的格。由于 API 模型的引擎输入速度按设计就是未知的，速度图下方的说明不再单独列出。标有 ≥ 的数值表示下限，例如 DeepSeek 因时限提醒丢弃了部分请求而未能完整计入的费用。
+最后，部分运行缺少某项具体指标的数据。缺失值一律不当作 0 处理：某次运行缺少某项数据时，只在该项指标中跳过，其余指标照常计入，并在图下方的说明中列出受影响的格。由于 API 模型的引擎输入速度和 Antigravity 的两项引擎速度按设计就是未知的，速度图下方的说明不再单独列出。标有 ≥ 的数值表示下限，例如 DeepSeek 因时限提醒丢弃了部分请求而未能完整计入的费用。
 
 ## 费用
 
@@ -112,6 +118,7 @@ v2.1 在 v2.0 数据的基础上，加入了 benchmark 第三阶段补测的 GPT
 | 厂商 | 依据 |
 | --- | --- |
 | OpenAI | 套餐运行，参考 API 价：token × OpenAI Standard API 单价 |
+| Google | 套餐运行，参考 API 价：token × Google Gemini API 单价（输出含思考） |
 | Anthropic | 套餐运行，参考 API 价：Claude Code 报告的 API 等价费用（实例 `cost.usd`） |
 | DeepSeek | 实例 `cost.usd`：按官方价逐请求计算，区分高峰 / 低谷 |
 | Strata（本地） | 本地运行成本：工作秒数 × 每小时成本 |
@@ -122,6 +129,12 @@ v2.1 在 v2.0 数据的基础上，加入了 benchmark 第三阶段补测的 GPT
 | --- | ---: | ---: | ---: |
 | [GPT-6.1 Sol](https://developers.openai.com/api/docs/models/gpt-6.1-sol) | $2 | $0.10 | $10 |
 | [GPT-6 Luna](https://developers.openai.com/api/docs/models/gpt-6-luna) | $0.10 | $0.01 | $0.50 |
+
+对 Gemini 模型，token 数乘以下列 Google Gemini API 单价（美元每百万 token；来源 [Google AI 价格页](https://ai.google.dev/gemini-api/docs/pricing)，数值由本次更新的任务给定，加入时未重新抓取核对）；输出数已含思考 token：
+
+| 模型 | 未缓存输入 | 缓存输入 | 输出 |
+| --- | ---: | ---: | ---: |
+| Gemini 4 Hydrogen | $1.50 | $0.075 | $7.50 |
 
 缓存写入 token 不计价：`pricing.json` 中的 `cacheWriteRate` 仅作参考，若 OpenAI 实例带有缓存写入 token，构建会直接报错停止。
 
@@ -146,6 +159,7 @@ v2.1 在 v2.0 数据的基础上，加入了 benchmark 第三阶段补测的 GPT
 ├── stats.py
 ├── test_build.py
 ├── benchmark-results.json
+├── benchmark-results-phase4.json
 ├── pricing.json
 ├── README.md
 ├── README.zh-CN.md
@@ -161,7 +175,7 @@ v2.1 在 v2.0 数据的基础上，加入了 benchmark 第三阶段补测的 GPT
 
 - **代码与计价参数**：`stats.py` 保存统计与费用规则（纯 Python，不依赖 Plotly），`build.py` 绘制图表并组装页面，`test_build.py` 负责测试，`pricing.json` 保存计价参数。
 - **样式、字体与生成物**：`resources/site.css` 是页面唯一的样式表，`resources/fonts/` 存放预下载的字体（字体许可与来源见 `resources/fonts/README.md`）。`resources/favicon.svg` 由脚本生成并保存在仓库中；`charts.html` 则是本地生成的文件，不提交到 Git。
-- **数据快照**：`benchmark-results.json` 是输入数据的独立快照。构建页面时只读取仓库中已提交的这份快照，不读取 `.env`，也不会从其他目录自动同步数据。
+- **数据快照**：`benchmark-results.json` 是输入数据的独立快照，`benchmark-results-phase4.json` 是第四阶段 Gemini 4 Hydrogen 运行的补充快照（同一格式，由构建脚本合并）。构建页面时只读取仓库中已提交的这些快照，不读取 `.env`，也不会从其他目录自动同步数据。
 
 当外部 benchmark 有新数据需要同步时，维护者先将 `.env.example` 复制为已被 Git 忽略的 `.env`，在 `BENCHMARK_SOURCE_RESULTS` 中填入可信来源文件的绝对路径，然后在仓库根目录用 Bash 复制并校验新快照：
 
@@ -171,6 +185,8 @@ v2.1 在 v2.0 数据的基础上，加入了 benchmark 第三阶段补测的 GPT
 cp -- "$BENCHMARK_SOURCE_RESULTS" benchmark-results.json
 cmp -- "$BENCHMARK_SOURCE_RESULTS" benchmark-results.json
 ```
+
+第四阶段快照用同样方式，从 `BENCHMARK_SOURCE_SUPPLEMENT_PHASE4` 复制到 `benchmark-results-phase4.json`。
 
 ## 使用
 
