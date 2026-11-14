@@ -3,10 +3,10 @@
   "benchmarkName": "Reviewer Model Benchmark",
   "benchmarkVersion": "2.0",
   "schemaVersion": 1,
-  "generatedAt": "2026-11-14T18:00:25+00:00",
+  "generatedAt": "2026-11-14T18:28:03+00:00",
   "source": {
    "project": "qwen_strata",
-   "commit": "5eac4a87c020152c249102ba6ba10c2e505a40fd",
+   "commit": "50aae90b8437cbb4af433e723ef3d789e4fd25ae",
    "treeDirty": true,
    "summarySha256": "655c23e37483dc84bba79e81c345be1c7db7adf1b594b45de303e1de9afa25cd"
   },
@@ -113,8 +113,8 @@
    },
    "timeLimit": {
     "rule": "reading-volume",
-    "zh": "阅读量时限 T = B ×（1/P + k/G）/ β，P、G、β 取每个配置自己短探针测出的速度；到 T 硬中断，按已写出的报告计分。实例的 T 见 timeLimitSeconds。",
-    "en": "Reading-volume limit T = B x (1/P + k/G) / beta with P, G, beta measured per configuration by a short probe; hard stop at T, scored from the report written. Per-instance T in timeLimitSeconds."
+    "zh": "阅读量时限 T = B ×（1/P + k/G）/ β，P、G、β 取每个配置自己短探针测出的速度；T 取值限制在 15–60 分钟（用户 2026-11-15）；到 T 被硬中断的实例作废并以 60 分钟时限重跑，不计分。实例的 T 见 timeLimitSeconds。",
+    "en": "Reading-volume limit T = B x (1/P + k/G) / beta with P, G, beta measured per configuration by a short probe, clamped to 15-60 minutes (user 2026-11-15); an instance hard-stopped at T is voided and rerun with a 60-minute limit, never scored. Per-instance T in timeLimitSeconds."
    }
   },
   {
@@ -134,8 +134,8 @@
    },
    "timeLimit": {
     "rule": "reading-volume",
-    "zh": "阅读量时限 T = B ×（1/P + k/G）/ β，P、G、β 取每个配置自己短探针测出的速度；到 T 硬中断，按已写出的报告计分。实例的 T 见 timeLimitSeconds。",
-    "en": "Reading-volume limit T = B x (1/P + k/G) / beta with P, G, beta measured per configuration by a short probe; hard stop at T, scored from the report written. Per-instance T in timeLimitSeconds."
+    "zh": "阅读量时限 T = B ×（1/P + k/G）/ β，P、G、β 取每个配置自己短探针测出的速度；T 取值限制在 15–60 分钟（用户 2026-11-15）；到 T 被硬中断的实例作废并以 60 分钟时限重跑，不计分。实例的 T 见 timeLimitSeconds。",
+    "en": "Reading-volume limit T = B x (1/P + k/G) / beta with P, G, beta measured per configuration by a short probe, clamped to 15-60 minutes (user 2026-11-15); an instance hard-stopped at T is voided and rerun with a 60-minute limit, never scored. Per-instance T in timeLimitSeconds."
    }
   },
   {

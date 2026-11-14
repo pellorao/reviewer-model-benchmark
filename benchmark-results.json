@@ -131,8 +131,8 @@
    },
    "timeLimit": {
     "rule": "reading-volume",
-    "zh": "阅读量时限 T = B ×（1/P + k/G）/ β，P、G、β 取每个配置自己短探针测出的速度；到 T 硬中断，按已写出的报告计分。实例的 T 见 timeLimitSeconds。",
-    "en": "Reading-volume limit T = B x (1/P + k/G) / beta with P, G, beta measured per configuration by a short probe; hard stop at T, scored from the report written. Per-instance T in timeLimitSeconds."
+    "zh": "阅读量时限 T = B ×（1/P + k/G）/ β，P、G、β 取每个配置自己短探针测出的速度；T 取值限制在 15–60 分钟（用户 2026-11-15）；到 T 被硬中断的实例作废并以 60 分钟时限重跑，不计分。实例的 T 见 timeLimitSeconds。",
+    "en": "Reading-volume limit T = B x (1/P + k/G) / beta with P, G, beta measured per configuration by a short probe, clamped to 15-60 minutes (user 2026-11-15); an instance hard-stopped at T is voided and rerun with a 60-minute limit, never scored. Per-instance T in timeLimitSeconds."
    }
   },
   {
@@ -152,8 +152,8 @@
    },
    "timeLimit": {
     "rule": "reading-volume",
-    "zh": "阅读量时限 T = B ×（1/P + k/G）/ β，P、G、β 取每个配置自己短探针测出的速度；到 T 硬中断，按已写出的报告计分。实例的 T 见 timeLimitSeconds。",
-    "en": "Reading-volume limit T = B x (1/P + k/G) / beta with P, G, beta measured per configuration by a short probe; hard stop at T, scored from the report written. Per-instance T in timeLimitSeconds."
+    "zh": "阅读量时限 T = B ×（1/P + k/G）/ β，P、G、β 取每个配置自己短探针测出的速度；T 取值限制在 15–60 分钟（用户 2026-11-15）；到 T 被硬中断的实例作废并以 60 分钟时限重跑，不计分。实例的 T 见 timeLimitSeconds。",
+    "en": "Reading-volume limit T = B x (1/P + k/G) / beta with P, G, beta measured per configuration by a short probe, clamped to 15-60 minutes (user 2026-11-15); an instance hard-stopped at T is voided and rerun with a 60-minute limit, never scored. Per-instance T in timeLimitSeconds."
    }
   },
   {
@@ -13984,29 +13984,31 @@
    "pooledIntoHigh": false,
    "startedAt": "2026-10-20T08:30:38.029098+00:00",
    "validity": {
-    "valid": true,
-    "status": "valid",
-    "notes": [],
+    "valid": false,
+    "status": "timeout",
+    "notes": [
+     "hard stop at T=544 s"
+    ],
     "reminderInterrupts": 0,
     "streamCutRetries": 0
    },
    "selection": {
-    "validRank": 4,
-    "firstN": true,
-    "mainStatistic": true,
+    "validRank": null,
+    "firstN": null,
+    "mainStatistic": null,
     "cellPooled": false,
-    "inMain": true,
+    "inMain": false,
     "stage": "preregistered"
    },
    "scoring": {
-    "status": "final",
-    "score": 0.3837145725242499,
-    "scoreR83": 0.3837145725242499,
-    "rawScore": 0.42634952502694434,
-    "scoreBeforePenalty": 0.42634952502694434,
-    "formatPenalty": 0.0,
-    "repairs": 0,
-    "overallDeduction": 0.1,
+    "status": null,
+    "score": null,
+    "scoreR83": null,
+    "rawScore": null,
+    "scoreBeforePenalty": null,
+    "formatPenalty": null,
+    "repairs": null,
+    "overallDeduction": null,
     "modelFailureSubScenarios": [],
     "diagnosticEnvironmentQueries": null
    },
@@ -14097,29 +14099,31 @@
    "pooledIntoHigh": false,
    "startedAt": "2026-10-20T08:32:04.863389+00:00",
    "validity": {
-    "valid": true,
-    "status": "valid",
-    "notes": [],
+    "valid": false,
+    "status": "timeout",
+    "notes": [
+     "hard stop at T=544 s"
+    ],
     "reminderInterrupts": 0,
     "streamCutRetries": 0
    },
    "selection": {
-    "validRank": 5,
-    "firstN": true,
-    "mainStatistic": true,
+    "validRank": null,
+    "firstN": null,
+    "mainStatistic": null,
     "cellPooled": false,
-    "inMain": true,
+    "inMain": false,
     "stage": "preregistered"
    },
    "scoring": {
-    "status": "final",
-    "score": 0.4195850772034983,
-    "scoreR83": 0.4195850772034983,
-    "rawScore": 0.4662056413372203,
-    "scoreBeforePenalty": 0.4662056413372203,
-    "formatPenalty": 0.054000000000000006,
-    "repairs": 0,
-    "overallDeduction": 0.1,
+    "status": null,
+    "score": null,
+    "scoreR83": null,
+    "rawScore": null,
+    "scoreBeforePenalty": null,
+    "formatPenalty": null,
+    "repairs": null,
+    "overallDeduction": null,
     "modelFailureSubScenarios": [],
     "diagnosticEnvironmentQueries": null
    },
@@ -18520,32 +18524,32 @@
    "pooledIntoHigh": false,
    "startedAt": "2026-10-20T20:02:35.383579+00:00",
    "validity": {
-    "valid": true,
-    "status": "valid",
-    "notes": [],
+    "valid": false,
+    "status": "timeout",
+    "notes": [
+     "hard stop at T=376 s"
+    ],
     "reminderInterrupts": 0,
     "streamCutRetries": 0
    },
    "selection": {
-    "validRank": 4,
-    "firstN": true,
-    "mainStatistic": true,
+    "validRank": null,
+    "firstN": null,
+    "mainStatistic": null,
     "cellPooled": false,
-    "inMain": true,
+    "inMain": false,
     "stage": "preregistered"
    },
    "scoring": {
-    "status": "modelFailure",
-    "score": 0.0,
-    "scoreR83": 0.0,
-    "rawScore": 0,
-    "scoreBeforePenalty": 0,
-    "formatPenalty": 0.0,
-    "repairs": 0,
-    "overallDeduction": 0.0,
-    "modelFailureSubScenarios": [
-     "default"
-    ],
+    "status": null,
+    "score": null,
+    "scoreR83": null,
+    "rawScore": null,
+    "scoreBeforePenalty": null,
+    "formatPenalty": null,
+    "repairs": null,
+    "overallDeduction": null,
+    "modelFailureSubScenarios": [],
     "diagnosticEnvironmentQueries": null
    },
    "time": {
@@ -18636,7 +18640,7 @@
     "streamCutRetries": 0
    },
    "selection": {
-    "validRank": 5,
+    "validRank": 4,
     "firstN": true,
     "mainStatistic": true,
     "cellPooled": false,
@@ -18749,7 +18753,7 @@
     "streamCutRetries": 0
    },
    "selection": {
-    "validRank": 6,
+    "validRank": 5,
     "firstN": false,
     "mainStatistic": false,
     "cellPooled": false,
@@ -91107,6 +91111,234 @@
     }
    ],
    "parallelWindow": null
+  },
+  {
+   "id": "anthropic/code-spec-v5/haiku-low-a10",
+   "scenario": "code-spec-v5",
+   "configKey": "claude-code/haiku/low",
+   "configNumber": 19,
+   "arm": "anthropic",
+   "attempt": 10,
+   "supplementaryNote": null,
+   "requestedEffort": "low",
+   "effectiveEffort": "low",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-11-14T18:15:46.060427+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 4,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "preregistered"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.6221922521922523,
+    "scoreR83": 0.6221922521922523,
+    "rawScore": 0.6221922521922523,
+    "scoreBeforePenalty": 0.6221922521922523,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 337.55458521842957,
+    "timeLimitSeconds": 3600,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 131982,
+    "cachedInput": 1776942,
+    "output": 30815,
+    "cacheWriteInput": 131932,
+    "cacheWrite1h": 131932,
+    "cacheWrite5m": 0,
+    "source": "Claude Code stream result usage",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 167.00539251551365,
+    "taskInput": 390.99454067434823,
+    "taskOutput": 91.28893918019155,
+    "lowerBounds": [
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "Claude Code stream result usage over the instance work seconds",
+     "engine": "API model: input unknown (no input-processing time); output = stream result output tokens / duration_api_ms, a lower bound (first-token latency and input processing included)"
+    }
+   },
+   "toolCalls": 25,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": {
+    "usd": 0.13811512,
+    "cny": null,
+    "lowerBound": false,
+    "basis": "anthropic"
+   },
+   "harnessReportedCostUsd": 0.13811512,
+   "modelIdsReturned": [
+    "claude-haiku-5-5"
+   ],
+   "serviceTiers": {
+    "standard": 25
+   },
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 337.55458521842957,
+     "tokens": {
+      "uncachedInput": 131982,
+      "cachedInput": 1776942,
+      "output": 30815
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": 131932,
+     "toolCalls": 25,
+     "apiSeconds": 184.515,
+     "compactions": 0,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": "delivered",
+     "harnessReportedCostUsd": 0.13811512
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "anthropic/code-spec-v5/haiku-low-a9",
+   "scenario": "code-spec-v5",
+   "configKey": "claude-code/haiku/low",
+   "configNumber": 19,
+   "arm": "anthropic",
+   "attempt": 9,
+   "supplementaryNote": null,
+   "requestedEffort": "low",
+   "effectiveEffort": "low",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-11-14T18:15:46.277189+00:00",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 5,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "preregistered"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.7480842124757024,
+    "scoreR83": 0.7480842124757024,
+    "rawScore": 0.7480842124757024,
+    "scoreBeforePenalty": 0.7480842124757024,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 304.7358741760254,
+    "timeLimitSeconds": 3600,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 133367,
+    "cachedInput": 1627435,
+    "output": 31770,
+    "cacheWriteInput": 133323,
+    "cacheWrite1h": 133323,
+    "cacheWrite5m": 0,
+    "source": "Claude Code stream result usage",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": 193.81287327432116,
+    "taskInput": 437.64784950446256,
+    "taskOutput": 104.25421715084524,
+    "lowerBounds": [
+     "engineOutput"
+    ],
+    "basis": {
+     "task": "Claude Code stream result usage over the instance work seconds",
+     "engine": "API model: input unknown (no input-processing time); output = stream result output tokens / duration_api_ms, a lower bound (first-token latency and input processing included)"
+    }
+   },
+   "toolCalls": 22,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": {
+    "usd": 0.15550555,
+    "cny": null,
+    "lowerBound": false,
+    "basis": "anthropic"
+   },
+   "harnessReportedCostUsd": 0.15550555,
+   "modelIdsReturned": [
+    "claude-haiku-5-5"
+   ],
+   "serviceTiers": {
+    "standard": 22
+   },
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 304.7358741760254,
+     "tokens": {
+      "uncachedInput": 133367,
+      "cachedInput": 1627435,
+      "output": 31770
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": 133323,
+     "toolCalls": 22,
+     "apiSeconds": 163.921,
+     "compactions": 0,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": "delivered",
+     "harnessReportedCostUsd": 0.15550555
+    }
+   ],
+   "parallelWindow": null
   }
  ],
  "sensitivityVariants": [
@@ -91204,6 +91436,11 @@
    "id": "phase3-supplement",
    "zh": "第三阶段只是补充（用户 2026-10-22）：gpt-6-luna xhigh（配置 28）、max（配置 29）在 Codex 上 4 个场景各格取全部有效实例（不截取前 5 个：并行调度多出的有效实例不是因分数加跑，与预登记实例效力相同，用户 2026-10-23），只给逐实例结果，不进预登记比较和 Holm 族，本工程也不拿它与其他配置比较。运行于 2026-10-23（JST 02:20–07:12），借用 ChatGPT 登录，条件与 v1 相同（同一 Codex 副本、场景冻结源、harness 补丁、搜索关闭、凭据 deny-read）；与前两阶段相隔一天，服务端模型或路由可能已有变化。",
    "en": "Phase 3 is a supplement only (user 2026-10-22): gpt-6-luna xhigh (configuration 28) and max (29) on Codex, every valid instance of each cell in the 4 scenarios (no first-5 cut: the valid instances that parallel scheduling added were not run because of scores and count the same as preregistered ones, user 2026-10-23), per-instance results only, never in a preregistered comparison or the Holm family, and not compared with other configurations by this project. Run on 2026-10-23 (JST 02:20-07:12) on a borrowed ChatGPT login under the v1 conditions (same Codex copy, frozen scenario sources, harness patches, search off, credential deny-read); a day after the first two phases, so the served model or routing may have changed."
+  },
+  {
+   "id": "time-limit-rerun",
+   "zh": "Code Spec / Code Standards 的时限 T 限制在 15–60 分钟（用户 2026-11-15）；到 T 被硬中断的实例作废、不计分，并以 60 分钟时限重跑。本文件里 3 个这样的实例（haiku low a7、a8；deepseek-flash max a4）标为 timeout。haiku low 补跑 a9、a10（Claude Code 2.1.310，其余实例为 2.1.303，时限 3600 s，均在约 6 分钟内正常交付）并取代 a7、a8 进入主统计，它们的盲裁是事后补做的单池（Opus high，同一冻结 brief 和锚点），并非与前 3 个实例同一批裁决。deepseek-flash max 的补跑因 DeepSeek 密钥返回 401 无法进行，该格主统计只有 4 个实例（a1、a2、a3、a5）；a6 有效但当时未计分、运行目录已不在，无法补评，留在主统计之外。",
+   "en": "The Code Spec / Code Standards limit T is clamped to 15-60 minutes (user 2026-11-15); an instance hard-stopped at T is voided, never scored, and rerun with a 60-minute limit. Three such instances in this file (haiku low a7, a8; deepseek-flash max a4) are marked timeout. Haiku low reruns a9 and a10 (Claude Code 2.1.310, the other instances ran 2.1.303; limit 3600 s; both delivered normally in about 6 minutes) replace a7 and a8 in the main statistic; their blind adjudication was done afterwards as a single pool (Opus high, same frozen brief and anchors), not in the same batch as the first three instances. The deepseek-flash max rerun could not run (the DeepSeek key returned 401), so that cell has 4 instances in the main statistic (a1, a2, a3, a5); a6 is valid but was never scored and its run directory is gone, so it stays outside the main statistic."
   }
  ]
 }
