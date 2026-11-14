@@ -75,6 +75,7 @@ First, the page filters the snapshot so that it uses only the instances the benc
 - Gemini 4 Hydrogen medium, high and xhigh are phase-4 supplement configurations (`kind` `phase4`); every valid instance of each cell counts, giving 5 runs per task.
 - DeepSeek runs requested as medium that the endpoint ran as high under the same time limit count as high, following the benchmark, so the two DeepSeek high cells in Commit Audit have 8 runs each.
 - Invalid runs and the supplementary "requested as medium" configuration, which ran under a different time limit, are excluded.
+- Time limit for Code Spec and Code Standards: the limit T of an instance is computed from the configuration's own speed and held between 15 and 60 minutes. An instance stopped by the limit is voided and rerun at 60 minutes; if it is stopped again at 60 minutes the run halts for a decision. Only instances that finished within their limit are counted. The limit stated in the hand-off prompt therefore differs between an instance and its rerun, a known small deviation. Gemini 4 Hydrogen had 6 such reruns (medium Code Spec 1, xhigh Code Spec 2, xhigh Code Standards 3).
 
 ### Scores
 

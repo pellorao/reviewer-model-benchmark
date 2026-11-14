@@ -75,6 +75,7 @@ v2.1 在 v2.0 数据的基础上，加入了 benchmark 第三阶段补测的 GPT
 - Gemini 4 Hydrogen medium、high 和 xhigh 属于第四阶段补充配置（`kind` 为 `phase4`），计入每格的全部有效实例，每项任务 5 次。
 - DeepSeek 请求设为 medium、但端点在相同时限下实际按 high 执行的运行，按 benchmark 口径并入 high 格；因此 Commit Audit 中的两个 DeepSeek high 格各有 8 次运行。
 - 无效运行，以及因时限不同而单列的“请求 medium”补充配置，均不进入页面。
+- Code Spec 与 Code Standards 的时限：每个实例的时限 T 按所测配置自身的速度算出，并限制在 15 至 60 分钟之间。到时限被中断的实例作废，并以 60 分钟重跑；60 分钟仍被中断则停下等待决定。最终只计在各自时限内完成的实例。因此交接提示里写的时限数字在实例和它的重跑之间不同，这是已知的小偏差。Gemini 4 Hydrogen 有 6 次这样的重跑（medium 的 Code Spec 1 次，xhigh 的 Code Spec 2 次、Code Standards 3 次）。
 
 ### 分数
 
