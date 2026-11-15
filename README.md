@@ -8,11 +8,15 @@ When choosing an AI model, agent harness, and reasoning effort for code or speci
 
 To let you move from the big picture to individual tasks, the page shows the overall weighted score first, then maps score against work time, token usage, and cost in three trade-off scatter plots (with an optional Pareto front), and finally breaks down per-task score, work time, token usage, cost, and speed. This page is an independent comparison view: it summarizes the per-task results into a weighted score without modifying the input data or replacing the benchmark's own reports.
 
-## Version v2.2
+## Version v2.3
 
 Before reading the charts or building the page, it helps to know which dataset version is included and how it evolved.
 
-Version v2.2 adds Gemini 4 Hydrogen at `medium`, `high` and `xhigh` effort, from the benchmark's phase-4 supplement, and leaves every other instance unchanged from v2.1. As data-source facts: the supplement ran about three weeks after the v2.0 runs, so the served model or routing may have changed; it ran in a different harness, Antigravity (`agy`), which brings its own system prompt, tools and context management, and its version was 1.5.8 for some runs and 1.5.9 for others (each instance records its version); the Antigravity work time is the `agy` process wall time summed over a run's sessions, which includes about 7 seconds of start-up per session, and the benchmark gives no engine speeds for it (only task speeds). As for the earlier supplement, each cell counts every valid run (5 per task here), and the benchmark itself does not compare these three configurations with the others. The page draws and compares them like every other configuration.
+Version v2.3 adds Gemini 4 Hydrogen at `low` effort, so the Hydrogen supplement now covers four tiers (`low`, `medium`, `high`, `xhigh`), and leaves every other instance unchanged from v2.2. Low ran one day after the other three tiers with the same method (Antigravity 1.5.9, every valid run counted, 5 per task, the same time-limit rule and blind adjudication); none of its 20 instances was voided or rerun. The same data-source facts as v2.2 apply to it.
+
+### v2.2
+
+Version v2.2 adds Gemini 4 Hydrogen at `medium`, `high` and `xhigh` effort, from the benchmark's phase-4 supplement, and leaves every other instance unchanged from v2.1. As data-source facts: the supplement ran about three weeks after the v2.0 runs, so the served model or routing may have changed; it ran in a different harness, Antigravity (`agy`), which brings its own system prompt, tools and context management, and its version was 1.5.8 for some runs and 1.5.9 for others (each instance records its version); the Antigravity work time is the `agy` process wall time summed over a run's sessions, which includes about 7 seconds of start-up per session, and the benchmark gives no engine speeds for it (only task speeds). As for the earlier supplement, each cell counts every valid run (5 per task here), and the benchmark itself does not compare these configurations with the others. The page draws and compares them like every other configuration.
 
 ### v2.1
 
@@ -41,7 +45,7 @@ The benchmark tasks come from ARW, the software project that provides these deve
 | Commit Audit | Audits a staged commit candidate: the selected files, required checks and coverage of the requirements. | 25% |
 | Spec Readiness | Before implementation, checks whether requirement documents are complete, consistent, feasible and verifiable; each run has two independent review threads. | 35% |
 
-Across those four tasks, the benchmark tests 32 configurations (27 main, 2 phase-3 and 3 phase-4 supplement configurations):
+Across those four tasks, the benchmark tests 33 configurations (27 main, 2 phase-3 and 4 phase-4 supplement configurations):
 
 | Harness | Models | Efforts | Cost basis |
 | --- | --- | --- | --- |
@@ -52,7 +56,7 @@ Across those four tasks, the benchmark tests 32 configurations (27 main, 2 phase
 | Claude Code | Claude Opus 5.5, Sonnet 5.5, Haiku 5.5 | low, medium, high | Subscription run, reference API price |
 | Claude Code | DeepSeek V4.1 Flash | low, high, max | DeepSeek price per request |
 | Claude Code | Strata IQ3_XXS (local) | low, medium, high | Local running cost |
-| Antigravity | Gemini 4 Hydrogen | medium, high, xhigh (all in the phase-4 supplement) | Plan run, reference API price |
+| Antigravity | Gemini 4 Hydrogen | low, medium, high, xhigh (all in the phase-4 supplement) | Plan run, reference API price |
 
 In this table, DeepSeek V4.1 Flash is the endpoint's `deepseek-flash` model (version DeepSeek-V4.1-Flash-1017), and Strata IQ3_XXS is a 3-bit quantization of Qwen3.8-Flash-Next run locally on a home PC (RTX 3080 Ti 12 GB, i9-13900, 64 GB RAM). Effort labels are each model's requested setting, not equal compute across models.
 
@@ -72,10 +76,10 @@ First, the page filters the snapshot so that it uses only the instances the benc
 
 - Standard configurations count 5 runs per task, while Strata counts 10 per task.
 - GPT-6 Luna xhigh and max are phase-3 supplement configurations (`kind` `phase3`); following the benchmark, every valid instance of each cell counts, giving 5 to 8 runs per task.
-- Gemini 4 Hydrogen medium, high and xhigh are phase-4 supplement configurations (`kind` `phase4`); every valid instance of each cell counts, giving 5 runs per task.
+- Gemini 4 Hydrogen low, medium, high and xhigh are phase-4 supplement configurations (`kind` `phase4`); every valid instance of each cell counts, giving 5 runs per task.
 - DeepSeek runs requested as medium that the endpoint ran as high under the same time limit count as high, following the benchmark, so the two DeepSeek high cells in Commit Audit have 8 runs each.
 - Invalid runs and the supplementary "requested as medium" configuration, which ran under a different time limit, are excluded.
-- Time limit for Code Spec and Code Standards: the limit T of an instance is computed from the configuration's own speed and held between 15 and 60 minutes. An instance stopped by the limit is voided and rerun at 60 minutes; if it is stopped again at 60 minutes the run halts for a decision. Only instances that finished within their limit are counted. The limit stated in the hand-off prompt therefore differs between an instance and its rerun, a known small deviation. Gemini 4 Hydrogen had 6 such reruns (medium Code Spec 1, xhigh Code Spec 2, xhigh Code Standards 3). Among the earlier models, three instances hit the old limit and were voided: Claude Haiku low Code Spec a7 and a8, and DeepSeek-flash max (Claude Code) Code Spec a4. Haiku low was rerun at 60 minutes (a9, a10, Claude Code 2.1.310 instead of 2.1.303, blind-adjudicated afterwards as one separate pool). The DeepSeek rerun could not run (its API key was rejected), so that cell has 4 instances in the main statistic instead of 5.
+- Time limit for Code Spec and Code Standards: the limit T of an instance is computed from the configuration's own speed and held between 15 and 60 minutes. An instance stopped by the limit is voided and rerun at 60 minutes; if it is stopped again at 60 minutes the run halts for a decision. Only instances that finished within their limit are counted. The limit stated in the hand-off prompt therefore differs between an instance and its rerun, a known small deviation. Gemini 4 Hydrogen had 6 such reruns (low had none; medium Code Spec 1, xhigh Code Spec 2, xhigh Code Standards 3). Among the earlier models, three instances hit the old limit and were voided: Claude Haiku low Code Spec a7 and a8, and DeepSeek-flash max (Claude Code) Code Spec a4. Haiku low was rerun at 60 minutes (a9, a10, Claude Code 2.1.310 instead of 2.1.303, blind-adjudicated afterwards as one separate pool). The DeepSeek rerun could not run (its API key was rejected), so that cell has 4 instances in the main statistic instead of 5.
 
 ### Scores
 

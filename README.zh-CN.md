@@ -8,11 +8,15 @@
 
 为了让读者从整体结论逐步深入到具体任务，页面先展示汇总四项任务的综合分数，再用三张权衡散点图（可显示帕累托前沿）对比分数与耗时、token 用量及费用的关系，最后列出分任务的分数、耗时、token、费用和速度明细。这个页面是独立的比较视图：它把分任务结果汇总为综合分数，不修改输入数据，也不替代 benchmark 自身的正式报告。
 
-## 版本 v2.2
+## 版本 v2.3
 
 在查看图表或构建页面前，需要先了解当前数据集的版本背景及其与早期版本的区别。
 
-v2.2 在 v2.1 的基础上，加入 benchmark 第四阶段补测的 Gemini 4 Hydrogen `medium`、`high` 和 `xhigh` 推理强度，其余实例与 v2.1 完全相同。以下是数据源的事实：补测比 v2.0 的运行晚约三周，服务端模型或路由可能已有变化；它使用另一种代理程序 Antigravity（`agy`），该程序自带系统提示、工具集和上下文管理，其版本在部分运行中为 1.5.8、部分为 1.5.9（每个实例都记录了版本）；Antigravity 的工作时间是 `agy` 进程墙钟时间按一次运行的各会话相加，每个会话含约 7 秒启动，benchmark 也不给它引擎速度（只有任务速度）。与上一次补测相同，每格计入全部有效运行（这里每项任务 5 次），benchmark 本身也不将这三个配置与其他配置直接比较。本页则与其他配置一样绘制并比较它们。
+v2.3 在 v2.2 的基础上，加入 Gemini 4 Hydrogen `low` 推理强度，Hydrogen 补测因此覆盖四档（`low`、`medium`、`high`、`xhigh`），其余实例与 v2.2 完全相同。low 比其余三档晚一天运行，方法相同（Antigravity 1.5.9，计入全部有效运行，每项任务 5 次，同一时限规则和盲裁）；它的 20 个实例没有作废或重跑。v2.2 说明的数据源事实同样适用于它。
+
+### v2.2
+
+v2.2 在 v2.1 的基础上，加入 benchmark 第四阶段补测的 Gemini 4 Hydrogen `medium`、`high` 和 `xhigh` 推理强度，其余实例与 v2.1 完全相同。以下是数据源的事实：补测比 v2.0 的运行晚约三周，服务端模型或路由可能已有变化；它使用另一种代理程序 Antigravity（`agy`），该程序自带系统提示、工具集和上下文管理，其版本在部分运行中为 1.5.8、部分为 1.5.9（每个实例都记录了版本）；Antigravity 的工作时间是 `agy` 进程墙钟时间按一次运行的各会话相加，每个会话含约 7 秒启动，benchmark 也不给它引擎速度（只有任务速度）。与上一次补测相同，每格计入全部有效运行（这里每项任务 5 次），benchmark 本身也不将这些配置与其他配置直接比较。本页则与其他配置一样绘制并比较它们。
 
 ### v2.1
 
@@ -41,7 +45,7 @@ v2.1 在 v2.0 数据的基础上，加入了 benchmark 第三阶段补测的 GPT
 | Commit Audit | 审计暂存的提交候选：选中的文件、必要检查和要求的覆盖情况。 | 25% |
 | Spec Readiness | 实施前检查需求文档是否完整、一致、可实现且可验证；每次运行有两个独立审查线程。 | 35% |
 
-围绕这 4 项任务，benchmark 共测试了 32 个配置（27 个主配置、2 个第三阶段和 3 个第四阶段补充配置）：
+围绕这 4 项任务，benchmark 共测试了 33 个配置（27 个主配置、2 个第三阶段和 4 个第四阶段补充配置）：
 
 | 代理程序 | 模型 | 推理强度 | 费用依据 |
 | --- | --- | --- | --- |
@@ -52,7 +56,7 @@ v2.1 在 v2.0 数据的基础上，加入了 benchmark 第三阶段补测的 GPT
 | Claude Code | Claude Opus 5.5、Sonnet 5.5、Haiku 5.5 | low、medium、high | 套餐运行，参考 API 价 |
 | Claude Code | DeepSeek V4.1 Flash | low、high、max | DeepSeek 逐请求价格 |
 | Claude Code | Strata IQ3_XXS（本地） | low、medium、high | 本地运行成本 |
-| Antigravity | Gemini 4 Hydrogen | medium、high、xhigh（均为第四阶段补测） | 套餐运行，参考 API 价 |
+| Antigravity | Gemini 4 Hydrogen | low、medium、high、xhigh（均为第四阶段补测） | 套餐运行，参考 API 价 |
 
 表中 DeepSeek V4.1 Flash 是 DeepSeek 端点的 `deepseek-flash` 模型（版本 DeepSeek-V4.1-Flash-1017）；Strata IQ3_XXS 是 Qwen3.8-Flash-Next 的 3 比特量化版本，在一台家用电脑（RTX 3080 Ti 12 GB、i9-13900、64 GB 内存）上本地运行。各配置的推理强度标签仅代表向模型请求的参数设置，不同模型间的同一标签并不代表相同的计算量。
 
@@ -72,10 +76,10 @@ v2.1 在 v2.0 数据的基础上，加入了 benchmark 第三阶段补测的 GPT
 
 - 常规配置每项任务计入 5 次运行，本地模型 Strata 每项任务计入 10 次。
 - GPT-6 Luna xhigh 和 max 属于第三阶段补充配置（`kind` 为 `phase3`），按 benchmark 的口径计入每格的全部有效实例，每项任务 5 至 8 次。
-- Gemini 4 Hydrogen medium、high 和 xhigh 属于第四阶段补充配置（`kind` 为 `phase4`），计入每格的全部有效实例，每项任务 5 次。
+- Gemini 4 Hydrogen low、medium、high 和 xhigh 属于第四阶段补充配置（`kind` 为 `phase4`），计入每格的全部有效实例，每项任务 5 次。
 - DeepSeek 请求设为 medium、但端点在相同时限下实际按 high 执行的运行，按 benchmark 口径并入 high 格；因此 Commit Audit 中的两个 DeepSeek high 格各有 8 次运行。
 - 无效运行，以及因时限不同而单列的“请求 medium”补充配置，均不进入页面。
-- Code Spec 与 Code Standards 的时限：每个实例的时限 T 按所测配置自身的速度算出，并限制在 15 至 60 分钟之间。到时限被中断的实例作废，并以 60 分钟重跑；60 分钟仍被中断则停下等待决定。最终只计在各自时限内完成的实例。因此交接提示里写的时限数字在实例和它的重跑之间不同，这是已知的小偏差。Gemini 4 Hydrogen 有 6 次这样的重跑（medium 的 Code Spec 1 次，xhigh 的 Code Spec 2 次、Code Standards 3 次）。较早的模型里有 3 个实例撞到旧时限而作废：Claude Haiku low 的 Code Spec a7、a8，以及 DeepSeek-flash max（Claude Code）的 Code Spec a4。Haiku low 已以 60 分钟补跑（a9、a10，Claude Code 2.1.310，原为 2.1.303，事后另开一个盲裁池裁决）。DeepSeek 的补跑因 API 密钥被拒无法进行，该格主统计只有 4 个实例而不是 5 个。
+- Code Spec 与 Code Standards 的时限：每个实例的时限 T 按所测配置自身的速度算出，并限制在 15 至 60 分钟之间。到时限被中断的实例作废，并以 60 分钟重跑；60 分钟仍被中断则停下等待决定。最终只计在各自时限内完成的实例。因此交接提示里写的时限数字在实例和它的重跑之间不同，这是已知的小偏差。Gemini 4 Hydrogen 有 6 次这样的重跑（low 没有；medium 的 Code Spec 1 次，xhigh 的 Code Spec 2 次、Code Standards 3 次）。较早的模型里有 3 个实例撞到旧时限而作废：Claude Haiku low 的 Code Spec a7、a8，以及 DeepSeek-flash max（Claude Code）的 Code Spec a4。Haiku low 已以 60 分钟补跑（a9、a10，Claude Code 2.1.310，原为 2.1.303，事后另开一个盲裁池裁决）。DeepSeek 的补跑因 API 密钥被拒无法进行，该格主统计只有 4 个实例而不是 5 个。
 
 ### 分数
 

@@ -3,12 +3,12 @@
   "benchmarkName": "Reviewer Model Benchmark",
   "benchmarkVersion": "2.0",
   "schemaVersion": 1,
-  "generatedAt": "2026-11-14T18:28:03+00:00",
+  "generatedAt": "2026-11-15T01:51:02+00:00",
   "source": {
    "project": "qwen_strata",
-   "commit": "50aae90b8437cbb4af433e723ef3d789e4fd25ae",
+   "commit": "8942e0e1a5d63b816e7bf3c12963300f4967e6c9",
    "treeDirty": true,
-   "summarySha256": "655c23e37483dc84bba79e81c345be1c7db7adf1b594b45de303e1de9afa25cd"
+   "summarySha256": "92d978b20015f3f7bad6cc0715b7d00226f658acb3762f083ed60629602b2260"
   },
   "scoring": {
    "version": "r8.4",
@@ -19,8 +19,8 @@
    "number": 4,
    "complete": true,
    "final": true,
-   "zh": "第四阶段补充（只含补充）：Gemini 4 Hydrogen medium / high / xhigh（配置 30–32，Antigravity），每格全部有效实例、不截取前 5 个，stage 为 phase4；本文件不含预登记配置，也不含前三阶段的实例（见第三阶段文件）；补充配置不进任何比较，见 caveats 的 phase4-supplement。",
-   "en": "Phase 4 supplement (supplement only): Gemini 4 Hydrogen medium / high / xhigh (configurations 30-32, Antigravity), every valid instance per cell, no first-5 cut, stage phase4; this file holds neither the preregistered configurations nor the instances of the first three phases (see the phase-3 file); the supplement configurations never enter a comparison, see the phase4-supplement caveat."
+   "zh": "第四阶段补充（只含补充）：Gemini 4 Hydrogen low / medium / high / xhigh（配置 30–32 和 36，Antigravity），每格全部有效实例、不截取前 5 个，stage 为 phase4；本文件不含预登记配置，也不含前三阶段的实例（见第三阶段文件）；补充配置不进任何比较，见 caveats 的 phase4-supplement。",
+   "en": "Phase 4 supplement (supplement only): Gemini 4 Hydrogen low / medium / high / xhigh (configurations 30-32 and 36, Antigravity), every valid instance per cell, no first-5 cut, stage phase4; this file holds neither the preregistered configurations nor the instances of the first three phases (see the phase-3 file); the supplement configurations never enter a comparison, see the phase4-supplement caveat."
   },
   "parallelWindows": {
    "zh": "Strata 加测期间，同一台主机上另有计算进程（nice 19）运行的时段。实例的 parallelWindow 标出开始于某时段（start）或运行中与某时段重叠（overlap）；时段只可能影响速度和用时，不影响分数。",
@@ -377,14 +377,41 @@
    "durationBasis": "antigravity",
    "costBasis": null,
    "inComparisons": false
+  },
+  {
+   "key": "antigravity/gemini-4-hydrogen/low",
+   "configNumber": 36,
+   "harness": "antigravity",
+   "harnessName": "Antigravity",
+   "harnessVersion": "1.5.9",
+   "model": "gemini-4-hydrogen",
+   "modelName": "Gemini 4 Hydrogen",
+   "modelId": null,
+   "modelIdsReturned": [
+    "gemini-4-hydrogen-low"
+   ],
+   "vendor": "google",
+   "vendorName": "Google",
+   "effort": "low",
+   "effectiveEffort": "low",
+   "kind": "phase4",
+   "local": false,
+   "arm": "antigravity",
+   "tokenSource": {
+    "zh": "agy stream-json 每步 usage 之和：input_tokens（未缓存输入）、cache_read_tokens（缓存输入）、output_tokens（输出，含思考；thinking 为其中思考部分）。",
+    "en": "Sum of the per-step usage of the agy stream-json: input_tokens (uncached input), cache_read_tokens (cached input), output_tokens (output, thinking included; thinking is the part of it that is reasoning)."
+   },
+   "durationBasis": "antigravity",
+   "costBasis": null,
+   "inComparisons": false
   }
  ],
  "selection": {
   "phase": 4,
   "preregisteredN": 5,
   "strataExtraTarget": 10,
-  "zh": "有效实例按开始时刻排序得到 validRank。phase 1：未合并的格取 validRank ≤ 5（firstN）；DeepSeek 合并格（cellPooled，medium 请求并入 high）取全部有效实例。phase 2：Strata 的格取 validRank ≤ 10，其余同 phase 1。phase 4（只含补充）：本文件只有补充配置 30–32（Gemini 4 Hydrogen medium、high、xhigh，Antigravity），各格取全部有效实例（mainStatistic 为 true，不截取前 5 个，用户 2026-11-14），只给实例、不进比较，也没有一致性行。inMain 是本文件阶段的结果；主统计多于前 5 个的格另有一致性行（firstN 为 true 的实例）。",
-  "en": "Valid instances ordered by start give validRank. Phase 1: cells not pooled take validRank <= 5 (firstN); pooled DeepSeek cells (cellPooled, medium requests pooled into high) take every valid instance. Phase 2: Strata cells take validRank <= 10, others as in phase 1. Phase 4 (supplement only): this file holds only the supplement configurations 30-32 (Gemini 4 Hydrogen medium / high / xhigh on Antigravity), every valid instance per cell (mainStatistic true, no first-5 cut, user 2026-11-14), instances only, never in a comparison and without a consistency row. inMain is the result for the phase of this file; a cell whose main statistic holds more than its first 5 also has a consistency row (the instances with firstN true)."
+  "zh": "有效实例按开始时刻排序得到 validRank。phase 1：未合并的格取 validRank ≤ 5（firstN）；DeepSeek 合并格（cellPooled，medium 请求并入 high）取全部有效实例。phase 2：Strata 的格取 validRank ≤ 10，其余同 phase 1。phase 4（只含补充）：本文件只有补充配置 30–32 和 36（Gemini 4 Hydrogen low、medium、high、xhigh，Antigravity），各格取全部有效实例（mainStatistic 为 true，不截取前 5 个，用户 2026-11-14），只给实例、不进比较，也没有一致性行。inMain 是本文件阶段的结果；主统计多于前 5 个的格另有一致性行（firstN 为 true 的实例）。",
+  "en": "Valid instances ordered by start give validRank. Phase 1: cells not pooled take validRank <= 5 (firstN); pooled DeepSeek cells (cellPooled, medium requests pooled into high) take every valid instance. Phase 2: Strata cells take validRank <= 10, others as in phase 1. Phase 4 (supplement only): this file holds only the supplement configurations 30-32 and 36 (Gemini 4 Hydrogen low / medium / high / xhigh on Antigravity), every valid instance per cell (mainStatistic true, no first-5 cut, user 2026-11-14), instances only, never in a comparison and without a consistency row. inMain is the result for the phase of this file; a cell whose main statistic holds more than its first 5 also has a consistency row (the instances with firstN true)."
  },
  "instances": [
   {
@@ -2443,6 +2470,546 @@
      "modelFailure": false,
      "finalStatus": "not-arw-form",
      "continuationStop": "hard_limit",
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "antigravity/code-spec-v5/hydrogen-low-a1",
+   "scenario": "code-spec-v5",
+   "configKey": "antigravity/gemini-4-hydrogen/low",
+   "configNumber": 36,
+   "arm": "antigravity",
+   "attempt": 1,
+   "supplementaryNote": null,
+   "requestedEffort": "low",
+   "effectiveEffort": "low",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-11-15T01:16:04.093155+00:00",
+   "harnessVersion": "1.5.9",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 1,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase4"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.34981029372684347,
+    "scoreR83": 0.34981029372684347,
+    "rawScore": 0.34981029372684347,
+    "scoreBeforePenalty": 0.34981029372684347,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 153.74180030822754,
+    "timeLimitSeconds": 900,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 90853,
+    "cachedInput": 1156585,
+    "output": 9883,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "thinking": 4815,
+    "source": "agy stream usage",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": null,
+    "taskInput": 590.9453370381664,
+    "taskOutput": 64.28310310004291,
+    "lowerBounds": [],
+    "basis": {
+     "task": "agy stream usage over the instance work seconds",
+     "engine": "Antigravity: engine speeds not derived (unknown); only the task speeds are given"
+    }
+   },
+   "toolCalls": 53,
+   "compactions": null,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gemini-4-hydrogen-low"
+   ],
+   "serviceTiers": {},
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 153.74180030822754,
+     "tokens": {
+      "uncachedInput": 90853,
+      "cachedInput": 1156585,
+      "output": 9883
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 53,
+     "apiSeconds": 125.40931675,
+     "compactions": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": "delivered",
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "antigravity/code-spec-v5/hydrogen-low-a2",
+   "scenario": "code-spec-v5",
+   "configKey": "antigravity/gemini-4-hydrogen/low",
+   "configNumber": 36,
+   "arm": "antigravity",
+   "attempt": 2,
+   "supplementaryNote": null,
+   "requestedEffort": "low",
+   "effectiveEffort": "low",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-11-15T01:18:38.526065+00:00",
+   "harnessVersion": "1.5.9",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 2,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase4"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.5781252847078765,
+    "scoreR83": 0.5781252847078765,
+    "rawScore": 0.5781252847078765,
+    "scoreBeforePenalty": 0.5781252847078765,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 200.73623299598694,
+    "timeLimitSeconds": 900,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 107379,
+    "cachedInput": 1332808,
+    "output": 7643,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "thinking": 3647,
+    "source": "agy stream usage",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": null,
+    "taskInput": 534.9258496952401,
+    "taskOutput": 38.07484023152311,
+    "lowerBounds": [],
+    "basis": {
+     "task": "agy stream usage over the instance work seconds",
+     "engine": "Antigravity: engine speeds not derived (unknown); only the task speeds are given"
+    }
+   },
+   "toolCalls": 33,
+   "compactions": null,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gemini-4-hydrogen-low"
+   ],
+   "serviceTiers": {},
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 200.73623299598694,
+     "tokens": {
+      "uncachedInput": 107379,
+      "cachedInput": 1332808,
+      "output": 7643
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 33,
+     "apiSeconds": 134.133903662,
+     "compactions": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": "delivered",
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "antigravity/code-spec-v5/hydrogen-low-a3",
+   "scenario": "code-spec-v5",
+   "configKey": "antigravity/gemini-4-hydrogen/low",
+   "configNumber": 36,
+   "arm": "antigravity",
+   "attempt": 3,
+   "supplementaryNote": null,
+   "requestedEffort": "low",
+   "effectiveEffort": "low",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-11-15T01:21:59.967920+00:00",
+   "harnessVersion": "1.5.9",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 3,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase4"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.45364420982068043,
+    "scoreR83": 0.45364420982068043,
+    "rawScore": 0.45364420982068043,
+    "scoreBeforePenalty": 0.45364420982068043,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 261.59577202796936,
+    "timeLimitSeconds": 900,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 92521,
+    "cachedInput": 1199168,
+    "output": 11444,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "thinking": 4678,
+    "source": "agy stream usage",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": null,
+    "taskInput": 353.6792635551763,
+    "taskOutput": 43.74688440597743,
+    "lowerBounds": [],
+    "basis": {
+     "task": "agy stream usage over the instance work seconds",
+     "engine": "Antigravity: engine speeds not derived (unknown); only the task speeds are given"
+    }
+   },
+   "toolCalls": 64,
+   "compactions": null,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gemini-4-hydrogen-low"
+   ],
+   "serviceTiers": {},
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 261.59577202796936,
+     "tokens": {
+      "uncachedInput": 92521,
+      "cachedInput": 1199168,
+      "output": 11444
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 64,
+     "apiSeconds": 128.487472601,
+     "compactions": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": "delivered",
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "antigravity/code-spec-v5/hydrogen-low-a4",
+   "scenario": "code-spec-v5",
+   "configKey": "antigravity/gemini-4-hydrogen/low",
+   "configNumber": 36,
+   "arm": "antigravity",
+   "attempt": 4,
+   "supplementaryNote": null,
+   "requestedEffort": "low",
+   "effectiveEffort": "low",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-11-15T01:26:22.254490+00:00",
+   "harnessVersion": "1.5.9",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 4,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase4"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.44090409590409585,
+    "scoreR83": 0.44090409590409585,
+    "rawScore": 0.44090409590409585,
+    "scoreBeforePenalty": 0.44090409590409585,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 146.69850206375122,
+    "timeLimitSeconds": 900,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 93997,
+    "cachedInput": 1160092,
+    "output": 8479,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "thinking": 2989,
+    "source": "agy stream usage",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": null,
+    "taskInput": 640.7495555690912,
+    "taskOutput": 57.79881785238172,
+    "lowerBounds": [],
+    "basis": {
+     "task": "agy stream usage over the instance work seconds",
+     "engine": "Antigravity: engine speeds not derived (unknown); only the task speeds are given"
+    }
+   },
+   "toolCalls": 64,
+   "compactions": null,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gemini-4-hydrogen-low"
+   ],
+   "serviceTiers": {},
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 146.69850206375122,
+     "tokens": {
+      "uncachedInput": 93997,
+      "cachedInput": 1160092,
+      "output": 8479
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 64,
+     "apiSeconds": 119.052773639,
+     "compactions": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": "delivered",
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "antigravity/code-spec-v5/hydrogen-low-a5",
+   "scenario": "code-spec-v5",
+   "configKey": "antigravity/gemini-4-hydrogen/low",
+   "configNumber": 36,
+   "arm": "antigravity",
+   "attempt": 5,
+   "supplementaryNote": null,
+   "requestedEffort": "low",
+   "effectiveEffort": "low",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-11-15T01:28:49.650321+00:00",
+   "harnessVersion": "1.5.9",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 5,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase4"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.5182350052664384,
+    "scoreR83": 0.5182350052664384,
+    "rawScore": 0.5182350052664384,
+    "scoreBeforePenalty": 0.5182350052664384,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 175.547785282135,
+    "timeLimitSeconds": 900,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 102184,
+    "cachedInput": 1236168,
+    "output": 7809,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "thinking": 3515,
+    "source": "agy stream usage",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": null,
+    "taskInput": 582.0865232550386,
+    "taskOutput": 44.48361446115435,
+    "lowerBounds": [],
+    "basis": {
+     "task": "agy stream usage over the instance work seconds",
+     "engine": "Antigravity: engine speeds not derived (unknown); only the task speeds are given"
+    }
+   },
+   "toolCalls": 34,
+   "compactions": null,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gemini-4-hydrogen-low"
+   ],
+   "serviceTiers": {},
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 175.547785282135,
+     "tokens": {
+      "uncachedInput": 102184,
+      "cachedInput": 1236168,
+      "output": 7809
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 34,
+     "apiSeconds": 107.833271112,
+     "compactions": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": "delivered",
      "harnessReportedCostUsd": null
     }
    ],
@@ -4621,6 +5188,546 @@
    "parallelWindow": null
   },
   {
+   "id": "antigravity/code-standards-v5.1/hydrogen-low-a1",
+   "scenario": "code-standards-v5.1",
+   "configKey": "antigravity/gemini-4-hydrogen/low",
+   "configNumber": 36,
+   "arm": "antigravity",
+   "attempt": 1,
+   "supplementaryNote": null,
+   "requestedEffort": "low",
+   "effectiveEffort": "low",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-11-15T01:24:56.219923+00:00",
+   "harnessVersion": "1.5.9",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 1,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase4"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.5263434428819044,
+    "scoreR83": 0.5263434428819044,
+    "rawScore": 0.5263434428819044,
+    "scoreBeforePenalty": 0.5263434428819044,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 75.71349048614502,
+    "timeLimitSeconds": 900,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 44497,
+    "cachedInput": 241735,
+    "output": 7623,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "thinking": 5241,
+    "source": "agy stream usage",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": null,
+    "taskInput": 587.702399061137,
+    "taskOutput": 100.68218954183534,
+    "lowerBounds": [],
+    "basis": {
+     "task": "agy stream usage over the instance work seconds",
+     "engine": "Antigravity: engine speeds not derived (unknown); only the task speeds are given"
+    }
+   },
+   "toolCalls": 10,
+   "compactions": null,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gemini-4-hydrogen-low"
+   ],
+   "serviceTiers": {},
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 75.71349048614502,
+     "tokens": {
+      "uncachedInput": 44497,
+      "cachedInput": 241735,
+      "output": 7623
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 10,
+     "apiSeconds": 52.324240747000005,
+     "compactions": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": "delivered",
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "antigravity/code-standards-v5.1/hydrogen-low-a2",
+   "scenario": "code-standards-v5.1",
+   "configKey": "antigravity/gemini-4-hydrogen/low",
+   "configNumber": 36,
+   "arm": "antigravity",
+   "attempt": 2,
+   "supplementaryNote": null,
+   "requestedEffort": "low",
+   "effectiveEffort": "low",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-11-15T01:26:12.651714+00:00",
+   "harnessVersion": "1.5.9",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 2,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase4"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.4363526755667223,
+    "scoreR83": 0.4363526755667223,
+    "rawScore": 0.4363526755667223,
+    "scoreBeforePenalty": 0.4363526755667223,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 58.62427473068237,
+    "timeLimitSeconds": 900,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 41498,
+    "cachedInput": 167470,
+    "output": 6242,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "thinking": 3010,
+    "source": "agy stream usage",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": null,
+    "taskInput": 707.863767878412,
+    "taskOutput": 106.4746647813641,
+    "lowerBounds": [],
+    "basis": {
+     "task": "agy stream usage over the instance work seconds",
+     "engine": "Antigravity: engine speeds not derived (unknown); only the task speeds are given"
+    }
+   },
+   "toolCalls": 19,
+   "compactions": null,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gemini-4-hydrogen-low"
+   ],
+   "serviceTiers": {},
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 58.62427473068237,
+     "tokens": {
+      "uncachedInput": 41498,
+      "cachedInput": 167470,
+      "output": 6242
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 19,
+     "apiSeconds": 42.850832862,
+     "compactions": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": "delivered",
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "antigravity/code-standards-v5.1/hydrogen-low-a3",
+   "scenario": "code-standards-v5.1",
+   "configKey": "antigravity/gemini-4-hydrogen/low",
+   "configNumber": 36,
+   "arm": "antigravity",
+   "attempt": 3,
+   "supplementaryNote": null,
+   "requestedEffort": "low",
+   "effectiveEffort": "low",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-11-15T01:27:11.999731+00:00",
+   "harnessVersion": "1.5.9",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 3,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase4"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.4615950063008887,
+    "scoreR83": 0.4615950063008887,
+    "rawScore": 0.4615950063008887,
+    "scoreBeforePenalty": 0.4615950063008887,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 64.04904222488403,
+    "timeLimitSeconds": 900,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 41433,
+    "cachedInput": 146070,
+    "output": 6524,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "thinking": 4038,
+    "source": "agy stream usage",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": null,
+    "taskInput": 646.8949192795681,
+    "taskOutput": 101.85944665797557,
+    "lowerBounds": [],
+    "basis": {
+     "task": "agy stream usage over the instance work seconds",
+     "engine": "Antigravity: engine speeds not derived (unknown); only the task speeds are given"
+    }
+   },
+   "toolCalls": 10,
+   "compactions": null,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gemini-4-hydrogen-low"
+   ],
+   "serviceTiers": {},
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 64.04904222488403,
+     "tokens": {
+      "uncachedInput": 41433,
+      "cachedInput": 146070,
+      "output": 6524
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 10,
+     "apiSeconds": 41.807244481000005,
+     "compactions": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": "delivered",
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "antigravity/code-standards-v5.1/hydrogen-low-a4",
+   "scenario": "code-standards-v5.1",
+   "configKey": "antigravity/gemini-4-hydrogen/low",
+   "configNumber": 36,
+   "arm": "antigravity",
+   "attempt": 4,
+   "supplementaryNote": null,
+   "requestedEffort": "low",
+   "effectiveEffort": "low",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-11-15T01:28:16.757522+00:00",
+   "harnessVersion": "1.5.9",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 4,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase4"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.4307142857142857,
+    "scoreR83": 0.4307142857142857,
+    "rawScore": 0.4307142857142857,
+    "scoreBeforePenalty": 0.4307142857142857,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 68.87666749954224,
+    "timeLimitSeconds": 900,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 45870,
+    "cachedInput": 219174,
+    "output": 6164,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "thinking": 3014,
+    "source": "agy stream usage",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": null,
+    "taskInput": 665.9729871556991,
+    "taskOutput": 89.49329611571244,
+    "lowerBounds": [],
+    "basis": {
+     "task": "agy stream usage over the instance work seconds",
+     "engine": "Antigravity: engine speeds not derived (unknown); only the task speeds are given"
+    }
+   },
+   "toolCalls": 17,
+   "compactions": null,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gemini-4-hydrogen-low"
+   ],
+   "serviceTiers": {},
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 68.87666749954224,
+     "tokens": {
+      "uncachedInput": 45870,
+      "cachedInput": 219174,
+      "output": 6164
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 17,
+     "apiSeconds": 51.755852167,
+     "compactions": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": "delivered",
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "antigravity/code-standards-v5.1/hydrogen-low-a5",
+   "scenario": "code-standards-v5.1",
+   "configKey": "antigravity/gemini-4-hydrogen/low",
+   "configNumber": 36,
+   "arm": "antigravity",
+   "attempt": 5,
+   "supplementaryNote": null,
+   "requestedEffort": "low",
+   "effectiveEffort": "low",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-11-15T01:29:26.341496+00:00",
+   "harnessVersion": "1.5.9",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 5,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase4"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.5235323650708266,
+    "scoreR83": 0.5235323650708266,
+    "rawScore": 0.5235323650708266,
+    "scoreBeforePenalty": 0.5235323650708266,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 86.3754632472992,
+    "timeLimitSeconds": 900,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 48177,
+    "cachedInput": 248933,
+    "output": 6445,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "thinking": 3685,
+    "source": "agy stream usage",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": null,
+    "taskInput": 557.7625657655319,
+    "taskOutput": 74.61609764740132,
+    "lowerBounds": [],
+    "basis": {
+     "task": "agy stream usage over the instance work seconds",
+     "engine": "Antigravity: engine speeds not derived (unknown); only the task speeds are given"
+    }
+   },
+   "toolCalls": 10,
+   "compactions": null,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gemini-4-hydrogen-low"
+   ],
+   "serviceTiers": {},
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 86.3754632472992,
+     "tokens": {
+      "uncachedInput": 48177,
+      "cachedInput": 248933,
+      "output": 6445
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 10,
+     "apiSeconds": 65.947567266,
+     "compactions": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": "delivered",
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
    "id": "antigravity/commit-audit-v3/hydrogen-medium-a2",
    "scenario": "commit-audit-v3",
    "configKey": "antigravity/gemini-4-hydrogen/medium",
@@ -6457,6 +7564,546 @@
      "modelFailure": false,
      "finalStatus": null,
      "continuationStop": "abnormal_end",
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "antigravity/commit-audit-v3/hydrogen-low-a1",
+   "scenario": "commit-audit-v3",
+   "configKey": "antigravity/gemini-4-hydrogen/low",
+   "configNumber": 36,
+   "arm": "antigravity",
+   "attempt": 1,
+   "supplementaryNote": null,
+   "requestedEffort": "low",
+   "effectiveEffort": "low",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-11-15T01:15:44.070034+00:00",
+   "harnessVersion": "1.5.9",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 1,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase4"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.7072878216757619,
+    "scoreR83": 0.7072878216757619,
+    "rawScore": 0.7072878216757619,
+    "scoreBeforePenalty": 0.7072878216757619,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 129.9925091266632,
+    "timeLimitSeconds": null,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 63304,
+    "cachedInput": 304843,
+    "output": 20937,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "thinking": 10038,
+    "source": "agy stream usage",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": null,
+    "taskInput": 486.98190707525544,
+    "taskOutput": 161.06312694987085,
+    "lowerBounds": [],
+    "basis": {
+     "task": "agy stream usage over the instance work seconds",
+     "engine": "Antigravity: engine speeds not derived (unknown); only the task speeds are given"
+    }
+   },
+   "toolCalls": 26,
+   "compactions": null,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gemini-4-hydrogen-low"
+   ],
+   "serviceTiers": {},
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 129.9925091266632,
+     "tokens": {
+      "uncachedInput": 63304,
+      "cachedInput": 304843,
+      "output": 20937
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 26,
+     "apiSeconds": 109.002459811,
+     "compactions": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": "delivered",
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "antigravity/commit-audit-v3/hydrogen-low-a2",
+   "scenario": "commit-audit-v3",
+   "configKey": "antigravity/gemini-4-hydrogen/low",
+   "configNumber": 36,
+   "arm": "antigravity",
+   "attempt": 2,
+   "supplementaryNote": null,
+   "requestedEffort": "low",
+   "effectiveEffort": "low",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-11-15T01:17:54.761247+00:00",
+   "harnessVersion": "1.5.9",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 2,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase4"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.065990647944524,
+    "scoreR83": 0.065990647944524,
+    "rawScore": 0.065990647944524,
+    "scoreBeforePenalty": 0.065990647944524,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 143.33779215812683,
+    "timeLimitSeconds": null,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 56500,
+    "cachedInput": 308196,
+    "output": 14971,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "thinking": 8677,
+    "source": "agy stream usage",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": null,
+    "taskInput": 394.17378452202297,
+    "taskOutput": 104.44558810759656,
+    "lowerBounds": [],
+    "basis": {
+     "task": "agy stream usage over the instance work seconds",
+     "engine": "Antigravity: engine speeds not derived (unknown); only the task speeds are given"
+    }
+   },
+   "toolCalls": 25,
+   "compactions": null,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gemini-4-hydrogen-low"
+   ],
+   "serviceTiers": {},
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 143.33779215812683,
+     "tokens": {
+      "uncachedInput": 56500,
+      "cachedInput": 308196,
+      "output": 14971
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 25,
+     "apiSeconds": 82.28164389,
+     "compactions": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": "delivered",
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "antigravity/commit-audit-v3/hydrogen-low-a3",
+   "scenario": "commit-audit-v3",
+   "configKey": "antigravity/gemini-4-hydrogen/low",
+   "configNumber": 36,
+   "arm": "antigravity",
+   "attempt": 3,
+   "supplementaryNote": null,
+   "requestedEffort": "low",
+   "effectiveEffort": "low",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-11-15T01:20:18.768203+00:00",
+   "harnessVersion": "1.5.9",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 3,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase4"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.15769857999133832,
+    "scoreR83": 0.15769857999133832,
+    "rawScore": 0.15769857999133832,
+    "scoreBeforePenalty": 0.15769857999133832,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 139.71833682060242,
+    "timeLimitSeconds": null,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 68751,
+    "cachedInput": 403184,
+    "output": 19600,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "thinking": 11845,
+    "source": "agy stream usage",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": null,
+    "taskInput": 492.06855423906103,
+    "taskOutput": 140.28223099424875,
+    "lowerBounds": [],
+    "basis": {
+     "task": "agy stream usage over the instance work seconds",
+     "engine": "Antigravity: engine speeds not derived (unknown); only the task speeds are given"
+    }
+   },
+   "toolCalls": 26,
+   "compactions": null,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gemini-4-hydrogen-low"
+   ],
+   "serviceTiers": {},
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 139.71833682060242,
+     "tokens": {
+      "uncachedInput": 68751,
+      "cachedInput": 403184,
+      "output": 19600
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 26,
+     "apiSeconds": 109.192495462,
+     "compactions": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": "delivered",
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "antigravity/commit-audit-v3/hydrogen-low-a4",
+   "scenario": "commit-audit-v3",
+   "configKey": "antigravity/gemini-4-hydrogen/low",
+   "configNumber": 36,
+   "arm": "antigravity",
+   "attempt": 4,
+   "supplementaryNote": null,
+   "requestedEffort": "low",
+   "effectiveEffort": "low",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-11-15T01:22:39.181828+00:00",
+   "harnessVersion": "1.5.9",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 4,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase4"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.15938181841480203,
+    "scoreR83": 0.15938181841480203,
+    "rawScore": 0.15938181841480203,
+    "scoreBeforePenalty": 0.15938181841480203,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 121.94955277442932,
+    "timeLimitSeconds": null,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 64504,
+    "cachedInput": 381046,
+    "output": 17525,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "thinking": 9663,
+    "source": "agy stream usage",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": null,
+    "taskInput": 528.940029155444,
+    "taskOutput": 143.70696407895875,
+    "lowerBounds": [],
+    "basis": {
+     "task": "agy stream usage over the instance work seconds",
+     "engine": "Antigravity: engine speeds not derived (unknown); only the task speeds are given"
+    }
+   },
+   "toolCalls": 27,
+   "compactions": null,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gemini-4-hydrogen-low"
+   ],
+   "serviceTiers": {},
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 121.94955277442932,
+     "tokens": {
+      "uncachedInput": 64504,
+      "cachedInput": 381046,
+      "output": 17525
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 27,
+     "apiSeconds": 100.711886173,
+     "compactions": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": "delivered",
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "antigravity/commit-audit-v3/hydrogen-low-a5",
+   "scenario": "commit-audit-v3",
+   "configKey": "antigravity/gemini-4-hydrogen/low",
+   "configNumber": 36,
+   "arm": "antigravity",
+   "attempt": 5,
+   "supplementaryNote": null,
+   "requestedEffort": "low",
+   "effectiveEffort": "low",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-11-15T01:24:41.819484+00:00",
+   "harnessVersion": "1.5.9",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 5,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase4"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.19391309973801243,
+    "scoreR83": 0.19391309973801243,
+    "rawScore": 0.19391309973801243,
+    "scoreBeforePenalty": 0.19391309973801243,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 122.35169434547424,
+    "timeLimitSeconds": null,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 63870,
+    "cachedInput": 359380,
+    "output": 18382,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "thinking": 10525,
+    "source": "agy stream usage",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": null,
+    "taskInput": 522.0197426907356,
+    "taskOutput": 150.23903100267893,
+    "lowerBounds": [],
+    "basis": {
+     "task": "agy stream usage over the instance work seconds",
+     "engine": "Antigravity: engine speeds not derived (unknown); only the task speeds are given"
+    }
+   },
+   "toolCalls": 27,
+   "compactions": null,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gemini-4-hydrogen-low"
+   ],
+   "serviceTiers": {},
+   "handoffs": [
+    {
+     "subScenario": "default",
+     "durationSeconds": 122.35169434547424,
+     "tokens": {
+      "uncachedInput": 63870,
+      "cachedInput": 359380,
+      "output": 18382
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 27,
+     "apiSeconds": 93.452305207,
+     "compactions": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": "delivered",
      "harnessReportedCostUsd": null
     }
    ],
@@ -8441,6 +10088,666 @@
     }
    ],
    "parallelWindow": null
+  },
+  {
+   "id": "antigravity/spec-readiness-v4.3/hydrogen-low-a1",
+   "scenario": "spec-readiness-v4.3",
+   "configKey": "antigravity/gemini-4-hydrogen/low",
+   "configNumber": 36,
+   "arm": "antigravity",
+   "attempt": 1,
+   "supplementaryNote": null,
+   "requestedEffort": "low",
+   "effectiveEffort": "low",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-11-15T01:15:24.139671+00:00",
+   "harnessVersion": "1.5.9",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 1,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase4"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.2760869565217391,
+    "scoreR83": 0.2760869565217391,
+    "rawScore": 0.2760869565217391,
+    "scoreBeforePenalty": 0.2760869565217391,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 122.12095212936401,
+    "timeLimitSeconds": null,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 104689,
+    "cachedInput": 354052,
+    "output": 10990,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "thinking": 8320,
+    "source": "agy stream usage",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": null,
+    "taskInput": 857.256663779544,
+    "taskOutput": 89.99274742272053,
+    "lowerBounds": [],
+    "basis": {
+     "task": "agy stream usage over the instance work seconds",
+     "engine": "Antigravity: engine speeds not derived (unknown); only the task speeds are given"
+    }
+   },
+   "toolCalls": 16,
+   "compactions": null,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gemini-4-hydrogen-low"
+   ],
+   "serviceTiers": {},
+   "handoffs": [
+    {
+     "subScenario": "runtime-migration",
+     "durationSeconds": 50.382285356521606,
+     "tokens": {
+      "uncachedInput": 53432,
+      "cachedInput": 205040,
+      "output": 4907
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 9,
+     "apiSeconds": 37.579437903,
+     "compactions": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": "delivered",
+     "harnessReportedCostUsd": null
+    },
+    {
+     "subScenario": "artifact-promotion",
+     "durationSeconds": 71.73866677284241,
+     "tokens": {
+      "uncachedInput": 51257,
+      "cachedInput": 149012,
+      "output": 6083
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 7,
+     "apiSeconds": 60.990321765,
+     "compactions": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": "delivered",
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "antigravity/spec-readiness-v4.3/hydrogen-low-a2",
+   "scenario": "spec-readiness-v4.3",
+   "configKey": "antigravity/gemini-4-hydrogen/low",
+   "configNumber": 36,
+   "arm": "antigravity",
+   "attempt": 2,
+   "supplementaryNote": null,
+   "requestedEffort": "low",
+   "effectiveEffort": "low",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-11-15T01:17:27.131131+00:00",
+   "harnessVersion": "1.5.9",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 2,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase4"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.2956521739130435,
+    "scoreR83": 0.2956521739130435,
+    "rawScore": 0.2956521739130435,
+    "scoreBeforePenalty": 0.2956521739130435,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 112.6730535030365,
+    "timeLimitSeconds": null,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 107209,
+    "cachedInput": 359262,
+    "output": 12330,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "thinking": 9758,
+    "source": "agy stream usage",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": null,
+    "taskInput": 951.5052327672184,
+    "taskOutput": 109.43166637147817,
+    "lowerBounds": [],
+    "basis": {
+     "task": "agy stream usage over the instance work seconds",
+     "engine": "Antigravity: engine speeds not derived (unknown); only the task speeds are given"
+    }
+   },
+   "toolCalls": 17,
+   "compactions": null,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gemini-4-hydrogen-low"
+   ],
+   "serviceTiers": {},
+   "handoffs": [
+    {
+     "subScenario": "runtime-migration",
+     "durationSeconds": 59.051395654678345,
+     "tokens": {
+      "uncachedInput": 55189,
+      "cachedInput": 209435,
+      "output": 5647
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 9,
+     "apiSeconds": 48.770336893999996,
+     "compactions": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": "delivered",
+     "harnessReportedCostUsd": null
+    },
+    {
+     "subScenario": "artifact-promotion",
+     "durationSeconds": 53.621657848358154,
+     "tokens": {
+      "uncachedInput": 52020,
+      "cachedInput": 149827,
+      "output": 6683
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 8,
+     "apiSeconds": 40.799761392,
+     "compactions": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": "delivered",
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "antigravity/spec-readiness-v4.3/hydrogen-low-a3",
+   "scenario": "spec-readiness-v4.3",
+   "configKey": "antigravity/gemini-4-hydrogen/low",
+   "configNumber": 36,
+   "arm": "antigravity",
+   "attempt": 3,
+   "supplementaryNote": null,
+   "requestedEffort": "low",
+   "effectiveEffort": "low",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-11-15T01:19:20.624233+00:00",
+   "harnessVersion": "1.5.9",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 3,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase4"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.17391304347826086,
+    "scoreR83": 0.17391304347826086,
+    "rawScore": 0.17391304347826086,
+    "scoreBeforePenalty": 0.17391304347826086,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 111.69803285598755,
+    "timeLimitSeconds": null,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 112776,
+    "cachedInput": 421383,
+    "output": 12782,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "thinking": 10660,
+    "source": "agy stream usage",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": null,
+    "taskInput": 1009.6507263060064,
+    "taskOutput": 114.43352826526366,
+    "lowerBounds": [],
+    "basis": {
+     "task": "agy stream usage over the instance work seconds",
+     "engine": "Antigravity: engine speeds not derived (unknown); only the task speeds are given"
+    }
+   },
+   "toolCalls": 18,
+   "compactions": null,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gemini-4-hydrogen-low"
+   ],
+   "serviceTiers": {},
+   "handoffs": [
+    {
+     "subScenario": "runtime-migration",
+     "durationSeconds": 55.391175746917725,
+     "tokens": {
+      "uncachedInput": 55740,
+      "cachedInput": 208093,
+      "output": 6111
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 9,
+     "apiSeconds": 44.458727777,
+     "compactions": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": "delivered",
+     "harnessReportedCostUsd": null
+    },
+    {
+     "subScenario": "artifact-promotion",
+     "durationSeconds": 56.306857109069824,
+     "tokens": {
+      "uncachedInput": 57036,
+      "cachedInput": 213290,
+      "output": 6671
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 9,
+     "apiSeconds": 47.620211771,
+     "compactions": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": "delivered",
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "antigravity/spec-readiness-v4.3/hydrogen-low-a4",
+   "scenario": "spec-readiness-v4.3",
+   "configKey": "antigravity/gemini-4-hydrogen/low",
+   "configNumber": 36,
+   "arm": "antigravity",
+   "attempt": 4,
+   "supplementaryNote": null,
+   "requestedEffort": "low",
+   "effectiveEffort": "low",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-11-15T01:21:13.148122+00:00",
+   "harnessVersion": "1.5.9",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 4,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase4"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.3021739130434783,
+    "scoreR83": 0.3021739130434783,
+    "rawScore": 0.3021739130434783,
+    "scoreBeforePenalty": 0.3021739130434783,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 111.40865850448608,
+    "timeLimitSeconds": null,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 115247,
+    "cachedInput": 330927,
+    "output": 13269,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "thinking": 10555,
+    "source": "agy stream usage",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": null,
+    "taskInput": 1034.4528113616893,
+    "taskOutput": 119.10205345005296,
+    "lowerBounds": [],
+    "basis": {
+     "task": "agy stream usage over the instance work seconds",
+     "engine": "Antigravity: engine speeds not derived (unknown); only the task speeds are given"
+    }
+   },
+   "toolCalls": 18,
+   "compactions": null,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gemini-4-hydrogen-low"
+   ],
+   "serviceTiers": {},
+   "handoffs": [
+    {
+     "subScenario": "runtime-migration",
+     "durationSeconds": 49.1934380531311,
+     "tokens": {
+      "uncachedInput": 55921,
+      "cachedInput": 162682,
+      "output": 5545
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 9,
+     "apiSeconds": 38.512911082,
+     "compactions": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": "delivered",
+     "harnessReportedCostUsd": null
+    },
+    {
+     "subScenario": "artifact-promotion",
+     "durationSeconds": 62.21522045135498,
+     "tokens": {
+      "uncachedInput": 59326,
+      "cachedInput": 168245,
+      "output": 7724
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 9,
+     "apiSeconds": 48.642237047,
+     "compactions": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": "delivered",
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
+  },
+  {
+   "id": "antigravity/spec-readiness-v4.3/hydrogen-low-a5",
+   "scenario": "spec-readiness-v4.3",
+   "configKey": "antigravity/gemini-4-hydrogen/low",
+   "configNumber": 36,
+   "arm": "antigravity",
+   "attempt": 5,
+   "supplementaryNote": null,
+   "requestedEffort": "low",
+   "effectiveEffort": "low",
+   "pooledIntoHigh": false,
+   "startedAt": "2026-11-15T01:23:05.369768+00:00",
+   "harnessVersion": "1.5.9",
+   "validity": {
+    "valid": true,
+    "status": "valid",
+    "notes": [],
+    "reminderInterrupts": 0,
+    "streamCutRetries": 0
+   },
+   "selection": {
+    "validRank": 5,
+    "firstN": true,
+    "mainStatistic": true,
+    "cellPooled": false,
+    "inMain": true,
+    "stage": "phase4"
+   },
+   "scoring": {
+    "status": "final",
+    "score": 0.2760869565217391,
+    "scoreR83": 0.2760869565217391,
+    "rawScore": 0.2760869565217391,
+    "scoreBeforePenalty": 0.2760869565217391,
+    "formatPenalty": 0.0,
+    "repairs": 0,
+    "overallDeduction": 0.0,
+    "modelFailureSubScenarios": [],
+    "diagnosticEnvironmentQueries": null
+   },
+   "time": {
+    "durationSeconds": 110.06931829452515,
+    "timeLimitSeconds": null,
+    "durationAdjustmentSeconds": null
+   },
+   "tokens": {
+    "uncachedInput": 106177,
+    "cachedInput": 354338,
+    "output": 11633,
+    "cacheWriteInput": null,
+    "cacheWrite1h": null,
+    "cacheWrite5m": null,
+    "thinking": 8895,
+    "source": "agy stream usage",
+    "lowerBound": false
+   },
+   "speeds": {
+    "engineInput": null,
+    "engineOutput": null,
+    "taskInput": 964.637572442213,
+    "taskOutput": 105.68794447215747,
+    "lowerBounds": [],
+    "basis": {
+     "task": "agy stream usage over the instance work seconds",
+     "engine": "Antigravity: engine speeds not derived (unknown); only the task speeds are given"
+    }
+   },
+   "toolCalls": 16,
+   "compactions": null,
+   "pauses": {
+    "known": true,
+    "count": 0,
+    "continueCount": 0
+   },
+   "cost": null,
+   "harnessReportedCostUsd": null,
+   "modelIdsReturned": [
+    "gemini-4-hydrogen-low"
+   ],
+   "serviceTiers": {},
+   "handoffs": [
+    {
+     "subScenario": "runtime-migration",
+     "durationSeconds": 60.078412771224976,
+     "tokens": {
+      "uncachedInput": 53670,
+      "cachedInput": 203284,
+      "output": 5598
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 9,
+     "apiSeconds": 46.281866869,
+     "compactions": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": "delivered",
+     "harnessReportedCostUsd": null
+    },
+    {
+     "subScenario": "artifact-promotion",
+     "durationSeconds": 49.99090552330017,
+     "tokens": {
+      "uncachedInput": 52507,
+      "cachedInput": 151054,
+      "output": 6035
+     },
+     "tokensLowerBound": false,
+     "cacheWriteInput": null,
+     "toolCalls": 7,
+     "apiSeconds": 37.580103074,
+     "compactions": null,
+     "engine": {
+      "read": null,
+      "generated": null,
+      "inputSeconds": null,
+      "decodeSeconds": null
+     },
+     "modelFailure": false,
+     "finalStatus": "ready",
+     "continuationStop": "delivered",
+     "harnessReportedCostUsd": null
+    }
+   ],
+   "parallelWindow": null
   }
  ],
  "sensitivityVariants": [],
@@ -8467,8 +10774,8 @@
   },
   {
    "id": "phase4-supplement",
-   "zh": "第四阶段只是补充（用户 2026-11-14）：Gemini 4 Hydrogen medium / high / xhigh（配置 30–32，Antigravity）在 4 个场景各格取全部有效实例（不截取前 5 个），只给逐实例结果，不进预登记比较；本文件只含这三个配置，预登记配置与前三阶段在第三阶段文件里。运行于 2026-11-14（JST），晚于 v1 约三周，服务端模型或路由可能已有变化，也没有同期对照。",
-   "en": "Phase 4 is a supplement only (user 2026-11-14): Gemini 4 Hydrogen medium / high / xhigh (configurations 30-32, Antigravity), every valid instance of each cell in the 4 scenarios (no first-5 cut), per-instance results only, never in a preregistered comparison; this file holds only these three configurations, the preregistered ones and the first three phases are in the phase-3 file. Run on 2026-11-14 (JST), about three weeks after v1, so the served model or routing may have changed, and there is no same-period control."
+   "zh": "第四阶段只是补充（用户 2026-11-14）：Gemini 4 Hydrogen low / medium / high / xhigh（配置 30–32 和 36，Antigravity）在 4 个场景各格取全部有效实例（不截取前 5 个），只给逐实例结果，不进预登记比较；本文件只含这三个配置，预登记配置与前三阶段在第三阶段文件里。运行于 2026-11-14（JST），晚于 v1 约三周，服务端模型或路由可能已有变化，也没有同期对照。",
+   "en": "Phase 4 is a supplement only (user 2026-11-14): Gemini 4 Hydrogen low / medium / high / xhigh (configurations 30-32 and 36, Antigravity), every valid instance of each cell in the 4 scenarios (no first-5 cut), per-instance results only, never in a preregistered comparison; this file holds only these three configurations, the preregistered ones and the first three phases are in the phase-3 file. Run on 2026-11-14 (JST), about three weeks after v1, so the served model or routing may have changed, and there is no same-period control."
   },
   {
    "id": "antigravity-harness",
