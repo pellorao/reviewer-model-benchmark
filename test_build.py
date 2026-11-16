@@ -250,7 +250,7 @@ class PageTests(unittest.TestCase):
         pricing["openai"]["gpt-6-luna"]["rates"]["output"] = 0.75
         pricing["localRunningCost"]["strata-iq3_xxs"]["wallPowerWatts"] = 450
         pricing["checkedAt"] = "2030-01-02"
-        copy_text = build.page_copy(pricing)
+        copy_text = build.page_copy(pricing, extract(self.data, pricing))
         self.assertIn("$0.10 / $0.01 / $0.75", copy_text["en"]["method_cost"])
         self.assertIn("450 W × $0.174 per kWh", copy_text["en"]["method_cost"])
         self.assertIn("450 W × 全球家庭平均电价 $0.174/kWh", copy_text["zh"]["method_cost"])
@@ -262,6 +262,25 @@ class PageTests(unittest.TestCase):
         self.assertIn(">Method &amp; data</a>", self.html)
         self.assertNotIn(">Method & data</a>", self.html)
         self.assertEqual(build.script_json({"a": "</script><b>"}), '{"a": "\\u003c/script>\\u003cb>"}')
+
+    def test_run_count_text_follows_cells_in_both_languages(self):
+        records = extract(self.data, PRICING)
+        cells = [cell for record in records for cell in record["cells"].values()]
+        for cell, n in zip(cells, (4, 8, 10)):
+            cell["n"] = n
+        text = build.page_copy(PRICING, records)
+        self.assertIn("Each task cell counts 2 to 10 scored runs.", text["en"]["version_summary"])
+        self.assertIn("每个任务格计入 2 至 10 次计分运行.", text["zh"]["version_summary"])
+        for key in ("method_selection", "detail_score_read"):
+            self.assertIn("9 cells with 2 runs; 1 cell with 4 runs; 1 cell with 8 runs; "
+                          "1 cell with 10 runs", text["en"][key])
+            self.assertIn("9 格各 2 次; 1 格各 4 次; 1 格各 8 次; 1 格各 10 次", text["zh"][key])
+        for cell in cells:
+            cell["n"] = 7
+        text = build.page_copy(PRICING, records)
+        self.assertIn("Each task cell counts 7 scored runs.", text["en"]["version_summary"])
+        self.assertIn("每个任务格计入 7 次计分运行.", text["zh"]["version_summary"])
+        self.assertIn("12 cells with 7 runs", text["en"]["method_selection"])
 
     def test_speed_note_lists_partial_cells_but_not_unknown_api_engine_input(self):
         records = build.extract(self.data, PRICING)

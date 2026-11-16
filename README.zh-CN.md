@@ -77,7 +77,7 @@ v2.1 在 v2.0 数据的基础上，加入了 benchmark 第三阶段补测的 GPT
 - 常规配置每项任务计入 5 次运行，本地模型 Strata 每项任务计入 10 次。
 - GPT-6 Luna xhigh 和 max 属于第三阶段补充配置（`kind` 为 `phase3`），按 benchmark 的口径计入每格的全部有效实例，每项任务 5 至 8 次。
 - Gemini 4 Hydrogen low、medium、high 和 xhigh 属于第四阶段补充配置（`kind` 为 `phase4`），计入每格的全部有效实例，每项任务 5 次。
-- DeepSeek 请求设为 medium、但端点在相同时限下实际按 high 执行的运行，按 benchmark 口径并入 high 格；因此 Commit Audit 中的两个 DeepSeek high 格各有 8 次运行。
+- DeepSeek 请求设为 medium、但端点在相同时限下实际按 high 执行的运行，按 benchmark 口径并入 high 格。页面根据筛选后的数据生成运行数范围及各运行数对应的格数分布。
 - 无效运行，以及因时限不同而单列的“请求 medium”补充配置，均不进入页面。
 - Code Spec 与 Code Standards 的时限：每个实例的时限 T 按所测配置自身的速度算出，并限制在 15 至 60 分钟之间。到时限被中断的实例作废，并以 60 分钟重跑；60 分钟仍被中断则停下等待决定。最终只计在各自时限内完成的实例。因此交接提示里写的时限数字在实例和它的重跑之间不同，这是已知的小偏差。Gemini 4 Hydrogen 有 6 次这样的重跑（low 没有；medium 的 Code Spec 1 次，xhigh 的 Code Spec 2 次、Code Standards 3 次）。较早的模型里有 3 个实例撞到旧时限而作废：Claude Haiku low 的 Code Spec a7、a8，以及 DeepSeek-flash max（Claude Code）的 Code Spec a4。Haiku low 已以 60 分钟补跑（a9、a10，Claude Code 2.1.310，原为 2.1.303，事后另开一个盲裁池裁决）。DeepSeek 的补跑因 API 密钥被拒无法进行，该格主统计只有 4 个实例而不是 5 个。
 

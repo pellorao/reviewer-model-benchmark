@@ -5,6 +5,7 @@ import colorsys
 import html
 import json
 import math
+from collections import Counter
 from datetime import date
 from pathlib import Path
 
@@ -868,9 +869,23 @@ def cost_method_values(pricing):
             "upkeep": usd(local["maintenanceUsdPerHour"]), "checked": pricing["checkedAt"]}
 
 
-def page_copy(pricing):
+def run_count_method_values(records):
+    """Describe scored cell sizes from the same records used by the charts."""
+    counts = Counter(cell["n"] for record in records for cell in record["cells"].values())
+    low, high = min(counts), max(counts)
+    return {
+        "en_range": str(low) if low == high else f"{low} to {high}",
+        "zh_range": str(low) if low == high else f"{low} 至 {high}",
+        "en_counts": "; ".join(f"{cells} {'cell' if cells == 1 else 'cells'} with {n} runs"
+                               for n, cells in sorted(counts.items())),
+        "zh_counts": "; ".join(f"{cells} 格各 {n} 次" for n, cells in sorted(counts.items())),
+    }
+
+
+def page_copy(pricing, records):
     weights = " + ".join(f"{weight:.2f} {name}" for _, name, weight in REVIEWERS)
     cost = cost_method_values(pricing)
+    runs = run_count_method_values(records)
     rates_en = join_and([f"{name} {rate}" for name, rate in cost["rates"]])
     rates_zh = ", ".join(
         f"{name} 每百万未缓存输入、缓存输入、输出 token 为 {rate}" if index == 0 else f"{name} 为 {rate}"
@@ -893,7 +908,7 @@ def page_copy(pricing):
             "headline": "Comparing AI models for software review",
             "lead": "A Reviewer is an AI agent assigned a software review task. Here, {model_count} models run four such tasks through two agent harnesses, Codex and Claude Code, at different reasoning effort settings; the charts compare their task performance, time and cost.",
             "version_title": f"Benchmark v{PAGE_VERSION}",
-            "version_summary": f"Adds GPT-6 Luna at xhigh and max effort (a supplement run one day later) and Gemini 4 Hydrogen at low, medium, high and xhigh effort (a supplement run about three weeks later, in the Antigravity harness; low was run a day after the other three) to the v2.0 run (new models, two harnesses, scoring {SCORING_VERSION} with scores that can be negative, 5 to 10 scored runs per task). Results are not comparable with v1.",
+            "version_summary": f"Adds GPT-6 Luna at xhigh and max effort (a supplement run one day later) and Gemini 4 Hydrogen at low, medium, high and xhigh effort (a supplement run about three weeks later, in the Antigravity harness; low was run a day after the other three) to the v2.0 run (new models, two harnesses, scoring {SCORING_VERSION} with scores that can be negative). Each task cell counts {runs['en_range']} scored runs. Results are not comparable with v1.",
             "version_readme": "For the measurement rules, see the project",
             "stat_models": "MODELS", "stat_configurations": "CONFIGURATIONS",
             "stat_benchmarks": "REVIEWER TASKS", "stat_runs": "SCORED RUNS",
@@ -925,7 +940,7 @@ def page_copy(pricing):
             "speed_label": "Speed",
             "speed_task_output": "Task output", "speed_task_input": "Task input",
             "speed_engine_output": "Engine output", "speed_engine_input": "Engine input",
-            "detail_score_read": "Each bar is the mean score of the runs the benchmark counts: 10 for Strata, 5 to 8 for GPT-6 Luna xhigh and max, and 5 for other configurations (8 for DeepSeek high in Commit Audit). The number above a track is the mean and the whisker the 95% confidence interval; with about five runs, a difference below about 30 points may be noise. The label color identifies the model. Scroll horizontally to compare all configurations.",
+            "detail_score_read": f"Each bar is the mean score of the runs the benchmark counts. Scored runs per cell: {runs['en_counts']}. The number above a track is the mean and the whisker the 95% confidence interval; with about five runs, a difference below about 30 points may be noise. The label color identifies the model. Scroll horizontally to compare all configurations.",
             "detail_time_read": "Each bar is one task's mean work time per run. Spec Readiness runs two independent review threads per run; their times are added.",
             "detail_token_read": "Each bar stacks mean non-cached input, cached input and output tokens per run. Claude Code counts cache writes as non-cached input; Strata on Codex includes its guardian requests. Hover for exact counts.",
             "detail_cost_read": "Each bar is one task's mean cost per run on the basis named in the tooltip; OpenAI and Claude runs used subscriptions, so theirs are reference API prices. Use Linear / Log above the chart to switch the cost axis.",
@@ -937,7 +952,7 @@ def page_copy(pricing):
             "reviewer_audit": "Audits a staged commit candidate: the selected files, required checks and coverage of the supplied requirements.",
             "reviewer_readiness": "Before implementation, checks whether requirement documents are complete, consistent, feasible and verifiable. Each run has two independent review threads.",
             "method_kicker": "DATA NOTES", "method_title": "How scores and costs are calculated",
-            "method_selection": "The data are the benchmark's per-run results. The page uses the runs the benchmark counts in its main statistics: 10 per task for Strata and 5 for other configurations. GPT-6 Luna xhigh and max are a supplement run a day later with every valid run counted (5 to 8 per task); the benchmark does not compare them with other configurations. Gemini 4 Hydrogen low, medium, high and xhigh are a supplement run about three weeks later (low a day after the other three) in a different harness (Antigravity; its version was 1.5.8 for some runs and 1.5.9 for others), with every valid run counted (5 per task); the benchmark does not compare them with other configurations either. DeepSeek runs requested as medium count as high where the endpoint ran them as high under the same time limit, so DeepSeek high has 8 runs in Commit Audit. Invalid runs and the supplementary DeepSeek configuration requested as medium under a different time limit are excluded.",
+            "method_selection": f"The data are the benchmark's per-run results. The page uses the runs the benchmark counts in its main statistics. Scored runs per cell: {runs['en_counts']}. GPT-6 Luna xhigh and max are a supplement run a day later with every valid run counted; the benchmark does not compare them with other configurations. Gemini 4 Hydrogen low, medium, high and xhigh are a supplement run about three weeks later (low a day after the other three) in a different harness (Antigravity; its version was 1.5.8 for some runs and 1.5.9 for others), with every valid run counted; the benchmark does not compare them with other configurations either. DeepSeek runs requested as medium count as high where the endpoint ran them as high under the same time limit. Invalid runs and the supplementary DeepSeek configuration requested as medium under a different time limit are excluded.",
             "method_score": f"A run's score (scoring {SCORING_VERSION}) credits the answer-key problems a report finds and deducts its false findings. It is not cut at 0, so it can be negative, and a run that produced no report scores 0. A task score is the mean of its runs, with a 95% interval from the t distribution. The weighted score is 100 × ({weights}); its interval combines the four standard errors with Welch–Satterthwaite degrees of freedom.",
             "method_runtime": "Time and tokens average every counted run, including zero-score runs, which still used resources. A task's value is the mean over its runs with data; a configuration's value is the arithmetic mean of its four task values. Speeds are total tokens over total seconds, never a mean of speeds: a task's speed pools its runs.",
             "method_cost": f"Cost per run: DeepSeek uses the benchmark's per-request cost at official prices; Claude models use the API-equivalent cost reported by Claude Code (subscription run, reference API price); GPT models price their tokens at OpenAI Standard API rates (subscription run, reference API price) ({rates_en} per million non-cached input, cached input and output tokens); Gemini models price their tokens at Google Gemini API rates (plan run, reference API price; output includes thinking) ({google_en} per million, same order); Strata uses work time × ({cost['watts']} W × {cost['electricity']} per kWh, the world household average, plus {cost['upkeep']} per hour of upkeep), excluding hardware purchase. Prices were checked on {cost['checked']}.",
@@ -963,7 +978,7 @@ def page_copy(pricing):
             "headline": "AI 软件审查模型对比",
             "lead": "Reviewer 是负责一项软件审查任务的 AI 代理. 这里让 {model_count} 个模型通过 Codex 和 Claude Code 两种代理程序, 以不同推理强度完成四类任务, 比较完成任务的能力、耗时和费用.",
             "version_title": f"基准版本 v{PAGE_VERSION}",
-            "version_summary": f"在 v2.0 测量 (新的模型、两种代理程序、评分 {SCORING_VERSION} 且分数可为负、每项任务计入 5 至 10 次运行) 上, 加入晚一天补测的 GPT-6 Luna xhigh 和 max 推理强度, 以及晚约三周补测的 Gemini 4 Hydrogen low、medium、high 和 xhigh 推理强度 (在 Antigravity 代理程序中运行, low 比其余三档晚一天). 结果不能与 v1 直接比较.",
+            "version_summary": f"在 v2.0 测量 (新的模型、两种代理程序、评分 {SCORING_VERSION} 且分数可为负) 上, 加入晚一天补测的 GPT-6 Luna xhigh 和 max 推理强度, 以及晚约三周补测的 Gemini 4 Hydrogen low、medium、high 和 xhigh 推理强度 (在 Antigravity 代理程序中运行, low 比其余三档晚一天). 每个任务格计入 {runs['zh_range']} 次计分运行. 结果不能与 v1 直接比较.",
             "version_readme": "测量规则请见项目",
             "stat_models": "模型", "stat_configurations": "模型配置",
             "stat_benchmarks": "REVIEWER 任务", "stat_runs": "计分运行",
@@ -995,7 +1010,7 @@ def page_copy(pricing):
             "speed_label": "速度",
             "speed_task_output": "任务输出", "speed_task_input": "任务输入",
             "speed_engine_output": "引擎输出", "speed_engine_input": "引擎输入",
-            "detail_score_read": "每根柱子是基准计入的运行的平均分: Strata 10 次, GPT-6 Luna xhigh 和 max 5 至 8 次, 其他配置 5 次 (Commit Audit 中的 DeepSeek high 为 8 次). 底槽上方的数字是平均分, 须线表示 95% 置信区间; 只有约 5 次运行时, 低于约 30 分的差距可能只是波动. 标签颜色对应模型, 水平滚动可查看全部配置.",
+            "detail_score_read": f"每根柱子是基准计入的运行的平均分. 各格计分运行数: {runs['zh_counts']}. 底槽上方的数字是平均分, 须线表示 95% 置信区间; 只有约 5 次运行时, 低于约 30 分的差距可能只是波动. 标签颜色对应模型, 水平滚动可查看全部配置.",
             "detail_time_read": "每根柱子是该任务单次运行的平均耗时. Spec Readiness 每次运行有两个独立审查线程, 耗时相加.",
             "detail_token_read": "每根柱子从下到上叠加单次运行的平均未缓存输入、缓存输入和输出 token. Claude Code 把缓存写入计为未缓存输入; Codex 上的 Strata 含 guardian 请求. 悬停可查看准确数量.",
             "detail_cost_read": "每根柱子是该任务单次运行的平均费用, 计费依据见悬停提示; OpenAI 与 Claude 为套餐运行, 费用是参考 API 价. 可用图表上方的线性 / 对数切换费用坐标.",
@@ -1007,7 +1022,7 @@ def page_copy(pricing):
             "reviewer_audit": "审计暂存的提交候选: 选中的文件、必要检查和任务要求的覆盖情况.",
             "reviewer_readiness": "在实施前检查需求文档是否完整、一致、可实现且可验证. 每次运行有两个独立审查线程.",
             "method_kicker": "数据说明", "method_title": "分数与费用的计算方法",
-            "method_selection": "数据是基准的逐次运行结果. 本页使用基准主统计计入的运行: Strata 每项任务 10 次, 其他配置 5 次. GPT-6 Luna xhigh 和 max 是晚一天的补测, 计入全部有效运行 (每项任务 5 至 8 次), 基准本身不拿它们与其他配置比较. Gemini 4 Hydrogen low、medium、high 和 xhigh 是晚约三周的补测 (low 比其余三档晚一天), 使用另一种代理程序 (Antigravity, 部分运行为 1.5.8 版, 部分为 1.5.9 版), 计入全部有效运行 (每项任务 5 次), 基准同样不拿它们与其他配置比较. 在相同时限下由端点按 high 执行的 DeepSeek medium 请求并入 high, 因此 Commit Audit 中的 DeepSeek high 有 8 次. 无效运行, 以及时限不同而单列的 DeepSeek medium 请求补充配置, 都不计入.",
+            "method_selection": f"数据是基准的逐次运行结果. 本页使用基准主统计计入的运行. 各格计分运行数: {runs['zh_counts']}. GPT-6 Luna xhigh 和 max 是晚一天的补测, 计入全部有效运行, 基准本身不拿它们与其他配置比较. Gemini 4 Hydrogen low、medium、high 和 xhigh 是晚约三周的补测 (low 比其余三档晚一天), 使用另一种代理程序 (Antigravity, 部分运行为 1.5.8 版, 部分为 1.5.9 版), 计入全部有效运行, 基准同样不拿它们与其他配置比较. 在相同时限下由端点按 high 执行的 DeepSeek medium 请求并入 high. 无效运行, 以及时限不同而单列的 DeepSeek medium 请求补充配置, 都不计入.",
             "method_score": f"单次运行的分数 (评分 {SCORING_VERSION}) 按报告找到的答案键问题加分, 按错误发现扣分. 分数不在 0 处截断, 所以可以为负; 没有产出报告的运行记 0 分. 任务分数是各次运行的平均值, 95% 区间按 t 分布计算. 综合分数 = 100 × ({weights}); 其区间合并四项的标准误, 自由度按 Welch–Satterthwaite 计算.",
             "method_runtime": "耗时和 token 对全部计入的运行求平均, 包括 0 分运行, 因为它们同样消耗了资源. 任务的值是有数据的运行的平均值; 配置的值是四项任务的值的算术平均. 速度是总 token 除以总耗时, 不对速度求平均: 任务速度合并该任务的各次运行.",
             "method_cost": f"单次运行费用: DeepSeek 采用基准按官方价逐请求计算的费用; Claude 模型采用 Claude Code 报告的 API 等价费用 (套餐运行, 参考 API 价); GPT 模型按 OpenAI Standard API 单价换算 token (套餐运行, 参考 API 价) ({rates_zh}); Gemini 模型按 Google Gemini API 单价换算 token (套餐运行, 参考 API 价, 输出含思考) ({google_zh}, 顺序同上); Strata 按耗时 × ({cost['watts']} W × 全球家庭平均电价 {cost['electricity']}/kWh + 每小时维护费 {cost['upkeep']}) 计算, 不含硬件购置. 价格已于 {cost['checked']} 核对.",
@@ -1032,7 +1047,7 @@ SOURCE_LINKS = (
 
 def page(results, pricing, supplements=()):
     records = extract(results, pricing, supplements)
-    copy = page_copy(pricing)
+    copy = page_copy(pricing, records)
     model_count = len({record["model"] for record in records})
     run_count = sum(cell["n"] for record in records for cell in record["cells"].values())
     for language in ("en", "zh"):
