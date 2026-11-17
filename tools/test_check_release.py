@@ -30,6 +30,19 @@ class ReleaseTests(unittest.TestCase):
         with self.assertRaisesRegex(release.CheckFailure, 'missing_local_pages'):
             release.compare_pages(self.root, 'https://example.org', 4, fetch)
 
+    def test_compare_ignores_only_the_footer_date(self):
+        def page(en_date, zh_date, body='data'):
+            return ('<footer><span class="footer-updated" data-i18n="footer_updated">Updated %s</span></footer>'
+                    '<script>{"en": {"footer_updated": "Updated %s"}, "zh": {"footer_updated": "更新于 %s"}}'
+                    '</script><p>%s</p>' % (en_date, en_date, zh_date, body)).encode()
+        (self.root / 'index.html').write_bytes(page('Nov 18, 2026', '2026 年 11 月 18 日'))
+        # A build one day (or one timezone) later differs only in the date and must still match.
+        release.compare_pages(self.root, 'https://example.org', 4,
+                              lambda *_: page('Nov 17, 2026', '2026 年 11 月 17 日'))
+        with self.assertRaisesRegex(release.CheckFailure, 'content_mismatch:index.html'):
+            release.compare_pages(self.root, 'https://example.org', 4,
+                                  lambda *_: page('Nov 17, 2026', '2026 年 11 月 17 日', 'other'))
+
     def test_fetch_sets_user_agent_and_bounds_response(self):
         opener = MagicMock()
         response = opener.open.return_value.__enter__.return_value

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build and verify all deployed HTML by exact SHA-256; no credentials or APIs."""
+"""Build and verify all deployed HTML by exact SHA-256 (footer build date ignored); no credentials or APIs."""
 import argparse
 from datetime import datetime, timezone
 import hashlib
@@ -39,13 +39,25 @@ def fetch(url, timeout):
         return body
 
 
+# build.py stamps the footer with date.today() (English and Chinese, in the markup and in the
+# language table), so a build on another day or in another timezone differs only there.
+FOOTER_DATE = re.compile(
+    rb'Updated [A-Z][a-z]{2} \d{1,2}, \d{4}'
+    + rb'|' + '更新于 \\d{4} 年 \\d{1,2} 月 \\d{1,2} 日'.encode())
+
+
+def page_digest(body):
+    """SHA-256 of a page with the footer's build date blanked; everything else stays exact."""
+    return hashlib.sha256(FOOTER_DATE.sub(b'<date>', body)).digest()
+
+
 def compare_pages(site, base_url, timeout, fetcher=fetch):
     pages = sorted(site.glob('*.html'))
     if not pages or not (site / 'index.html').is_file():
         raise CheckFailure('missing_local_pages')
     for page in pages:
         remote = fetcher(base_url.rstrip('/') + '/' + ('' if page.name == 'index.html' else page.name), timeout)
-        if hashlib.sha256(remote).digest() != hashlib.sha256(page.read_bytes()).digest():
+        if page_digest(remote) != page_digest(page.read_bytes()):
             raise CheckFailure('content_mismatch:' + page.name)
 
 
