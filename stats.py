@@ -154,6 +154,12 @@ def plan_efficiency(pricing, vendor):
     return rule["e"] if rule else None
 
 
+def plan_efficiency_estimate(pricing, vendor):
+    """True when E of the vendor's plan category is an estimate (no direct quota measurement)."""
+    rule = pricing["taskPoints"]["efficiency"].get(vendor)
+    return bool(rule and rule.get("estimate"))
+
+
 def plan_weekly_cost(pricing):
     """USD per week of the reference plan (the Claude $100 plan): monthly price over a 30-day month, times 7 days."""
     plan = pricing["taskPoints"]["plan"]
@@ -234,6 +240,7 @@ def summarize_cell(instances, config, pricing):
         "taskPoints": mean_of(points), "planShare": plan_share(mean_of(points), pricing),
         "apiCost": mean_of(api_costs),
         "efficiency": plan_efficiency(pricing, config["vendor"]),
+        "efficiencyEstimate": plan_efficiency_estimate(pricing, config["vendor"]),
         "speeds": speeds, "speedCounts": speed_counts,
         "speedLowerBounds": speed_bounds,
     }
@@ -269,6 +276,7 @@ def composite(cells):
         "costLowerBound": any(cells[key]["costLowerBound"] for key, _, _ in REVIEWERS),
         "taskPoints": task_points, "planShare": plan_share_value, "apiCost": api_cost,
         "efficiency": next((cells[key]["efficiency"] for key, _, _ in REVIEWERS if cells[key]["efficiency"] is not None), None),
+        "efficiencyEstimate": any(cells[key]["efficiencyEstimate"] for key, _, _ in REVIEWERS),
         "tokens": ({key: mean_of([tokens[key] for tokens in token_cells]) for key in TOKEN_KEYS}
                    if token_cells else None),
     }

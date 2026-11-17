@@ -183,8 +183,14 @@ h3 {
   border-left: 1px solid var(--point-divider);
   padding-left: 8px;
 }
-.point-tip-note {
+.point-tip-rows {
   margin-top: 4px;
+}
+.point-tip-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  white-space: nowrap;
 }
 .point-tooltip[hidden],.bar-tooltip[hidden] {
   display: none;

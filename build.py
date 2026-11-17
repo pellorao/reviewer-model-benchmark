@@ -17,7 +17,7 @@ from stats import (EFFORTS, HARNESS_NAMES, MODEL_NAMES, REVIEWERS, SCORING_VERSI
                    extract, load_pricing, plan_weekly_cost)
 
 
-PAGE_VERSION = "2.6"
+PAGE_VERSION = "2.6.1"
 # Model colors in MODEL_NAMES order (stats.py); series follow harness order, then this model order.
 MODEL_COLORS = {
     "gpt-6.1-sol": "#4c78b8",
@@ -121,15 +121,6 @@ SPEED_LABELS = {
     "engineOutput": ("Engine output speed (tok/s)", "引擎输出速度 (tok/s)"),
     "engineInput": ("Engine input speed (tok/s)", "引擎输入速度 (tok/s)"),
 }
-PLAN_BASIS_EN = "Subscription run, priced as its share of the Claude $100 plan's weekly fee"
-PLAN_BASIS_ZH = "套餐运行, 按占 Claude $100 套餐周费用的份额计"
-COST_BASIS = {
-    "openai": (PLAN_BASIS_EN, PLAN_BASIS_ZH),
-    "google": (PLAN_BASIS_EN + " (estimated E)", PLAN_BASIS_ZH + " (E 为估算)"),
-    "deepseek": ("DeepSeek price per request", "DeepSeek 逐请求价格"),
-    "anthropic": (PLAN_BASIS_EN, PLAN_BASIS_ZH),
-    "strata": ("Local running cost", "本地运行成本"),
-}
 
 
 def series_label(harness, model):
@@ -157,30 +148,26 @@ def short_value(record, key):
     return f"{record[key]:.1f}"
 
 
-def task_points_text(points, api_cost, efficiency, share, lower=False, api="API", language="en"):
-    """A plan run's equivalent task points with its API-equivalent cost, E and share of a $100 plan week,
-    e.g. 0.017 (API $1.7055 × E 1) = 0.318% of a $100 plan week; ≥ marks a lower bound."""
-    bound = "≥" if lower else ""
-    of = f"{bound}{share * 100:.3g}% of a $100 plan week" if language == "en" else f"$100 套餐周额度的 {bound}{share * 100:.3g}%"
-    return f"{bound}{points:.3g} ({api} {bound}${api_cost:.4f} × E {efficiency:.3g}) = {of}"
-
-
-def plan_points_note(record):
-    """English and Chinese hover line (tab-separated) for a plan run's equivalent task points."""
-    args = (record["taskPoints"], record["apiCost"], record["efficiency"], record["planShare"], record["costLowerBound"])
-    return (f"Equivalent task points: {task_points_text(*args, api='API-equivalent')}"
-            f"\t等效任务点: {task_points_text(*args, api='API 等价', language='zh')}")
+def plan_rows(item, language):
+    """Data rows of a plan run's cost tooltip as (label, value): equivalent task points, API-equivalent
+    cost, efficiency ratio E and share of a plan week; ≥ marks a lower bound, E is tagged when estimated."""
+    en = language == "en"
+    bound = "≥" if item["costLowerBound"] else ""
+    estimate = (" (estimated)" if en else " (估算)") if item["efficiencyEstimate"] else ""
+    return [("Equivalent task points" if en else "等效任务点", f"{bound}{item['taskPoints']:.3g}"),
+            ("API-equivalent cost" if en else "API 等价费用", f"{bound}${item['apiCost']:.4f}"),
+            ("E", f"{item['efficiency']:.3g}{estimate}"),
+            ("Plan week share" if en else "套餐周份额", f"{bound}{item['planShare'] * 100:.3g}%")]
 
 
 def hover_summary(record, xkey, ykey):
+    """Tooltip source of a scatter point: label, the two values, then one line per data row of a plan run's
+    cost: English label, value, Chinese label, value, tab-separated (the tooltip picks the page language)."""
     summary = (f"{record['label']}\n{short_value(record, xkey)}\n"
                f"{short_value(record, ykey)}")
-    if "cost" in (xkey, ykey):
-        # English and Chinese notes are tab-separated; the tooltip picks the page language.
-        english, chinese = COST_BASIS[record["vendor"]]
-        summary += f"\nCost: {english}\t费用: {chinese}"
-        if record["taskPoints"] is not None:
-            summary += "\n" + plan_points_note(record)
+    if "cost" in (xkey, ykey) and record["taskPoints"] is not None:
+        for (en_label, en_value), (zh_label, zh_value) in zip(plan_rows(record, "en"), plan_rows(record, "zh")):
+            summary += f"\n{en_label}\t{en_value}\t{zh_label}\t{zh_value}"
     return summary
 
 
@@ -364,12 +351,23 @@ def chart(records, xkey, ykey, chart_id):
         metrics.appendChild(cell);
       }
       data.appendChild(metrics);
-      if (notes.length) {
-        const note = document.createElement('div');
-        note.className = 'point-tip-note';
-        note.textContent = notes.map(line => line.split(String.fromCharCode(9))[window.chartLanguage === 'zh' ? 1 : 0] ?? line)
-          .join(String.fromCharCode(10));
-        data.appendChild(note);
+      const shift = window.chartLanguage === 'zh' ? 2 : 0;
+      const rows = notes.map(line => line.split(String.fromCharCode(9)).slice(shift, shift + 2));
+      if (rows.length) {
+        const list = document.createElement('div');
+        list.className = 'point-tip-rows';
+        for (const [name, value] of rows) {
+          const row = document.createElement('div');
+          row.className = 'point-tip-row';
+          for (const [className, text] of [['point-tip-name', name], ['point-tip-value', value]]) {
+            const cell = document.createElement('span');
+            cell.className = className;
+            cell.textContent = text;
+            row.appendChild(cell);
+          }
+          list.appendChild(row);
+        }
+        data.appendChild(list);
       }
       tip.replaceChildren(title, data);
       tip.style.width = '';
@@ -380,7 +378,9 @@ def chart(records, xkey, ykey, chart_id):
         return range.getBoundingClientRect().width;
       };
       const cellWidth = Math.max(...[...metrics.children].map(textWidth)) + 9;
-      tip.style.width = Math.ceil(Math.max(textWidth(title), cellWidth * 2) + 20) + 'px';
+      const rowWidth = Math.max(0, ...[...data.querySelectorAll('.point-tip-row')]
+        .map(row => [...row.children].reduce((sum, cell) => sum + textWidth(cell), 12)));
+      tip.style.width = Math.ceil(Math.max(textWidth(title), cellWidth * 2, rowWidth) + 20) + 'px';
       const frameBox = frame.getBoundingClientRect(), graphBox = gd.getBoundingClientRect();
       const px = Number.isFinite(point.xPixel) ? point.xPixel : event.xPixel;
       const py = Number.isFinite(point.yPixel) ? point.yPixel : event.yPixel;
@@ -640,8 +640,7 @@ def effort_score_chart(records):
                      "display": f"{record['score']:.1f}"
                                 + (f" ± {record['half']:.1f}" if record["half"] is not None else "")}
                     for record in group]
-            meta = (f"Weighted score ± 95% CI · {len(rows)} effort levels" if language == "en"
-                    else f"综合分数 ± 95% 区间 · {len(rows)} 档推理强度")
+            meta = "Weighted score ± 95% CI" if language == "en" else "综合分数 ± 95% 区间"
             details[language][position] = {"label": title, "meta": meta, "rows": rows}
     figure = go.Figure()
     for effort in sorted(EFFORTS, key=EFFORTS.get, reverse=True):
@@ -719,11 +718,9 @@ def detail_meta(cell, metric, name, language, speed=None):
         used = cell[DETAIL_METRICS[metric]["count"]]
     text = (f"{name}\n{used}/{cell['n']} instances with data" if en
             else f"{name}\n{used}/{cell['n']} 个实例有数据")
-    lower = (cell["speedLowerBounds"][speed] if metric == "speed"
-             else cell["tokenLowerBound"] if metric == "tokens"
-             else cell["costLowerBound"] if metric == "cost" else False)
-    if lower:
-        text += "\nIncludes lower bounds (≥)" if en else "\n含下限值 (≥)"
+    # Cost and speed values carry their own ≥; token counts are shown plain, so the meta line marks them.
+    if metric == "tokens" and cell["tokenLowerBound"]:
+        text += "\nLower bounds (≥)" if en else "\n含下限值 (≥)"
     return text
 
 
@@ -757,18 +754,15 @@ def detail_bar_chart(records, metric):
                             display, row_name = f"{value:.1f} min", ("Work time", "耗时")
                         elif metric == "cost":
                             display = f"{'≥' if cell['costLowerBound'] else ''}${value:.4f}"
-                            row_name = COST_BASIS[record["vendor"]]
+                            row_name = ("Cost", "费用")
                         else:
                             bound = "≥" if cell["speedLowerBounds"][speed] else ""
                             display, row_name = f"{bound}{value:,.1f} tok/s", SPEED_LABELS[speed]
                         rows = [{"name": row_name[0] if language == "en" else row_name[1],
                                  "color": ROLE_COLORS[index], "display": display}]
                         if metric == "cost" and cell["taskPoints"] is not None:
-                            rows.append({"name": "Equivalent task points" if language == "en" else "等效任务点",
-                                         "color": ROLE_COLORS[index],
-                                         "display": task_points_text(cell["taskPoints"], cell["apiCost"],
-                                                                     cell["efficiency"], cell["planShare"],
-                                                                     cell["costLowerBound"], language=language)})
+                            rows += [{"name": label, "color": ROLE_COLORS[index], "display": plan_value}
+                                     for label, plan_value in plan_rows(cell, language)]
                     role_details.append({"label": record["label"], "meta": meta, "rows": rows})
             details[language][record["label"]] = role_details
     figure = go.Figure()
@@ -955,13 +949,13 @@ def page_copy(pricing, records):
             "trade_intro": "Each point is one configuration. Lines join the effort levels of one model in one harness: circles mark Codex and diamonds Claude Code. A Pareto-front point has no other visible point that is at least as good on both plotted measures and better on one. Click Pareto Front in a legend to show those points and their connecting line. Hold Ctrl while scrolling over a chart to zoom.",
             "cost_score_title": "Cost per run vs. score",
             "cost_score_desc": f"Cost per run averages each task's per-run cost, then the four tasks. The bases differ by vendor and none is an actual bill: for every subscription-plan run (Claude, GPT and Gemini models), the share of the Claude $100 plan's weekly fee ({cost['week_usd']}) that the run used up; for DeepSeek, per-request prices; and for the local Strata model, estimated electricity and upkeep.",
-            "cost_score_read": "Higher score is better; farther left is a lower cost per run. Hover a point for its cost basis. All plan runs follow one rule: a run that uses 1/100 of the $100 plan's weekly quota costs 1/100 of its weekly fee; Gemini's efficiency ratio is an estimate (see Data notes). Use Linear / Log above the chart to switch the cost axis: Linear shows absolute differences; Log helps compare costs across a wide range.",
+            "cost_score_read": "Higher score is better; farther left is a lower cost per run. Hover a point for its values; a plan run's tooltip lists its equivalent task points, API-equivalent cost, efficiency ratio E and share of a plan week, and ≥ marks a lower bound. All plan runs follow one rule: a run that uses 1/100 of the $100 plan's weekly quota costs 1/100 of its weekly fee; Gemini's efficiency ratio E is an estimate, tagged so in the tooltip (see Data notes). Use Linear / Log above the chart to switch the cost axis: Linear shows absolute differences; Log helps compare costs across a wide range.",
             "time_score_title": "Work time vs. score",
             "time_score_desc": "Compare the weighted score with the average work time of one review run.",
             "time_score_read": "Higher score is better; farther left is a shorter run. Work time excludes setup and loading. Codex counts the agent's accumulated work time and Claude Code the session's wall time. Code Spec and Code Standards stop at a time limit set from each configuration's own speed and held between 15 and 60 minutes; a run that is stopped by the limit is voided and rerun, so every counted run ended before its limit. Two caveats: runs made before the 15-60 minute rule used their original limits (the voided runs were then rerun at 60 minutes, some on a newer Claude Code version), and the DeepSeek-flash max Code Spec (Claude Code) cell has 4 counted runs instead of 5 because its rerun could not be made.",
             "time_cost_title": "Work time vs. cost per run",
             "time_cost_desc": "Inspect the relationship between run time and cost.",
-            "time_cost_read": "Farther left is a shorter run; lower is a lower cost per run. This plot does not encode quality, so use it alongside the score charts. Use Linear / Log above the chart to switch the cost axis.",
+            "time_cost_read": "Farther left is a shorter run; lower is a lower cost per run. The cost rows in the tooltip are explained under Cost per run vs. score. This plot does not encode quality, so use it alongside the score charts. Use Linear / Log above the chart to switch the cost axis.",
             "cost_scale": "Cost scale", "scale_linear": "Linear", "scale_log": "Log",
             "review_kicker": "03 / TASK DETAIL", "review_title": "Results by reviewer task",
             "review_desc": "Compare each configuration's score, work time, token usage, cost and speed in each of the four reviewer tasks.",
@@ -976,7 +970,7 @@ def page_copy(pricing, records):
             "detail_score_read": f"Each bar is the mean score of the runs the benchmark counts. Scored runs per cell: {runs['en_counts']}. The number above a track is the mean and the whisker the 95% confidence interval; with about five runs, a difference below about 30 points may be noise. The label color identifies the model. Scroll horizontally to compare all configurations.",
             "detail_time_read": "Each bar is one task's mean work time per run. Spec Readiness runs two independent review threads per run; their times are added.",
             "detail_token_read": "Each bar stacks mean non-cached input, cached input and output tokens per run. Claude Code counts cache writes as non-cached input; Strata on Codex includes its guardian requests. Hover for exact counts.",
-            "detail_cost_read": "Each bar is one task's mean cost per run on the basis named in the tooltip; OpenAI, Claude and Gemini runs used subscriptions, so theirs are priced as a share of the Claude $100 plan's weekly fee (the tooltip also gives the equivalent task points, the API-equivalent cost and the efficiency ratio E behind that share). Use Linear / Log above the chart to switch the cost axis.",
+            "detail_cost_read": "Each bar is one task's mean cost per run. OpenAI, Claude and Gemini runs used subscriptions, so theirs are priced as a share of the Claude $100 plan's weekly fee (the tooltip gives the equivalent task points, the API-equivalent cost, the efficiency ratio E and the share of a plan week behind that price; Gemini's E is an estimate). DeepSeek and Strata are priced in actual-cost dollars (see Data notes). Use Linear / Log above the chart to switch the cost axis.",
             "detail_speed_read": "A speed is total tokens divided by total seconds, never an average of per-run speeds. Task speeds divide non-cached input or output tokens by work time: the speed a user perceives. Engine speeds measure the model alone. API models cannot separate input processing, so their engine input speed is unknown and their engine output speed is a lower bound (≥); engine input speed exists only for Strata.",
             "reviewer_guide_title": "The four reviewer tasks and their score shares",
             "score_share_label": "Score share",
@@ -988,7 +982,7 @@ def page_copy(pricing, records):
             "method_selection": f"The data are the benchmark's per-run results. The page uses the runs the benchmark counts in its main statistics. Scored runs per cell: {runs['en_counts']}. GPT-6 Luna xhigh and max are a supplement run a day later with every valid run counted; the benchmark does not compare them with other configurations. Gemini 4 Hydrogen low, medium, high and xhigh are a supplement run about three weeks later (low a day after the other three) in a different harness (Antigravity; its version was 1.5.8 for some runs and 1.5.9 for others), with every valid run counted; the benchmark does not compare them with other configurations either. DeepSeek runs requested as medium count as high where the endpoint ran them as high under the same time limit. Invalid runs and the supplementary DeepSeek configuration requested as medium under a different time limit are excluded.",
             "method_score": f"A run's score (scoring {SCORING_VERSION}) credits the answer-key problems a report finds and deducts its false findings. It is not cut at 0, so it can be negative, and a run that produced no report scores 0. A task score is the mean of its runs, with a 95% interval from the t distribution. The weighted score is 100 × ({weights}); its interval combines the four standard errors with Welch–Satterthwaite degrees of freedom.",
             "method_runtime": "Time and tokens average every counted run, including zero-score runs, which still used resources. A task's value is the mean over its runs with data; a configuration's value is the arithmetic mean of its four task values. Speeds are total tokens over total seconds, never a mean of speeds: a task's speed pools its runs.",
-            "method_cost": f"Cost per run: DeepSeek uses the benchmark's per-request cost at official prices; Claude, GPT and Gemini models ran on subscription plans, and all of them are converted into one subscription price, the Claude $100 plan's weekly fee ({cost['week_usd']}: $100 a month over a 30-day month, times 7 days). A run's cost is the share of that plan's weekly quota it uses, times the weekly fee. For example, if one $100 plan week allowed 10G tokens of a small model but only 1G of a large one, then 100M tokens of each would use 1/100 and 1/10 of the week, so they cost 1/100 and 1/10 of the weekly fee. The share is found through equivalent task points: one point is a fixed amount of Claude API spending ({cost['point_usd']}), a Claude $100 plan week holds {cost['week_points']} points (about {cost['week_api']} of Claude API-priced use, measured on {cost['week_checked']}), and a plan category's efficiency ratio E is what Claude would have spent on the same kind of finished work divided by what that plan spent (from the author's own usage history). A run's points are its API-equivalent cost × E ÷ {cost['point_usd']}, and its cost is points ÷ {cost['week_points']} × {cost['week_usd']}; the tooltips show the points, the API-equivalent cost, E and the share of a plan week. The API-equivalent cost is, for Claude models, the cost Claude Code reports; for GPT models, token counts at OpenAI Standard API rates ({rates_en} per million non-cached input, cached input and output tokens); for Gemini models, token counts at Google Gemini API rates (output includes thinking; {google_en} per million, same order). E is one value per plan category, not per model: Claude {cost['e_claude']} (1 by definition), Codex {cost['e_gpt']} (used for Sol and Luna alike), both read from the author's task-point history on {cost['plan_checked']}; Gemini {cost['e_gemini']} is an estimate from a 2026-11-16 analysis whose coverage (32 to 48%) is below the display threshold of the author's status page, and it will not be updated because the Antigravity tracking was removed. DeepSeek and Strata are not subscriptions and stay in actual-cost dollars, so they are not on the same footing as the plan runs. Strata uses work time × ({cost['watts']} W × {cost['electricity']} per kWh, the world household average, plus {cost['upkeep']} per hour of upkeep), excluding hardware purchase. Prices were checked on {cost['checked']}.",
+            "method_cost": f"Cost per run: DeepSeek uses the benchmark's per-request cost at official prices; Claude, GPT and Gemini models ran on subscription plans, and all of them are converted into one subscription price, the Claude $100 plan's weekly fee ({cost['week_usd']}: $100 a month over a 30-day month, times 7 days). A run's cost is the share of that plan's weekly quota it uses, times the weekly fee. For example, if one $100 plan week allowed 10G tokens of a small model but only 1G of a large one, then 100M tokens of each would use 1/100 and 1/10 of the week, so they cost 1/100 and 1/10 of the weekly fee. The share is found through equivalent task points: one point is a fixed amount of Claude API spending ({cost['point_usd']}), a Claude $100 plan week holds {cost['week_points']} points (about {cost['week_api']} of Claude API-priced use, measured on {cost['week_checked']}), and a plan category's efficiency ratio E is what Claude would have spent on the same kind of finished work divided by what that plan spent (from the author's own usage history). A run's points are its API-equivalent cost × E ÷ {cost['point_usd']}, and its cost is points ÷ {cost['week_points']} × {cost['week_usd']}. The API-equivalent cost is, for Claude models, the cost Claude Code reports; for GPT models, token counts at OpenAI Standard API rates ({rates_en} per million non-cached input, cached input and output tokens); for Gemini models, token counts at Google Gemini API rates (output includes thinking; {google_en} per million, same order). E is one value per plan category, not per model: Claude {cost['e_claude']} (1 by definition), Codex {cost['e_gpt']} (used for Sol and Luna alike), both read from the author's task-point history on {cost['plan_checked']}; Gemini {cost['e_gemini']} is an estimate from a 2026-11-16 analysis whose coverage (32 to 48%) is below the display threshold of the author's status page, and it will not be updated because the Antigravity tracking was removed. DeepSeek and Strata are not subscriptions and stay in actual-cost dollars, so they are not on the same footing as the plan runs. Strata uses work time × ({cost['watts']} W × {cost['electricity']} per kWh, the world household average, plus {cost['upkeep']} per hour of upkeep), excluding hardware purchase. Prices were checked on {cost['checked']}.",
             "method_missing": "Missing values are not zero: a task mean uses only the runs with data, and the notes under each chart list where that happens. Values marked ≥ are lower bounds, for example DeepSeek costs that miss requests dropped by a time-limit reminder.",
             "google_prices": "Google pricing", "openai_prices": "OpenAI pricing", "deepseek_prices": "DeepSeek pricing",
             "anthropic_prices": "Anthropic pricing", "electricity_prices": "Electricity prices",
@@ -1025,13 +1019,13 @@ def page_copy(pricing, records):
             "trade_intro": "每个点代表一个配置. 连线连接同一代理程序上同一模型的不同推理强度: 圆点为 Codex, 菱形为 Claude Code. 对前沿上的点, 其他可见点无法在两项指标上都不差、且至少一项更好. 点击图例中的帕累托前沿, 即可显示这些点及其连线. 按住 Ctrl 并在图表上滚动滚轮可缩放.",
             "cost_score_title": "单次运行费用与分数",
             "cost_score_desc": f"单次运行费用先对每项任务的单次费用求平均, 再对四项任务求平均. 各厂商的计费依据不同, 都不是实际账单: 所有套餐运行 (Claude, GPT 与 Gemini 模型) 按该次运行用掉的 Claude $100 套餐周费用 ({cost['week_usd']}) 的份额; DeepSeek 按逐请求价格; 本地 Strata 模型按估算的电费和维护费.",
-            "cost_score_read": "分数越高越好; 越靠左表示单次运行费用越低. 悬停在点上可查看计费依据. 所有套餐运行用同一条规则: 用掉 $100 套餐周额度 1/100 的运行, 费用就是周费用的 1/100; Gemini 的效率比 E 是估算值 (见数据说明). 可用图表上方的线性 / 对数切换费用坐标: 线性便于比较绝对费用差异, 对数便于查看跨数量级的费用.",
+            "cost_score_read": "分数越高越好; 越靠左表示单次运行费用越低. 悬停在点上可查看数值; 套餐运行的提示列出等效任务点, API 等价费用, 效率比 E 和占套餐周额度的份额, ≥ 表示下限. 所有套餐运行用同一条规则: 用掉 $100 套餐周额度 1/100 的运行, 费用就是周费用的 1/100; Gemini 的效率比 E 是估算值, 提示中会标注 (见数据说明). 可用图表上方的线性 / 对数切换费用坐标: 线性便于比较绝对费用差异, 对数便于查看跨数量级的费用.",
             "time_score_title": "耗时与分数",
             "time_score_desc": "比较各配置的综合分数与单次审查运行的平均耗时.",
             "time_score_read": "分数越高越好; 越靠左表示单次运行越快. 耗时不含准备与加载. Codex 计代理的累计工作时间, Claude Code 计会话的墙钟时间. Code Spec 与 Code Standards 按各配置自身速度设定时限, 并限制在 15 至 60 分钟之间; 到时被停止的运行作废并重跑, 因此计入的运行都在时限内结束. 两点说明: 15 至 60 分钟规则之前完成的运行沿用当时的时限 (作废的运行随后以 60 分钟重跑, 其中一部分用了较新的 Claude Code 版本); DeepSeek-flash max 的 Code Spec (Claude Code) 一格只有 4 个计入的运行而不是 5 个, 因为它的重跑没能进行.",
             "time_cost_title": "耗时与单次运行费用",
             "time_cost_desc": "查看运行耗时与费用之间的关系.",
-            "time_cost_read": "越靠左表示单次运行越快; 越靠下表示单次运行费用越低. 此图不表示质量, 需结合分数图阅读. 可用图表上方的线性 / 对数切换费用坐标.",
+            "time_cost_read": "越靠左表示单次运行越快; 越靠下表示单次运行费用越低. 提示中的费用各行见“单次运行费用与分数”图的说明. 此图不表示质量, 需结合分数图阅读. 可用图表上方的线性 / 对数切换费用坐标.",
             "cost_scale": "费用坐标", "scale_linear": "线性", "scale_log": "对数",
             "review_kicker": "03 / 任务明细", "review_title": "按 Reviewer 任务比较",
             "review_desc": "分别比较各配置在四项 Reviewer 任务中的分数、耗时、token 用量、费用与速度.",
@@ -1046,7 +1040,7 @@ def page_copy(pricing, records):
             "detail_score_read": f"每根柱子是基准计入的运行的平均分. 各格计分运行数: {runs['zh_counts']}. 底槽上方的数字是平均分, 须线表示 95% 置信区间; 只有约 5 次运行时, 低于约 30 分的差距可能只是波动. 标签颜色对应模型, 水平滚动可查看全部配置.",
             "detail_time_read": "每根柱子是该任务单次运行的平均耗时. Spec Readiness 每次运行有两个独立审查线程, 耗时相加.",
             "detail_token_read": "每根柱子从下到上叠加单次运行的平均未缓存输入、缓存输入和输出 token. Claude Code 把缓存写入计为未缓存输入; Codex 上的 Strata 含 guardian 请求. 悬停可查看准确数量.",
-            "detail_cost_read": "每根柱子是该任务单次运行的平均费用, 计费依据见悬停提示; OpenAI, Claude 与 Gemini 为套餐运行, 费用按占 Claude $100 套餐周费用的份额计 (悬停提示同时给出背后的等效任务点, API 等价费用和效率比 E). 可用图表上方的线性 / 对数切换费用坐标.",
+            "detail_cost_read": "每根柱子是该任务单次运行的平均费用. OpenAI, Claude 与 Gemini 为套餐运行, 费用按占 Claude $100 套餐周费用的份额计 (悬停提示给出背后的等效任务点, API 等价费用, 效率比 E 和占套餐周额度的份额; Gemini 的 E 是估算值). DeepSeek 与 Strata 按实际花费的美元计 (见数据说明). 可用图表上方的线性 / 对数切换费用坐标.",
             "detail_speed_read": "速度一律是总 token 除以总耗时, 不对各次运行的速度求平均. 任务速度是未缓存输入或输出 token 除以耗时, 即用户感受到的速度. 引擎速度只衡量模型本身. API 模型无法分出输入处理时间, 所以引擎输入速度未知, 引擎输出速度是下限 (≥); 只有 Strata 有引擎输入速度.",
             "reviewer_guide_title": "四项 Reviewer 任务及评分占比",
             "score_share_label": "评分占比",
@@ -1058,7 +1052,7 @@ def page_copy(pricing, records):
             "method_selection": f"数据是基准的逐次运行结果. 本页使用基准主统计计入的运行. 各格计分运行数: {runs['zh_counts']}. GPT-6 Luna xhigh 和 max 是晚一天的补测, 计入全部有效运行, 基准本身不拿它们与其他配置比较. Gemini 4 Hydrogen low、medium、high 和 xhigh 是晚约三周的补测 (low 比其余三档晚一天), 使用另一种代理程序 (Antigravity, 部分运行为 1.5.8 版, 部分为 1.5.9 版), 计入全部有效运行, 基准同样不拿它们与其他配置比较. 在相同时限下由端点按 high 执行的 DeepSeek medium 请求并入 high. 无效运行, 以及时限不同而单列的 DeepSeek medium 请求补充配置, 都不计入.",
             "method_score": f"单次运行的分数 (评分 {SCORING_VERSION}) 按报告找到的答案键问题加分, 按错误发现扣分. 分数不在 0 处截断, 所以可以为负; 没有产出报告的运行记 0 分. 任务分数是各次运行的平均值, 95% 区间按 t 分布计算. 综合分数 = 100 × ({weights}); 其区间合并四项的标准误, 自由度按 Welch–Satterthwaite 计算.",
             "method_runtime": "耗时和 token 对全部计入的运行求平均, 包括 0 分运行, 因为它们同样消耗了资源. 任务的值是有数据的运行的平均值; 配置的值是四项任务的值的算术平均. 速度是总 token 除以总耗时, 不对速度求平均: 任务速度合并该任务的各次运行.",
-            "method_cost": f"单次运行费用: DeepSeek 采用基准按官方价逐请求计算的费用; Claude, GPT 与 Gemini 模型为套餐运行, 都换算成同一个订阅价格, 即 Claude $100 套餐的周费用 ({cost['week_usd']}: 每月 $100, 按 30 天一个月折成每天再乘 7 天). 一次运行的费用 = 它用掉的该套餐周额度的份额 × 周费用. 例如同一个 $100 套餐一周可跑小模型 10G token, 大模型只能跑 1G, 两者各实际用 100M token 时, 分别用掉周额度的 1/100 和 1/10, 费用就是周费用的 1/100 和 1/10. 份额通过等效任务点求得: 1 点是固定的 {cost['point_usd']} Claude API 花费, Claude $100 套餐一周有 {cost['week_points']} 点 (约 {cost['week_api']} 的 Claude API 标价用量, {cost['week_checked']} 实测), 套餐类别的效率比 E 是 Claude 做同类已完成的活会花的钱除以该套餐实际花的钱 (取自作者自己的使用历史). 一次运行的点数 = API 等价费用 × E ÷ {cost['point_usd']}, 费用 = 点数 ÷ {cost['week_points']} × {cost['week_usd']}; 悬停提示给出点数, API 等价费用, E 和占 $100 套餐周额度的份额. API 等价费用: Claude 模型用 Claude Code 报告的费用; GPT 模型按 OpenAI Standard API 单价换算 token ({rates_zh}); Gemini 模型按 Google Gemini API 单价换算 token (输出含思考; {google_zh}, 顺序同上). E 每个套餐类别一个值, 不按模型区分: Claude {cost['e_claude']} (按定义为 1), Codex {cost['e_gpt']} (Sol 与 Luna 通用), 均取自作者 {cost['plan_checked']} 的任务点历史; Gemini {cost['e_gemini']} 是 2026-11-16 一次分析的估算值, 覆盖率 (32% 至 48%) 低于作者状态页的显示门槛, 且 Antigravity 的统计已撤除, 不会再更新. DeepSeek 与 Strata 不是订阅, 仍按实际花费的美元计, 与套餐运行口径不同. Strata 按耗时 × ({cost['watts']} W × 全球家庭平均电价 {cost['electricity']}/kWh + 每小时维护费 {cost['upkeep']}) 计算, 不含硬件购置. 价格已于 {cost['checked']} 核对.",
+            "method_cost": f"单次运行费用: DeepSeek 采用基准按官方价逐请求计算的费用; Claude, GPT 与 Gemini 模型为套餐运行, 都换算成同一个订阅价格, 即 Claude $100 套餐的周费用 ({cost['week_usd']}: 每月 $100, 按 30 天一个月折成每天再乘 7 天). 一次运行的费用 = 它用掉的该套餐周额度的份额 × 周费用. 例如同一个 $100 套餐一周可跑小模型 10G token, 大模型只能跑 1G, 两者各实际用 100M token 时, 分别用掉周额度的 1/100 和 1/10, 费用就是周费用的 1/100 和 1/10. 份额通过等效任务点求得: 1 点是固定的 {cost['point_usd']} Claude API 花费, Claude $100 套餐一周有 {cost['week_points']} 点 (约 {cost['week_api']} 的 Claude API 标价用量, {cost['week_checked']} 实测), 套餐类别的效率比 E 是 Claude 做同类已完成的活会花的钱除以该套餐实际花的钱 (取自作者自己的使用历史). 一次运行的点数 = API 等价费用 × E ÷ {cost['point_usd']}, 费用 = 点数 ÷ {cost['week_points']} × {cost['week_usd']}. API 等价费用: Claude 模型用 Claude Code 报告的费用; GPT 模型按 OpenAI Standard API 单价换算 token ({rates_zh}); Gemini 模型按 Google Gemini API 单价换算 token (输出含思考; {google_zh}, 顺序同上). E 每个套餐类别一个值, 不按模型区分: Claude {cost['e_claude']} (按定义为 1), Codex {cost['e_gpt']} (Sol 与 Luna 通用), 均取自作者 {cost['plan_checked']} 的任务点历史; Gemini {cost['e_gemini']} 是 2026-11-16 一次分析的估算值, 覆盖率 (32% 至 48%) 低于作者状态页的显示门槛, 且 Antigravity 的统计已撤除, 不会再更新. DeepSeek 与 Strata 不是订阅, 仍按实际花费的美元计, 与套餐运行口径不同. Strata 按耗时 × ({cost['watts']} W × 全球家庭平均电价 {cost['electricity']}/kWh + 每小时维护费 {cost['upkeep']}) 计算, 不含硬件购置. 价格已于 {cost['checked']} 核对.",
             "method_missing": "缺失值不是 0: 任务均值只用有数据的运行, 各图下方的说明会列出这些情况. 标 ≥ 的值是下限, 例如 DeepSeek 有请求因时限提醒被丢弃而未计入的费用.",
             "google_prices": "Google 价格", "openai_prices": "OpenAI 价格", "deepseek_prices": "DeepSeek 价格",
             "anthropic_prices": "Anthropic 价格", "electricity_prices": "电价",

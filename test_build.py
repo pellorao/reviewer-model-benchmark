@@ -2,6 +2,7 @@
 
 import copy
 import math
+import re
 import statistics
 import unittest
 
@@ -118,7 +119,8 @@ class StatisticsTests(unittest.TestCase):
     def test_composite_resource_values_average_available_tasks(self):
         cells = {key: {"mean": 0.5, "se": None, "n": 1, "minutes": minutes, "cost": None,
                        "costLowerBound": False, "tokens": None,
-                       "taskPoints": points, "planShare": None if points is None else points / 5, "efficiency": 1.88, "apiCost": None}
+                       "taskPoints": points, "planShare": None if points is None else points / 5, "efficiency": 1.88,
+                       "efficiencyEstimate": False, "apiCost": None}
                  for (key, _, _), minutes, points in zip(REVIEWERS, (1.0, None, 3.0, 5.0), (0.2, 0.4, None, 0.9))}
         result = composite(cells)
         self.assertIsNone(result["half"])
@@ -351,7 +353,7 @@ class PageTests(unittest.TestCase):
                          "benchmark-scatter-3", "benchmark-bars-grouped", "benchmark-bars-minutes",
                          "benchmark-bars-tokens", "benchmark-bars-cost", "benchmark-bars-speed"):
             self.assertIn(f'id="{chart_id}"', self.html)
-        self.assertIn("套餐运行, 按占 Claude $100 套餐周费用的份额计", self.html)
+        self.assertIn("等效任务点", self.html)
 
     def test_method_text_follows_pricing_and_weights(self):
         pricing = copy.deepcopy(PRICING)
@@ -366,26 +368,43 @@ class PageTests(unittest.TestCase):
         self.assertIn("0.20 Code Standards + 0.20 Code Spec + 0.25 Commit Audit + 0.35 Spec Readiness",
                       copy_text["en"]["method_score"])
 
-    def test_plan_share_is_in_hover_and_cost_detail_tooltips(self):
+    def test_plan_run_tooltips_hold_only_data_rows(self):
         records = {record["vendor"]: record for record in extract(self.data, PRICING)}
-        hover = build.hover_summary(records["anthropic"], "cost", "score")
-        self.assertIn("Cost: Subscription run, priced as its share of the Claude $100 plan's weekly fee", hover)
-        self.assertIn("费用: 套餐运行, 按占 Claude $100 套餐周费用的份额计", hover)
-        self.assertIn("Equivalent task points: 0.003 (API-equivalent $0.3000 × E 1) = 0.056% of a $100 plan week", hover)
-        self.assertIn("等效任务点: 0.003 (API 等价 $0.3000 × E 1) = $100 套餐周额度的 0.056%", hover)
-        self.assertNotIn("task points", build.hover_summary(records["strata"], "cost", "score"))
-        self.assertNotIn("task points", build.hover_summary(records["anthropic"], "minutes", "score"))
-        self.assertIn('"display": "0.003 (API $0.3000 × E 1) = 0.056% of a $100 plan week"', self.html)
-        self.assertIn('"display": "0.003 (API $0.3000 × E 1) = $100 套餐周额度的 0.056%"', self.html)
-        self.assertIn("Equivalent task points", self.html)
-        self.assertIn("套餐运行, 按占 Claude $100 套餐周费用的份额计", self.html)
+        hover = build.hover_summary(records["anthropic"], "cost", "score").split("\n")
+        self.assertEqual(hover[0], records["anthropic"]["label"])
+        self.assertEqual(hover[3], "Equivalent task points\t0.003\t等效任务点\t0.003")
+        self.assertEqual(hover[4], "API-equivalent cost\t$0.3000\tAPI 等价费用\t$0.3000")
+        self.assertEqual(hover[5], "E\t1\tE\t1")
+        self.assertEqual(hover[6], "Plan week share\t0.056%\t套餐周份额\t0.056%")
+        self.assertEqual(len(hover), 7)
+        # Every line is a label or a short value: no sentence, no cost-basis wording.
+        self.assertNotIn("Subscription run", "".join(hover))
+        gemini = build.hover_summary({**records["openai"], "efficiencyEstimate": True}, "minutes", "cost")
+        self.assertIn("E\t1.88 (estimated)\tE\t1.88 (估算)", gemini)
+        self.assertEqual(build.hover_summary(records["strata"], "cost", "score").count("\n"), 2)
+        self.assertEqual(build.hover_summary(records["anthropic"], "minutes", "score").count("\n"), 2)
+        self.assertIn('"name": "Equivalent task points", "color"', self.html)
+        self.assertIn('"name": "Cost", "color"', self.html)
+        self.assertIn('"display": "0.003"', self.html)
+        self.assertIn('"display": "$0.3000"', self.html)
+        self.assertNotIn("priced as its share", "".join(re.findall(r'"name": "[^"]*"', self.html)))
 
-    def test_lower_bound_mark_reaches_the_task_point_lines(self):
-        record = {"taskPoints": 0.002, "apiCost": 0.1, "efficiency": 1.88, "planShare": 0.00037, "costLowerBound": True}
-        note = build.plan_points_note(record)
-        self.assertIn("Equivalent task points: ≥0.002 (API-equivalent ≥$0.1000 × E 1.88) = ≥0.037% of a $100 plan week", note)
-        self.assertIn("等效任务点: ≥0.002 (API 等价 ≥$0.1000 × E 1.88) = $100 套餐周额度的 ≥0.037%", note)
-        self.assertEqual(build.task_points_text(0.002, 0.1, 1.88, 0.00037), "0.002 (API $0.1000 × E 1.88) = 0.037% of a $100 plan week")
+    def test_every_tooltip_label_is_short(self):
+        # Tooltips list data; any explanation belongs to the reading notes and data notes.
+        names = set(re.findall(r'"(?:name|meta|label)": "([^"]*)"', self.html))
+        names |= set(re.findall(r'"meta": "([^"]*)', self.html))
+        for name in names:
+            self.assertLess(len(name), 60, name)
+        for text in (" · 3 effort levels", " · 档推理强度", "Includes lower bounds", "basis named in the tooltip", "计费依据见悬停提示"):
+            self.assertNotIn(text, self.html)
+
+    def test_lower_bound_mark_reaches_the_task_point_rows(self):
+        item = {"taskPoints": 0.002, "apiCost": 0.1, "efficiency": 1.88, "planShare": 0.00037, "costLowerBound": True,
+                "efficiencyEstimate": False}
+        self.assertEqual(build.plan_rows(item, "en"), [("Equivalent task points", "≥0.002"),
+                                                      ("API-equivalent cost", "≥$0.1000"), ("E", "1.88"),
+                                                      ("Plan week share", "≥0.037%")])
+        self.assertEqual(build.plan_rows(item, "zh")[3], ("套餐周份额", "≥0.037%"))
 
     def test_method_text_states_the_plan_fee_conversion(self):
         copy_text = build.page_copy(PRICING, extract(self.data, PRICING))
@@ -401,8 +420,8 @@ class PageTests(unittest.TestCase):
             self.assertIn("$23.33", copy_text[language]["cost_score_desc"])
             self.assertIn("1/100", copy_text[language]["cost_score_read"])
 
-    def test_page_version_is_2_6(self):
-        self.assertEqual(build.PAGE_VERSION, "2.6")
+    def test_page_version_is_2_6_1(self):
+        self.assertEqual(build.PAGE_VERSION, "2.6.1")
 
     def test_page_text_is_escaped_and_script_json_cannot_close_the_script(self):
         self.assertIn(">Method &amp; data</a>", self.html)
