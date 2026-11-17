@@ -1,15 +1,15 @@
 {
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "checkedAt": "2026-10-22",
   "currency": "USD",
   "tokensPerUnit": 1000000,
-  "costBasis": "Per-instance cost averaged within each scenario, then across the four scenarios; not actual billing. Plan runs (anthropic, openai) are priced by their share of the $100 plan's weekly quota times its weekly cost; the rest in USD",
+  "costBasis": "Per-instance cost averaged within each scenario, then across the four scenarios; not actual billing. Subscription-plan runs (Claude, GPT, Gemini) are the run's API-equivalent USD times the efficiency ratio E of its plan category, in Claude API dollars (taskPoints); the rest in USD",
   "instanceCost": {
     "deepseek": "Benchmark instance cost.usd: per-request official price list, peak / off-peak by request time",
-    "anthropic": "Benchmark instance cost.usd (Claude Code total_cost_usd, API-equivalent USD), as a share of the $100 plan's weekly quota (planCost), times the plan's weekly cost",
-    "openai": "Token counts priced at the rates below (API-equivalent USD), as a share of the $100 plan's weekly quota (planCost), times the plan's weekly cost",
+    "anthropic": "Benchmark instance cost.usd (Claude Code total_cost_usd, API-equivalent USD) times the Claude plan's E (1 by definition); equivalent task points = result / taskPoints.pointUsd",
+    "openai": "Token counts priced at the rates below (API-equivalent USD) times the Codex plan's E; equivalent task points = result / taskPoints.pointUsd",
     "strata": "Local running cost from the instance work seconds and the localRunningCost settings below",
-    "google": "Token counts priced at the rates below (output includes thinking); the benchmark ran on a Google plan login, so this is a reference API price"
+    "google": "Token counts priced at the rates below (output includes thinking; API-equivalent USD) times Gemini's estimated E; equivalent task points = result / taskPoints.pointUsd. The benchmark ran on a Google plan login"
   },
   "openai": {
     "gpt-6.1-sol": {
@@ -63,23 +63,40 @@
       "checkedAt": "2026-11-14"
     }
   },
-  "planCost": {
-    "planName": "$100 plan",
-    "monthlyUsd": 100,
-    "daysPerMonth": 30,
-    "formula": "cost USD = (API-equivalent USD of the run / weeklyApiEquivalentUsd) x (monthlyUsd / daysPerMonth x 7)",
-    "weeklyApiEquivalentUsd": {
+  "taskPoints": {
+    "pointUsd": 100,
+    "pointUsdSource": "TASK_POINT_USD in ~/.claude/lib/conversion.py: one equivalent task point is worth $100 of Claude API (1/20 of a Max 20x weekly quota)",
+    "formula": "cost USD = API-equivalent USD of the run x E of the plan category; equivalent task points = cost USD / pointUsd. A run's share of its plan's window times the window's API-equivalent value is the run's API-equivalent USD, so the plan size cancels and only E remains.",
+    "efficiencyMeaning": "E = Claude's historical cost of the same kind of finished work / this plan category's cost of it (taskpts.py); the category aggregate is used for every model of the plan, not each model's own E",
+    "checkedAt": "2026-11-18",
+    "efficiency": {
       "anthropic": {
-        "usd": 536,
-        "plan": "Claude Max 5x ($100)",
-        "basis": "Measured on the local Claude Max 20x plan on 2026-11-18: K = 0.0466 percentage points of weekly quota per API-priced USD at 11% used (usage.sh --calibrate), so a full week is 100 / 0.0466 = about $2,146 of API-priced use; the $100 plan is taken as 1/4 of the Max 20x quota. A 1% rounding step at 11% used is about +/-9%, and Claude Code's recorded run cost uses its own price list, so treat the factor as about +/-10%."
+        "e": 1.0,
+        "category": "Claude plan",
+        "estimate": false,
+        "source": "taskpts.json scope claude (model null) on 2026-11-18 04:01; 1 by definition (coverage 80%, 28-day window)"
       },
       "openai": {
-        "usd": 470,
-        "plan": "ChatGPT/Codex $100 plan",
-        "basis": "Measured on the local Codex $20 plan on 2026-11-18: 45% of the weekly quota used = about $21.15 of API-priced active use, so about $47.0 per week (limits/codex.json conversion, auto-review and credit-paid calls excluded); the $100 plan has 10 times the $20 plan's weekly quota (user's figure), so $470. Rates are the same as the page's OpenAI rates."
+        "e": 1.8826,
+        "category": "Codex plan",
+        "estimate": false,
+        "interval95": [
+          1.554,
+          2.335
+        ],
+        "coverage": 0.525,
+        "source": "taskpts.json scope codex (model null) on 2026-11-18 04:01 (28-day window, 146 covered finished items); used for Sol and Luna alike, Luna's own E is hidden by the page's coverage rule"
+      },
+      "google": {
+        "e": 1.19,
+        "category": "Antigravity Gemini plan",
+        "estimate": true,
+        "coverage": [
+          0.32,
+          0.48
+        ],
+        "source": "Estimate from .tasks/common/taskpts-boot-report-1116.md section 7 (Gemini aggregate, baseline weighted by Claude's real review counts: 1.19, coverage 48%; 1.08 to 1.15 under the other baselines). Below the status page's display threshold, and the Antigravity pipeline was removed on 2026-11-17, so it will not be updated."
       }
-    },
-    "checkedAt": "2026-11-18"
+    }
   }
 }

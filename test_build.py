@@ -6,7 +6,7 @@ import statistics
 import unittest
 
 from stats import (REVIEWERS, TOKEN_KEYS, composite, extract, instance_api_cost, instance_cost,
-                   instance_plan_percent, load_pricing, summarize_cell, t_quantile)
+                   instance_task_points, load_pricing, summarize_cell, t_quantile)
 
 try:  # The statistics tests need no plotly; only the page tests do.
     import build
@@ -19,7 +19,6 @@ PRICING = load_pricing()
 OPENAI_RATES = {model: tuple(rule["rates"][key] for key in TOKEN_KEYS)
                 for model, rule in PRICING["openai"].items()}
 LOCAL_COST = PRICING["localRunningCost"]
-PLAN_WEEKLY_USD = 100 / 30 * 7  # the user-set weekly cost of the $100 plan
 
 SCENARIOS = [{"id": f"scenario-{index}", "reviewerId": key}
              for index, (key, _, _) in enumerate(REVIEWERS)]
@@ -117,13 +116,14 @@ class StatisticsTests(unittest.TestCase):
     def test_composite_resource_values_average_available_tasks(self):
         cells = {key: {"mean": 0.5, "se": None, "n": 1, "minutes": minutes, "cost": None,
                        "costLowerBound": False, "tokens": None,
-                       "planPercent": percent, "apiCost": None}
-                 for (key, _, _), minutes, percent in zip(REVIEWERS, (1.0, None, 3.0, 5.0), (0.2, 0.4, None, 0.9))}
+                       "taskPoints": points, "efficiency": 1.88, "apiCost": None}
+                 for (key, _, _), minutes, points in zip(REVIEWERS, (1.0, None, 3.0, 5.0), (0.2, 0.4, None, 0.9))}
         result = composite(cells)
         self.assertIsNone(result["half"])
         self.assertAlmostEqual(result["minutes"], 3.0)
         self.assertEqual(result["timeCount"], 3)
-        self.assertAlmostEqual(result["planPercent"], 0.5)
+        self.assertAlmostEqual(result["taskPoints"], 0.5)
+        self.assertEqual(result["efficiency"], 1.88)
         self.assertIsNone(result["apiCost"])
 
 
@@ -141,50 +141,68 @@ class CostTests(unittest.TestCase):
         deepseek = {**CONFIGS["anthropic"], "vendor": "deepseek"}
         self.assertEqual(instance_cost(item, deepseek, PRICING), (0.42, True))
         self.assertEqual(instance_cost(instance(0.5), CONFIGS["anthropic"], PRICING), (None, False))
-        self.assertIsNone(instance_plan_percent(instance(0.5), CONFIGS["anthropic"], PRICING))
 
-    def test_plan_vendors_cost_is_quota_share_times_weekly_plan_cost(self):
-        weekly = PRICING["planCost"]["weeklyApiEquivalentUsd"]
+    def test_plan_vendors_cost_is_api_equivalent_times_the_plan_category_efficiency(self):
+        eff = PRICING["taskPoints"]["efficiency"]
         item = instance(0.5, cost={"usd": 0.42, "lowerBound": True})
-        percent = instance_plan_percent(item, CONFIGS["anthropic"], PRICING)
-        self.assertAlmostEqual(percent, 0.42 / weekly["anthropic"]["usd"] * 100)
         usd, lower = instance_cost(item, CONFIGS["anthropic"], PRICING)
-        self.assertAlmostEqual(usd, percent / 100 * PLAN_WEEKLY_USD)
+        self.assertAlmostEqual(usd, 0.42 * eff["anthropic"]["e"])
         self.assertTrue(lower)
+        self.assertAlmostEqual(instance_task_points(item, CONFIGS["anthropic"], PRICING),
+                               usd / PRICING["taskPoints"]["pointUsd"])
         tokens = instance(0.5, tokens=(1_000_000, 2_000_000, 100_000))
         api_usd = instance_api_cost(tokens, CONFIGS["openai"], PRICING)[0]
-        self.assertAlmostEqual(instance_plan_percent(tokens, CONFIGS["openai"], PRICING),
-                               api_usd / weekly["openai"]["usd"] * 100)
-        self.assertAlmostEqual(instance_cost(tokens, CONFIGS["openai"], PRICING)[0],
-                               api_usd / weekly["openai"]["usd"] * PLAN_WEEKLY_USD)
+        self.assertAlmostEqual(instance_cost(tokens, CONFIGS["openai"], PRICING)[0], api_usd * eff["openai"]["e"])
+        self.assertAlmostEqual(instance_task_points(tokens, CONFIGS["openai"], PRICING),
+                               api_usd * eff["openai"]["e"] / 100)
 
-    def test_plan_quota_is_the_injected_weekly_api_equivalent(self):
+    def test_claude_plan_efficiency_is_one_by_definition(self):
+        self.assertEqual(PRICING["taskPoints"]["efficiency"]["anthropic"]["e"], 1.0)
+        self.assertEqual(PRICING["taskPoints"]["pointUsd"], 100)
+
+    def test_efficiency_is_the_injected_value_and_gemini_is_a_plan_vendor(self):
         other = copy.deepcopy(PRICING)
-        other["planCost"]["weeklyApiEquivalentUsd"]["openai"]["usd"] = 470.0
+        other["taskPoints"]["efficiency"]["openai"]["e"] = 2.0
+        other["taskPoints"]["efficiency"]["google"]["e"] = 1.5
         tokens = instance(0.5, tokens=(1_000_000, 0, 0))
-        self.assertAlmostEqual(instance_plan_percent(tokens, CONFIGS["openai"], other), 2.0 / 470 * 100)
+        self.assertAlmostEqual(instance_cost(tokens, CONFIGS["openai"], other)[0], 2.0 * 2.0)
+        google = {**CONFIGS["openai"], "vendor": "google", "model": "gemini-4-hydrogen"}
+        self.assertAlmostEqual(instance_cost(tokens, google, other)[0], 1.5 * 1.5)
+        self.assertAlmostEqual(instance_task_points(tokens, google, other), 1.5 * 1.5 / 100)
 
-    def test_non_plan_vendors_keep_their_dollar_cost_and_have_no_percent(self):
+    def test_gemini_cost_is_estimated_efficiency_times_api_price(self):
         google = {**CONFIGS["openai"], "vendor": "google", "model": "gemini-4-hydrogen"}
         tokens = instance(0.5, tokens=(1_000_000, 0, 0))
-        self.assertAlmostEqual(instance_cost(tokens, google, PRICING)[0], 1.5)
-        self.assertIsNone(instance_plan_percent(tokens, google, PRICING))
-        self.assertIsNone(instance_plan_percent(instance(0.5, seconds=3600), CONFIGS["strata"], PRICING))
+        self.assertAlmostEqual(instance_api_cost(tokens, google, PRICING)[0], 1.5)
+        self.assertAlmostEqual(instance_cost(tokens, google, PRICING)[0],
+                               1.5 * PRICING["taskPoints"]["efficiency"]["google"]["e"])
+        self.assertTrue(PRICING["taskPoints"]["efficiency"]["google"]["estimate"])
 
-    def test_cell_and_composite_carry_plan_percent_and_api_equivalent(self):
-        items = full_config(CONFIGS["anthropic"]["key"], cost={"usd": 0.3})
-        cell = summarize_cell(items[:2], CONFIGS["anthropic"], PRICING)
-        weekly = PRICING["planCost"]["weeklyApiEquivalentUsd"]["anthropic"]["usd"]
-        self.assertAlmostEqual(cell["planPercent"], 0.3 / weekly * 100)
-        self.assertAlmostEqual(cell["apiCost"], 0.3)
-        self.assertAlmostEqual(cell["cost"], 0.3 / weekly * PLAN_WEEKLY_USD)
-        record = extract(results(items, configs=(CONFIGS["anthropic"],)), PRICING)[0]
-        self.assertAlmostEqual(record["planPercent"], 0.3 / weekly * 100)
-        self.assertAlmostEqual(record["apiCost"], 0.3)
+    def test_non_plan_vendors_keep_their_dollar_cost_and_have_no_points(self):
+        deepseek = {**CONFIGS["anthropic"], "vendor": "deepseek"}
+        item = instance(0.5, cost={"usd": 0.42})
+        self.assertEqual(instance_cost(item, deepseek, PRICING), (0.42, False))
+        self.assertIsNone(instance_task_points(item, deepseek, PRICING))
+        self.assertIsNone(instance_task_points(instance(0.5, seconds=3600), CONFIGS["strata"], PRICING))
+        self.assertIsNone(instance_task_points(instance(0.5), CONFIGS["anthropic"], PRICING))
+
+    def test_cell_and_composite_carry_task_points_and_api_equivalent(self):
+        items = full_config(CONFIGS["openai"]["key"], tokens=(1_000_000, 0, 0))
+        cell = summarize_cell(items[:2], CONFIGS["openai"], PRICING)
+        e = PRICING["taskPoints"]["efficiency"]["openai"]["e"]
+        self.assertAlmostEqual(cell["apiCost"], 2.0)
+        self.assertAlmostEqual(cell["cost"], 2.0 * e)
+        self.assertAlmostEqual(cell["taskPoints"], 2.0 * e / 100)
+        self.assertEqual(cell["efficiency"], e)
+        record = extract(results(items), PRICING)[0]
+        self.assertAlmostEqual(record["taskPoints"], 2.0 * e / 100)
+        self.assertAlmostEqual(record["apiCost"], 2.0)
+        self.assertEqual(record["efficiency"], e)
         local = extract(results(full_config(CONFIGS["strata"]["key"]),
                                 configs=(CONFIGS["strata"],)), PRICING)[0]
-        self.assertIsNone(local["planPercent"])
+        self.assertIsNone(local["taskPoints"])
         self.assertIsNone(local["apiCost"])
+        self.assertIsNone(local["efficiency"])
 
     def test_local_cost_is_running_cost_and_positive(self):
         rule = LOCAL_COST["strata-iq3_xxs"]
@@ -192,7 +210,7 @@ class CostTests(unittest.TestCase):
         self.assertAlmostEqual(usd, rule["wallPowerWatts"] / 1000 * rule["electricityUsdPerKwh"]
                                + rule["maintenanceUsdPerHour"])
         self.assertGreater(usd, 0)
-        self.assertEqual(PRICING["schemaVersion"], 3)
+        self.assertEqual(PRICING["schemaVersion"], 4)
 
     def test_pricing_is_injected(self):
         cheaper = copy.deepcopy(PRICING)
@@ -240,7 +258,7 @@ class ExtractTests(unittest.TestCase):
         records = extract(main, PRICING, [extra])
         hydrogen = next(record for record in records if record["vendor"] == "google")
         self.assertEqual((hydrogen["label"], hydrogen["harness"]), ("Gemini 4 Hydrogen · high · Antigravity", "antigravity"))
-        self.assertAlmostEqual(hydrogen["cost"], 1.5 + 2 * 0.075 + 0.1 * 7.5)
+        self.assertAlmostEqual(hydrogen["cost"], (1.5 + 2 * 0.075 + 0.1 * 7.5) * PRICING["taskPoints"]["efficiency"]["google"]["e"])
         with self.assertRaisesRegex(ValueError, "repeats"):
             extract(main, PRICING, [extra, extra])
         with self.assertRaisesRegex(ValueError, "same scenarios"):
@@ -292,7 +310,7 @@ class PageTests(unittest.TestCase):
                          "benchmark-scatter-3", "benchmark-bars-grouped", "benchmark-bars-minutes",
                          "benchmark-bars-tokens", "benchmark-bars-cost", "benchmark-bars-speed"):
             self.assertIn(f'id="{chart_id}"', self.html)
-        self.assertIn("套餐运行, 参考 API 价", self.html)
+        self.assertIn("套餐运行, 按等效任务点折算的 Claude API 美元", self.html)
 
     def test_method_text_follows_pricing_and_weights(self):
         pricing = copy.deepcopy(PRICING)
@@ -307,24 +325,35 @@ class PageTests(unittest.TestCase):
         self.assertIn("0.20 Code Standards + 0.20 Code Spec + 0.25 Commit Audit + 0.35 Spec Readiness",
                       copy_text["en"]["method_score"])
 
-    def test_plan_percent_is_in_hover_and_cost_detail_tooltips(self):
+    def test_task_points_are_in_hover_and_cost_detail_tooltips(self):
         records = {record["vendor"]: record for record in extract(self.data, PRICING)}
-        weekly = PRICING["planCost"]["weeklyApiEquivalentUsd"]["anthropic"]["usd"]
-        percent = f"{0.3 / weekly * 100:.3g}%"
         hover = build.hover_summary(records["anthropic"], "cost", "score")
-        self.assertIn(f"Plan quota: {percent} of the $100 plan's weekly quota", hover)
-        self.assertIn(f"占 $100 套餐周额度的 {percent}", hover)
-        self.assertNotIn("Plan quota", build.hover_summary(records["strata"], "cost", "score"))
-        self.assertNotIn("Plan quota", build.hover_summary(records["strata"], "minutes", "score"))
-        self.assertIn(f'"display": "{percent} (API $0.3000)"', self.html)
-        self.assertIn("Quota share of the $100 plan's week", self.html)
+        self.assertIn("Equivalent task points: 0.003 (API-equivalent $0.3000 × E 1)", hover)
+        self.assertIn("等效任务点: 0.003 (API 等价 $0.3000 × E 1)", hover)
+        self.assertNotIn("task points", build.hover_summary(records["strata"], "cost", "score"))
+        self.assertNotIn("task points", build.hover_summary(records["anthropic"], "minutes", "score"))
+        self.assertIn('"display": "0.003 (API $0.3000 × E 1)"', self.html)
+        self.assertIn("Equivalent task points", self.html)
 
-    def test_method_text_states_the_plan_conversion(self):
+    def test_method_text_states_the_task_point_conversion(self):
         copy_text = build.page_copy(PRICING, extract(self.data, PRICING))
-        self.assertIn("$23.33", copy_text["en"]["method_cost"])
-        self.assertIn("$100 plan", copy_text["en"]["method_cost"])
-        self.assertIn("$100 套餐", copy_text["zh"]["method_cost"])
-        self.assertIn("$23.33", copy_text["zh"]["method_cost"])
+        for language, task_points in (("en", "task points"), ("zh", "等效任务点")):
+            text = copy_text[language]["method_cost"]
+            self.assertIn(task_points, text)
+            self.assertIn("$100", text)
+            self.assertIn("1.88", text)
+            self.assertIn("1.19", text)
+            self.assertNotIn("23.33", text)
+            self.assertNotIn("$536", text)
+            self.assertNotIn("$470", text)
+        for key in ("cost_score_desc", "cost_score_read", "detail_cost_read"):
+            for language in ("en", "zh"):
+                self.assertNotIn("23.33", copy_text[language][key])
+                self.assertNotIn("$100 plan's weekly", copy_text[language][key])
+                self.assertNotIn("$100 套餐周", copy_text[language][key])
+
+    def test_page_version_is_2_5(self):
+        self.assertEqual(build.PAGE_VERSION, "2.5")
 
     def test_page_text_is_escaped_and_script_json_cannot_close_the_script(self):
         self.assertIn(">Method &amp; data</a>", self.html)

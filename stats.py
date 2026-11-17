@@ -10,7 +10,7 @@ from pathlib import Path
 
 
 RESULTS_SCHEMA_VERSION = 1
-PRICING_SCHEMA_VERSION = 3
+PRICING_SCHEMA_VERSION = 4
 SCORING_VERSION = "r8.4"
 REVIEWERS = (
     ("code-standards-reviewer", "Code Standards", 0.20),
@@ -148,36 +148,29 @@ def instance_api_cost(instance, config, pricing):
     return rule(instance, config, pricing)
 
 
-def plan_weekly_cost(pricing):
-    """USD per week of the reference plan: its monthly price over a 30-day month, times 7 days."""
-    plan = pricing["planCost"]
-    return plan["monthlyUsd"] / plan["daysPerMonth"] * 7
-
-
-def plan_weekly_api_usd(pricing, vendor):
-    """API-priced USD that fill the reference plan's weekly quota for a plan vendor, else None."""
-    rule = pricing["planCost"]["weeklyApiEquivalentUsd"].get(vendor)
-    return rule["usd"] if rule else None
-
-
-def instance_plan_percent(instance, config, pricing):
-    """Share of the reference plan's weekly quota one instance used, in percent; None when not a plan run or unknown."""
-    weekly = plan_weekly_api_usd(pricing, config["vendor"])
-    usd = instance_api_cost(instance, config, pricing)[0]
-    return None if weekly is None or usd is None else usd / weekly * 100
+def plan_efficiency(pricing, vendor):
+    """Efficiency ratio E of a plan vendor's quota category (Claude's cost of the same work / this plan's cost), else None."""
+    rule = pricing["taskPoints"]["efficiency"].get(vendor)
+    return rule["e"] if rule else None
 
 
 def instance_cost(instance, config, pricing):
-    """Return (USD, lower bound) for one instance, or (None, False) when unknown.
+    """Return (Claude-API USD, lower bound) for one instance, or (None, False) when unknown.
 
-    A plan vendor's cost is its quota share times the plan's weekly cost; every other vendor's cost is
-    its own dollar rule.
+    A plan vendor's run is its API-equivalent USD times its plan category's E, which is the run's equivalent
+    task points times the point's Claude API value; every other vendor's cost is its own dollar rule.
     """
     usd, lower = instance_api_cost(instance, config, pricing)
-    percent = instance_plan_percent(instance, config, pricing)
-    if percent is None:
-        return usd, lower
-    return percent / 100 * plan_weekly_cost(pricing), lower
+    e = plan_efficiency(pricing, config["vendor"])
+    return (usd, lower) if e is None or usd is None else (usd * e, lower)
+
+
+def instance_task_points(instance, config, pricing):
+    """Equivalent task points one instance used; None when not a plan run or unknown."""
+    if plan_efficiency(pricing, config["vendor"]) is None:
+        return None
+    usd = instance_cost(instance, config, pricing)[0]
+    return None if usd is None else usd / pricing["taskPoints"]["pointUsd"]
 
 
 def mean_of(values):
@@ -197,10 +190,10 @@ def summarize_cell(instances, config, pricing):
                   if all(finite_number(instance["tokens"].get(key)) for key in TOKEN_KEYS)]
     costs = [instance_cost(instance, config, pricing) for instance in instances]
     costs = [cost for cost in costs if cost[0] is not None]
-    percents = [instance_plan_percent(instance, config, pricing) for instance in instances]
-    percents = [percent for percent in percents if percent is not None]
+    points = [instance_task_points(instance, config, pricing) for instance in instances]
+    points = [value for value in points if value is not None]
     api_costs = ([instance_api_cost(instance, config, pricing)[0] for instance in instances]
-                 if percents else [])
+                 if points else [])
     api_costs = [usd for usd in api_costs if usd is not None]
     speeds, speed_counts, speed_bounds = {}, {}, {}
     for key in SPEED_KEYS:
@@ -227,7 +220,8 @@ def summarize_cell(instances, config, pricing):
         "tokenLowerBound": any(tokens.get("lowerBound") for tokens in token_sets),
         "cost": mean_of([cost[0] for cost in costs]), "costCount": len(costs),
         "costLowerBound": any(cost[1] for cost in costs),
-        "planPercent": mean_of(percents), "apiCost": mean_of(api_costs),
+        "taskPoints": mean_of(points), "apiCost": mean_of(api_costs),
+        "efficiency": plan_efficiency(pricing, config["vendor"]),
         "speeds": speeds, "speedCounts": speed_counts,
         "speedLowerBounds": speed_bounds,
     }
@@ -253,14 +247,15 @@ def composite(cells):
 
     minutes, time_count = average("minutes")
     cost, cost_count = average("cost")
-    plan_percent, _ = average("planPercent")
+    task_points, _ = average("taskPoints")
     api_cost, _ = average("apiCost")
     token_cells = [cells[key]["tokens"] for key, _, _ in REVIEWERS if cells[key]["tokens"]]
     return {
         "score": score, "half": half, "minutes": minutes, "timeCount": time_count,
         "cost": cost, "costCount": cost_count,
         "costLowerBound": any(cells[key]["costLowerBound"] for key, _, _ in REVIEWERS),
-        "planPercent": plan_percent, "apiCost": api_cost,
+        "taskPoints": task_points, "apiCost": api_cost,
+        "efficiency": next((cells[key]["efficiency"] for key, _, _ in REVIEWERS if cells[key]["efficiency"] is not None), None),
         "tokens": ({key: mean_of([tokens[key] for tokens in token_cells]) for key in TOKEN_KEYS}
                    if token_cells else None),
     }
