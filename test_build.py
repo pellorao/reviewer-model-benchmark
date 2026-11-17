@@ -421,7 +421,7 @@ class PageTests(unittest.TestCase):
             self.assertIn("1/100", copy_text[language]["cost_score_read"])
 
     def test_page_version_is_2_6_1(self):
-        self.assertEqual(build.PAGE_VERSION, "2.6.1")
+        self.assertEqual(build.PAGE_VERSION, "2.6.2")
 
     def test_page_text_is_escaped_and_script_json_cannot_close_the_script(self):
         self.assertIn(">Method &amp; data</a>", self.html)

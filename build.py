@@ -17,7 +17,7 @@ from stats import (EFFORTS, HARNESS_NAMES, MODEL_NAMES, REVIEWERS, SCORING_VERSI
                    extract, load_pricing, plan_weekly_cost)
 
 
-PAGE_VERSION = "2.6.1"
+PAGE_VERSION = "2.6.2"
 # Model colors in MODEL_NAMES order (stats.py); series follow harness order, then this model order.
 MODEL_COLORS = {
     "gpt-6.1-sol": "#4c78b8",

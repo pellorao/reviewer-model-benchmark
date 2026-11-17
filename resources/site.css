@@ -788,8 +788,8 @@ h2 {
 }
 
 @media (max-width: 600px) {
-  .summary-strip { width: 100%; }
-  .summary-item { min-width: 0; gap: 6px; padding: 10px 9px; }
+  .summary-strip { width: 100%; flex-wrap: wrap; }
+  .summary-item { flex: 1 1 auto; min-width: 0; gap: 6px; padding: 10px 9px; }
   .icon-summary-mark { width: 16px; height: 16px; }
   .summary-item strong { font-size: 20px; }
   .summary-item span { font-size: 9px; }
