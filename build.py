@@ -17,7 +17,7 @@ from stats import (EFFORTS, HARNESS_NAMES, MODEL_NAMES, REVIEWERS, SCORING_VERSI
                    extract, load_pricing, plan_weekly_cost)
 
 
-PAGE_VERSION = "2.6.2"
+PAGE_VERSION = "2.6.3"
 # Model colors in MODEL_NAMES order (stats.py); series follow harness order, then this model order.
 MODEL_COLORS = {
     "gpt-6.1-sol": "#4c78b8",
@@ -148,26 +148,21 @@ def short_value(record, key):
     return f"{record[key]:.1f}"
 
 
-def plan_rows(item, language):
-    """Data rows of a plan run's cost tooltip as (label, value): equivalent task points, API-equivalent
-    cost, efficiency ratio E and share of a plan week; ≥ marks a lower bound, E is tagged when estimated."""
-    en = language == "en"
-    bound = "≥" if item["costLowerBound"] else ""
-    estimate = (" (estimated)" if en else " (估算)") if item["efficiencyEstimate"] else ""
-    return [("Equivalent task points" if en else "等效任务点", f"{bound}{item['taskPoints']:.3g}"),
-            ("API-equivalent cost" if en else "API 等价费用", f"{bound}${item['apiCost']:.4f}"),
-            ("E", f"{item['efficiency']:.3g}{estimate}"),
-            ("Plan week share" if en else "套餐周份额", f"{bound}{item['planShare'] * 100:.3g}%")]
+PLAN_BASIS = ("Price converted to plan subscription fee", "换算成套餐订阅费的价格")
+COST_BASIS = {
+    "openai": PLAN_BASIS, "google": PLAN_BASIS, "anthropic": PLAN_BASIS,
+    "deepseek": ("DeepSeek price per request", "DeepSeek 逐请求价格"),
+    "strata": ("Local running cost", "本地运行成本"),
+}
 
 
 def hover_summary(record, xkey, ykey):
-    """Tooltip source of a scatter point: label, the two values, then one line per data row of a plan run's
-    cost: English label, value, Chinese label, value, tab-separated (the tooltip picks the page language)."""
-    summary = (f"{record['label']}\n{short_value(record, xkey)}\n"
-               f"{short_value(record, ykey)}")
-    if "cost" in (xkey, ykey) and record["taskPoints"] is not None:
-        for (en_label, en_value), (zh_label, zh_value) in zip(plan_rows(record, "en"), plan_rows(record, "zh")):
-            summary += f"\n{en_label}\t{en_value}\t{zh_label}\t{zh_value}"
+    """Tooltip source of a scatter point: label, the two values, and for a cost chart one line naming the
+    basis of the cost shown (label and value in English, then in Chinese, tab-separated; the tooltip picks the page language)."""
+    summary = f"{record['label']}\n{short_value(record, xkey)}\n{short_value(record, ykey)}"
+    if "cost" in (xkey, ykey):
+        english, chinese = COST_BASIS[record["vendor"]]
+        summary += f"\nCost\t{english}\t费用\t{chinese}"
     return summary
 
 
@@ -754,15 +749,12 @@ def detail_bar_chart(records, metric):
                             display, row_name = f"{value:.1f} min", ("Work time", "耗时")
                         elif metric == "cost":
                             display = f"{'≥' if cell['costLowerBound'] else ''}${value:.4f}"
-                            row_name = ("Cost", "费用")
+                            row_name = COST_BASIS[record["vendor"]]
                         else:
                             bound = "≥" if cell["speedLowerBounds"][speed] else ""
                             display, row_name = f"{bound}{value:,.1f} tok/s", SPEED_LABELS[speed]
                         rows = [{"name": row_name[0] if language == "en" else row_name[1],
                                  "color": ROLE_COLORS[index], "display": display}]
-                        if metric == "cost" and cell["taskPoints"] is not None:
-                            rows += [{"name": label, "color": ROLE_COLORS[index], "display": plan_value}
-                                     for label, plan_value in plan_rows(cell, language)]
                     role_details.append({"label": record["label"], "meta": meta, "rows": rows})
             details[language][record["label"]] = role_details
     figure = go.Figure()
@@ -949,13 +941,13 @@ def page_copy(pricing, records):
             "trade_intro": "Each point is one configuration. Lines join the effort levels of one model in one harness: circles mark Codex and diamonds Claude Code. A Pareto-front point has no other visible point that is at least as good on both plotted measures and better on one. Click Pareto Front in a legend to show those points and their connecting line. Hold Ctrl while scrolling over a chart to zoom.",
             "cost_score_title": "Cost per run vs. score",
             "cost_score_desc": f"Cost per run averages each task's per-run cost, then the four tasks. The bases differ by vendor and none is an actual bill: for every subscription-plan run (Claude, GPT and Gemini models), the share of the Claude $100 plan's weekly fee ({cost['week_usd']}) that the run used up; for DeepSeek, per-request prices; and for the local Strata model, estimated electricity and upkeep.",
-            "cost_score_read": "Higher score is better; farther left is a lower cost per run. Hover a point for its values; a plan run's tooltip lists its equivalent task points, API-equivalent cost, efficiency ratio E and share of a plan week, and ≥ marks a lower bound. All plan runs follow one rule: a run that uses 1/100 of the $100 plan's weekly quota costs 1/100 of its weekly fee; Gemini's efficiency ratio E is an estimate, tagged so in the tooltip (see Data notes). Use Linear / Log above the chart to switch the cost axis: Linear shows absolute differences; Log helps compare costs across a wide range.",
+            "cost_score_read": "Higher score is better; farther left is a lower cost per run. Hover a point for its values; ≥ marks a lower bound. The cost shown is one comparable figure: for a subscription-plan run (Claude, GPT, Gemini) its price converted to the plan's subscription fee, for DeepSeek and Strata the actual cost. The conversion follows one rule: a run that uses 1/100 of the $100 plan's weekly quota costs 1/100 of its weekly fee (see Data notes). Use Linear / Log above the chart to switch the cost axis: Linear shows absolute differences; Log helps compare costs across a wide range.",
             "time_score_title": "Work time vs. score",
             "time_score_desc": "Compare the weighted score with the average work time of one review run.",
             "time_score_read": "Higher score is better; farther left is a shorter run. Work time excludes setup and loading. Codex counts the agent's accumulated work time and Claude Code the session's wall time. Code Spec and Code Standards stop at a time limit set from each configuration's own speed and held between 15 and 60 minutes; a run that is stopped by the limit is voided and rerun, so every counted run ended before its limit. Two caveats: runs made before the 15-60 minute rule used their original limits (the voided runs were then rerun at 60 minutes, some on a newer Claude Code version), and the DeepSeek-flash max Code Spec (Claude Code) cell has 4 counted runs instead of 5 because its rerun could not be made.",
             "time_cost_title": "Work time vs. cost per run",
             "time_cost_desc": "Inspect the relationship between run time and cost.",
-            "time_cost_read": "Farther left is a shorter run; lower is a lower cost per run. The cost rows in the tooltip are explained under Cost per run vs. score. This plot does not encode quality, so use it alongside the score charts. Use Linear / Log above the chart to switch the cost axis.",
+            "time_cost_read": "Farther left is a shorter run; lower is a lower cost per run. The cost, a price converted to the plan's subscription fee or the actual cost, is explained under Cost per run vs. score. This plot does not encode quality, so use it alongside the score charts. Use Linear / Log above the chart to switch the cost axis.",
             "cost_scale": "Cost scale", "scale_linear": "Linear", "scale_log": "Log",
             "review_kicker": "03 / TASK DETAIL", "review_title": "Results by reviewer task",
             "review_desc": "Compare each configuration's score, work time, token usage, cost and speed in each of the four reviewer tasks.",
@@ -970,7 +962,7 @@ def page_copy(pricing, records):
             "detail_score_read": f"Each bar is the mean score of the runs the benchmark counts. Scored runs per cell: {runs['en_counts']}. The number above a track is the mean and the whisker the 95% confidence interval; with about five runs, a difference below about 30 points may be noise. The label color identifies the model. Scroll horizontally to compare all configurations.",
             "detail_time_read": "Each bar is one task's mean work time per run. Spec Readiness runs two independent review threads per run; their times are added.",
             "detail_token_read": "Each bar stacks mean non-cached input, cached input and output tokens per run. Claude Code counts cache writes as non-cached input; Strata on Codex includes its guardian requests. Hover for exact counts.",
-            "detail_cost_read": "Each bar is one task's mean cost per run. OpenAI, Claude and Gemini runs used subscriptions, so theirs are priced as a share of the Claude $100 plan's weekly fee (the tooltip gives the equivalent task points, the API-equivalent cost, the efficiency ratio E and the share of a plan week behind that price; Gemini's E is an estimate). DeepSeek and Strata are priced in actual-cost dollars (see Data notes). Use Linear / Log above the chart to switch the cost axis.",
+            "detail_cost_read": "Each bar is one task's mean cost per run. OpenAI, Claude and Gemini runs used subscriptions, so theirs are priced as a share of the Claude $100 plan's weekly fee (the price converted to the plan's subscription fee; the conversion is explained in the Data notes). DeepSeek and Strata are priced in actual-cost dollars (see Data notes). Use Linear / Log above the chart to switch the cost axis.",
             "detail_speed_read": "A speed is total tokens divided by total seconds, never an average of per-run speeds. Task speeds divide non-cached input or output tokens by work time: the speed a user perceives. Engine speeds measure the model alone. API models cannot separate input processing, so their engine input speed is unknown and their engine output speed is a lower bound (≥); engine input speed exists only for Strata.",
             "reviewer_guide_title": "The four reviewer tasks and their score shares",
             "score_share_label": "Score share",
@@ -1019,13 +1011,13 @@ def page_copy(pricing, records):
             "trade_intro": "每个点代表一个配置. 连线连接同一代理程序上同一模型的不同推理强度: 圆点为 Codex, 菱形为 Claude Code. 对前沿上的点, 其他可见点无法在两项指标上都不差、且至少一项更好. 点击图例中的帕累托前沿, 即可显示这些点及其连线. 按住 Ctrl 并在图表上滚动滚轮可缩放.",
             "cost_score_title": "单次运行费用与分数",
             "cost_score_desc": f"单次运行费用先对每项任务的单次费用求平均, 再对四项任务求平均. 各厂商的计费依据不同, 都不是实际账单: 所有套餐运行 (Claude, GPT 与 Gemini 模型) 按该次运行用掉的 Claude $100 套餐周费用 ({cost['week_usd']}) 的份额; DeepSeek 按逐请求价格; 本地 Strata 模型按估算的电费和维护费.",
-            "cost_score_read": "分数越高越好; 越靠左表示单次运行费用越低. 悬停在点上可查看数值; 套餐运行的提示列出等效任务点, API 等价费用, 效率比 E 和占套餐周额度的份额, ≥ 表示下限. 所有套餐运行用同一条规则: 用掉 $100 套餐周额度 1/100 的运行, 费用就是周费用的 1/100; Gemini 的效率比 E 是估算值, 提示中会标注 (见数据说明). 可用图表上方的线性 / 对数切换费用坐标: 线性便于比较绝对费用差异, 对数便于查看跨数量级的费用.",
+            "cost_score_read": "分数越高越好; 越靠左表示单次运行费用越低. 悬停在点上可查看数值, ≥ 表示下限. 提示中的费用只有一个可比较的值: 套餐运行 (Claude, GPT, Gemini) 是换算成套餐订阅费后的价格, DeepSeek 与 Strata 是实际花费. 换算用同一条规则: 用掉 $100 套餐周额度 1/100 的运行, 费用就是周费用的 1/100 (见数据说明). 可用图表上方的线性 / 对数切换费用坐标: 线性便于比较绝对费用差异, 对数便于查看跨数量级的费用.",
             "time_score_title": "耗时与分数",
             "time_score_desc": "比较各配置的综合分数与单次审查运行的平均耗时.",
             "time_score_read": "分数越高越好; 越靠左表示单次运行越快. 耗时不含准备与加载. Codex 计代理的累计工作时间, Claude Code 计会话的墙钟时间. Code Spec 与 Code Standards 按各配置自身速度设定时限, 并限制在 15 至 60 分钟之间; 到时被停止的运行作废并重跑, 因此计入的运行都在时限内结束. 两点说明: 15 至 60 分钟规则之前完成的运行沿用当时的时限 (作废的运行随后以 60 分钟重跑, 其中一部分用了较新的 Claude Code 版本); DeepSeek-flash max 的 Code Spec (Claude Code) 一格只有 4 个计入的运行而不是 5 个, 因为它的重跑没能进行.",
             "time_cost_title": "耗时与单次运行费用",
             "time_cost_desc": "查看运行耗时与费用之间的关系.",
-            "time_cost_read": "越靠左表示单次运行越快; 越靠下表示单次运行费用越低. 提示中的费用各行见“单次运行费用与分数”图的说明. 此图不表示质量, 需结合分数图阅读. 可用图表上方的线性 / 对数切换费用坐标.",
+            "time_cost_read": "越靠左表示单次运行越快; 越靠下表示单次运行费用越低. 提示中的费用 (换算成套餐订阅费的价格, 或实际花费) 见“单次运行费用与分数”图的说明. 此图不表示质量, 需结合分数图阅读. 可用图表上方的线性 / 对数切换费用坐标.",
             "cost_scale": "费用坐标", "scale_linear": "线性", "scale_log": "对数",
             "review_kicker": "03 / 任务明细", "review_title": "按 Reviewer 任务比较",
             "review_desc": "分别比较各配置在四项 Reviewer 任务中的分数、耗时、token 用量、费用与速度.",
@@ -1040,7 +1032,7 @@ def page_copy(pricing, records):
             "detail_score_read": f"每根柱子是基准计入的运行的平均分. 各格计分运行数: {runs['zh_counts']}. 底槽上方的数字是平均分, 须线表示 95% 置信区间; 只有约 5 次运行时, 低于约 30 分的差距可能只是波动. 标签颜色对应模型, 水平滚动可查看全部配置.",
             "detail_time_read": "每根柱子是该任务单次运行的平均耗时. Spec Readiness 每次运行有两个独立审查线程, 耗时相加.",
             "detail_token_read": "每根柱子从下到上叠加单次运行的平均未缓存输入、缓存输入和输出 token. Claude Code 把缓存写入计为未缓存输入; Codex 上的 Strata 含 guardian 请求. 悬停可查看准确数量.",
-            "detail_cost_read": "每根柱子是该任务单次运行的平均费用. OpenAI, Claude 与 Gemini 为套餐运行, 费用按占 Claude $100 套餐周费用的份额计 (悬停提示给出背后的等效任务点, API 等价费用, 效率比 E 和占套餐周额度的份额; Gemini 的 E 是估算值). DeepSeek 与 Strata 按实际花费的美元计 (见数据说明). 可用图表上方的线性 / 对数切换费用坐标.",
+            "detail_cost_read": "每根柱子是该任务单次运行的平均费用. OpenAI, Claude 与 Gemini 为套餐运行, 费用按占 Claude $100 套餐周费用的份额计 (即换算成套餐订阅费的价格, 换算方法见数据说明). DeepSeek 与 Strata 按实际花费的美元计 (见数据说明). 可用图表上方的线性 / 对数切换费用坐标.",
             "detail_speed_read": "速度一律是总 token 除以总耗时, 不对各次运行的速度求平均. 任务速度是未缓存输入或输出 token 除以耗时, 即用户感受到的速度. 引擎速度只衡量模型本身. API 模型无法分出输入处理时间, 所以引擎输入速度未知, 引擎输出速度是下限 (≥); 只有 Strata 有引擎输入速度.",
             "reviewer_guide_title": "四项 Reviewer 任务及评分占比",
             "score_share_label": "评分占比",
