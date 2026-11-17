@@ -155,16 +155,17 @@ def short_value(record, key):
     return f"{record[key]:.1f}"
 
 
-def task_points_text(points, api_cost, efficiency):
-    """A plan run's equivalent task points with its API-equivalent cost and E, e.g. 0.0126 (API $1.7055 × E 0.741)."""
-    return f"{points:.3g} (API ${api_cost:.4f} × E {efficiency:.3g})"
+def task_points_text(points, api_cost, efficiency, lower=False, api="API"):
+    """A plan run's equivalent task points with its API-equivalent cost and E, e.g. 0.0126 (API $1.7055 × E 0.741); ≥ marks a lower bound."""
+    bound = "≥" if lower else ""
+    return f"{bound}{points:.3g} ({api} {bound}${api_cost:.4f} × E {efficiency:.3g})"
 
 
-def plan_points_note(points, api_cost, efficiency):
+def plan_points_note(record):
     """English and Chinese hover line (tab-separated) for a plan run's equivalent task points."""
-    shown = task_points_text(points, api_cost, efficiency)
-    return (f"Equivalent task points: {shown.replace('API', 'API-equivalent')}"
-            f"\t等效任务点: {shown.replace('API', 'API 等价')}")
+    args = (record["taskPoints"], record["apiCost"], record["efficiency"], record["costLowerBound"])
+    return (f"Equivalent task points: {task_points_text(*args, api='API-equivalent')}"
+            f"\t等效任务点: {task_points_text(*args, api='API 等价')}")
 
 
 def hover_summary(record, xkey, ykey):
@@ -175,7 +176,7 @@ def hover_summary(record, xkey, ykey):
         english, chinese = COST_BASIS[record["vendor"]]
         summary += f"\nCost: {english}\t费用: {chinese}"
         if record["taskPoints"] is not None:
-            summary += "\n" + plan_points_note(record["taskPoints"], record["apiCost"], record["efficiency"])
+            summary += "\n" + plan_points_note(record)
     return summary
 
 
@@ -762,7 +763,7 @@ def detail_bar_chart(records, metric):
                             rows.append({"name": "Equivalent task points" if language == "en" else "等效任务点",
                                          "color": ROLE_COLORS[index],
                                          "display": task_points_text(cell["taskPoints"], cell["apiCost"],
-                                                                     cell["efficiency"])})
+                                                                     cell["efficiency"], cell["costLowerBound"])})
                     role_details.append({"label": record["label"], "meta": meta, "rows": rows})
             details[language][record["label"]] = role_details
     figure = go.Figure()

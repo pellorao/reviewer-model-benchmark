@@ -335,6 +335,13 @@ class PageTests(unittest.TestCase):
         self.assertIn('"display": "0.003 (API $0.3000 × E 1)"', self.html)
         self.assertIn("Equivalent task points", self.html)
 
+    def test_lower_bound_mark_reaches_the_task_point_lines(self):
+        record = {"taskPoints": 0.002, "apiCost": 0.1, "efficiency": 1.88, "costLowerBound": True}
+        note = build.plan_points_note(record)
+        self.assertIn("Equivalent task points: ≥0.002 (API-equivalent ≥$0.1000 × E 1.88)", note)
+        self.assertIn("等效任务点: ≥0.002 (API 等价 ≥$0.1000 × E 1.88)", note)
+        self.assertEqual(build.task_points_text(0.002, 0.1, 1.88), "0.002 (API $0.1000 × E 1.88)")
+
     def test_method_text_states_the_task_point_conversion(self):
         copy_text = build.page_copy(PRICING, extract(self.data, PRICING))
         for language, task_points in (("en", "task points"), ("zh", "等效任务点")):
