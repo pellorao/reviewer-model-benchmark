@@ -8,9 +8,13 @@ When choosing an AI model, agent harness, and reasoning effort for code or speci
 
 To let you move from the big picture to individual tasks, the page shows the overall weighted score first, then maps score against work time, token usage, and cost in three trade-off scatter plots (with an optional Pareto front), and finally breaks down per-task score, work time, token usage, cost, and speed. This page is an independent comparison view: it summarizes the per-task results into a weighted score without modifying the input data or replacing the benchmark's own reports.
 
-## Version v2.3
+## Version v2.4
 
 Before reading the charts or building the page, it helps to know which dataset version is included and how it evolved.
+
+Version v2.4 changes only the cost basis; no instance, score, time or token value changes from v2.3. Claude Code and Codex runs on subscription plans (Claude and GPT models) are no longer priced at their API-equivalent cost. Each is priced by the share of the $100 plan's weekly quota the run used, times the plan's weekly cost ($100 ÷ 30 × 7 = $23.33), and the quota share is shown as a percentage in the tooltips. DeepSeek and Strata keep their dollar costs, and Gemini 4 Hydrogen keeps its reference API price because no plan-quota measurement exists for it. Costs of the converted configurations fall by roughly 20 times, so the cost axes and the Pareto fronts differ from v2.3. See the Cost section for the conversion factors.
+
+### v2.3
 
 Version v2.3 adds Gemini 4 Hydrogen at `low` effort, so the Hydrogen supplement now covers four tiers (`low`, `medium`, `high`, `xhigh`), and leaves every other instance unchanged from v2.2. Low ran one day after the other three tiers with the same method (Antigravity 1.5.9, every valid run counted, 5 per task, the same time-limit rule and blind adjudication); none of its 20 instances was voided or rerun. The same data-source facts as v2.2 apply to it.
 

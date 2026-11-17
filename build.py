@@ -17,7 +17,7 @@ from stats import (EFFORTS, HARNESS_NAMES, MODEL_NAMES, REVIEWERS, SCORING_VERSI
                    extract, load_pricing, plan_weekly_cost)
 
 
-PAGE_VERSION = "2.3"
+PAGE_VERSION = "2.4"
 # Model colors in MODEL_NAMES order (stats.py); series follow harness order, then this model order.
 MODEL_COLORS = {
     "gpt-6.1-sol": "#4c78b8",
@@ -934,7 +934,7 @@ def page_copy(pricing, records):
             "headline": "Comparing AI models for software review",
             "lead": "A Reviewer is an AI agent assigned a software review task. Here, {model_count} models run four such tasks through two agent harnesses, Codex and Claude Code, at different reasoning effort settings; the charts compare their task performance, time and cost.",
             "version_title": f"Benchmark v{PAGE_VERSION}",
-            "version_summary": f"Adds GPT-6 Luna at xhigh and max effort (a supplement run one day later) and Gemini 4 Hydrogen at low, medium, high and xhigh effort (a supplement run about three weeks later, in the Antigravity harness; low was run a day after the other three) to the v2.0 run (new models, two harnesses, scoring {SCORING_VERSION} with scores that can be negative). Each task cell counts {runs['en_range']} scored runs. Results are not comparable with v1.",
+            "version_summary": f"Adds GPT-6 Luna at xhigh and max effort (a supplement run one day later) and Gemini 4 Hydrogen at low, medium, high and xhigh effort (a supplement run about three weeks later, in the Antigravity harness; low was run a day after the other three) to the v2.0 run (new models, two harnesses, scoring {SCORING_VERSION} with scores that can be negative). Each task cell counts {runs['en_range']} scored runs. v2.4 changes only the cost basis, not the data: Claude and GPT subscription runs are now priced by their share of the $100 plan's weekly quota times the plan's weekly cost, instead of at their API-equivalent price. Results are not comparable with v1.",
             "version_readme": "For the measurement rules, see the project",
             "stat_models": "MODELS", "stat_configurations": "CONFIGURATIONS",
             "stat_benchmarks": "REVIEWER TASKS", "stat_runs": "SCORED RUNS",
@@ -1004,7 +1004,7 @@ def page_copy(pricing, records):
             "headline": "AI 软件审查模型对比",
             "lead": "Reviewer 是负责一项软件审查任务的 AI 代理. 这里让 {model_count} 个模型通过 Codex 和 Claude Code 两种代理程序, 以不同推理强度完成四类任务, 比较完成任务的能力、耗时和费用.",
             "version_title": f"基准版本 v{PAGE_VERSION}",
-            "version_summary": f"在 v2.0 测量 (新的模型、两种代理程序、评分 {SCORING_VERSION} 且分数可为负) 上, 加入晚一天补测的 GPT-6 Luna xhigh 和 max 推理强度, 以及晚约三周补测的 Gemini 4 Hydrogen low、medium、high 和 xhigh 推理强度 (在 Antigravity 代理程序中运行, low 比其余三档晚一天). 每个任务格计入 {runs['zh_range']} 次计分运行. 结果不能与 v1 直接比较.",
+            "version_summary": f"在 v2.0 测量 (新的模型、两种代理程序、评分 {SCORING_VERSION} 且分数可为负) 上, 加入晚一天补测的 GPT-6 Luna xhigh 和 max 推理强度, 以及晚约三周补测的 Gemini 4 Hydrogen low、medium、high 和 xhigh 推理强度 (在 Antigravity 代理程序中运行, low 比其余三档晚一天). 每个任务格计入 {runs['zh_range']} 次计分运行. v2.4 只改了费用口径, 数据不变: Claude 与 GPT 的套餐运行改按其占 $100 套餐周额度的比例乘以套餐周费用计价, 不再按 API 等价价. 结果不能与 v1 直接比较.",
             "version_readme": "测量规则请见项目",
             "stat_models": "模型", "stat_configurations": "模型配置",
             "stat_benchmarks": "REVIEWER 任务", "stat_runs": "计分运行",
