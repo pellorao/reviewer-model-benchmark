@@ -8,15 +8,19 @@ When choosing an AI model, agent harness, and reasoning effort for code or speci
 
 To let you move from the big picture to individual tasks, the page shows the overall weighted score first, then maps score against work time, token usage, and cost in three trade-off scatter plots (with an optional Pareto front), and finally breaks down per-task score, work time, token usage, cost, and speed. This page is an independent comparison view: it summarizes the per-task results into a weighted score without modifying the input data or replacing the benchmark's own reports.
 
-## Version v2.5
+## Version v2.6
 
 Before reading the charts or building the page, it helps to know which dataset version is included and how it evolved.
 
-Version v2.5 changes only the cost basis again; no instance, score, time or token value changes from v2.4. In v2.4 only Claude and GPT subscription runs were converted (by their share of a $100 plan's weekly quota times $23.33) and Gemini stayed at its API list price. Now every subscription-plan run (Claude, GPT and Gemini models) uses the same rule, the one the author's status page uses for equivalent task points: the run is valued at its equivalent task points, and one point is $100 of Claude API spending. The tooltips show the points, the run's API-equivalent cost and the efficiency ratio E (see the Cost section). DeepSeek and Strata keep their dollar costs. Claude costs return to their API-equivalent values because E is 1 for the Claude plan, GPT costs are 1.88 times their API-equivalent values, and Gemini costs are 1.19 times theirs (an estimate). The $100 plan factors and the $23.33 weekly cost of v2.4 are gone.
+Version v2.6 changes only the cost basis again; no instance, score, time or token value changes from v2.5. Every subscription-plan run (Claude, GPT and Gemini models) is now priced as a subscription fee: the share of the Claude $100 plan's weekly fee ($100 ÷ 30 × 7 = $23.33) that the run used up. For example, a run that uses 1/100 of the plan's weekly quota costs 1/100 of the weekly fee, about $0.23. The share is found through equivalent task points (see the Cost section), which only serve as the way of converting between models and plans. Because v2.6 multiplies every plan run by the same constant relative to v2.5, the cost ratios between any two plan runs are unchanged, and Claude costs return to their v2.4 values. DeepSeek and Strata have no subscription and keep their actual-cost dollars, so they are not on the same footing as the plan runs. The page text, tooltips and this README describe the cost this way.
+
+### v2.5
+
+Version v2.5 (superseded by v2.6) priced every subscription-plan run in Claude API dollars at $100 per equivalent task point (API-equivalent cost × the plan category's efficiency ratio E). v2.6 keeps those ratios and only changes the unit.
 
 ### v2.4
 
-Version v2.4 (superseded by v2.5) priced Claude Code and Codex subscription runs by the share of the $100 plan's weekly quota the run used, times the plan's weekly cost ($100 ÷ 30 × 7 = $23.33), and left Gemini 4 Hydrogen at its reference API price. Its factors were $536 (Claude $100 plan) and $470 (OpenAI $100 plan) of API-equivalent quota a week.
+Version v2.4 (superseded by v2.5 and v2.6) priced Claude Code and Codex subscription runs by the share of the $100 plan's weekly quota the run used, times the plan's weekly cost ($100 ÷ 30 × 7 = $23.33), and left Gemini 4 Hydrogen at its reference API price. Its factors were $536 (Claude $100 plan) and $470 (OpenAI $100 plan) of API-equivalent quota a week.
 
 ### v2.3
 
@@ -38,7 +42,7 @@ Underlying v2.1 is the v2.0 measurement, which was a complete redesign whose res
 - It uses scoring r8.4: scores are not cut at 0 and can be negative; a model failure (no report) scores 0; and diagnostic scores count as is, with no 0.9 discount.
 - Each configuration counts 5 runs per task (10 for the local Strata model), and the score charts show 95% confidence intervals.
 - It adds task speeds and engine speeds (tok/s).
-- Cost bases differ by vendor: subscription runs (Claude, GPT and Gemini models) are priced by their equivalent task points in Claude API dollars, API runs in USD, and the local model by a local running cost (see below).
+- Cost bases differ by vendor: subscription runs (Claude, GPT and Gemini models) are priced as their share of the Claude $100 plan's weekly fee, API runs in USD, and the local model by a local running cost (see below).
 
 Because of these changes, `build.py` supports v2.x data only (results file schema 1); the v1 page and script remain in the Git history.
 
@@ -57,14 +61,14 @@ Across those four tasks, the benchmark tests 33 configurations (27 main, 2 phase
 
 | Harness | Models | Efforts | Cost basis |
 | --- | --- | --- | --- |
-| Codex | GPT-6.1 Sol | low, medium, high | Subscription run, equivalent task points in Claude API USD |
-| Codex | GPT-6 Luna | low, medium, high, xhigh, max (xhigh and max in the supplement) | Subscription run, equivalent task points in Claude API USD |
+| Codex | GPT-6.1 Sol | low, medium, high | Subscription run, priced as its share of the Claude $100 plan's weekly fee |
+| Codex | GPT-6 Luna | low, medium, high, xhigh, max (xhigh and max in the supplement) | Subscription run, priced as its share of the Claude $100 plan's weekly fee |
 | Codex | DeepSeek V4.1 Flash | low, high, max | DeepSeek price per request |
 | Codex | Strata IQ3_XXS (local) | low, medium, high | Local running cost |
-| Claude Code | Claude Opus 5.5, Sonnet 5.5, Haiku 5.5 | low, medium, high | Subscription run, equivalent task points in Claude API USD |
+| Claude Code | Claude Opus 5.5, Sonnet 5.5, Haiku 5.5 | low, medium, high | Subscription run, priced as its share of the Claude $100 plan's weekly fee |
 | Claude Code | DeepSeek V4.1 Flash | low, high, max | DeepSeek price per request |
 | Claude Code | Strata IQ3_XXS (local) | low, medium, high | Local running cost |
-| Antigravity | Gemini 4 Hydrogen | low, medium, high, xhigh (all in the phase-4 supplement) | Plan run, equivalent task points in Claude API USD (estimated E) |
+| Antigravity | Gemini 4 Hydrogen | low, medium, high, xhigh (all in the phase-4 supplement) | Plan run, priced as its share of the Claude $100 plan's weekly fee (estimated E) |
 
 In this table, DeepSeek V4.1 Flash is the endpoint's `deepseek-flash` model (version DeepSeek-V4.1-Flash-1017), and Strata IQ3_XXS is a 3-bit quantization of Qwen3.8-Flash-Next run locally on a home PC (RTX 3080 Ti 12 GB, i9-13900, 64 GB RAM). Effort labels are each model's requested setting, not equal compute across models.
 
@@ -126,17 +130,17 @@ Finally, some runs lack a specific measurement. Missing values are never treated
 
 ## Cost
 
-Among the metrics above, cost requires special handling because configurations ran under different billing methods—subscription plans, per-request API billing, and local hardware. Consequently, no cost on the page is an actual bill. Instead, prices were checked on **2026-10-22** (the task-point factors below on **2026-11-18**), and the rules in `pricing.json` put each vendor on a defined cost basis. All configurations stay in US dollars on one cost axis:
+Among the metrics above, cost requires special handling because configurations ran under different billing methods—subscription plans, per-request API billing, and local hardware. Consequently, no cost on the page is an actual bill. Instead, prices were checked on **2026-10-22** (the plan-week and task-point factors below on **2026-11-18**), and the rules in `pricing.json` put each vendor on a defined cost basis. All configurations stay in US dollars on one cost axis. Subscription runs are priced as a subscription fee while DeepSeek and Strata are priced by actual spending, so the two groups are not on the same footing:
 
 | Vendor | Basis |
 | --- | --- |
-| OpenAI | Subscription run, equivalent task points: tokens × OpenAI Standard API rates, then the task-point conversion below |
-| Google | Plan run, equivalent task points: tokens × Google Gemini API rates (output includes thinking), then the task-point conversion below |
-| Anthropic | Subscription run, equivalent task points: the API-equivalent cost Claude Code reports (instance `cost.usd`), then the task-point conversion below |
+| OpenAI | Subscription run, share of the plan week: tokens × OpenAI Standard API rates, then the conversion below |
+| Google | Plan run, share of the plan week: tokens × Google Gemini API rates (output includes thinking), then the conversion below |
+| Anthropic | Subscription run, share of the plan week: the API-equivalent cost Claude Code reports (instance `cost.usd`), then the conversion below |
 | DeepSeek | Instance `cost.usd`: official prices per request, peak or off-peak |
 | Strata (local) | Local running cost: work seconds × hourly cost |
 
-Task-point conversion (all subscription-plan runs: Claude, GPT and Gemini): the author's status page measures a plan's quota in equivalent task points, where one point is a fixed $100 of Claude API spending (1/20 of a Claude Max 20x weekly quota) and a plan category's efficiency ratio E is what Claude would have spent on the same kind of finished work divided by what that plan actually spent (from the author's own 28-day usage history). A run's share of its plan's window times the window's API-equivalent value is the run's own API-equivalent cost, so the plan's size cancels and the cost shown is the run's API-equivalent cost × E; the equivalent task points are that cost divided by $100. A Claude Opus run with an API-equivalent cost of $1.7055 (E = 1) costs $1.7055 (0.0171 points); a GPT-6.1 Sol run of $0.5084 costs $0.5084 × 1.88 = $0.957 (0.00957 points). The tooltips show the points, the API-equivalent cost and E. E is one value per plan category and is used for every model of that plan, not each model's own E, so one plan never has two prices:
+Plan-fee conversion (all subscription-plan runs: Claude, GPT and Gemini): the cost shown is the run's share of the Claude $100 plan's weekly quota times that plan's weekly fee ($100 ÷ 30 × 7 = $23.33). If a $100 plan week allowed 10G tokens of a small model but only 1G of a large one, and both used 100M tokens in a chart, the small model costs 1/100 of the weekly fee and the large one 1/10. The share is found through equivalent task points, the unit of the author's status page: one point is a fixed $100 of Claude API spending (1/20 of a Claude Max 20x weekly quota); a Claude $100 plan week holds 5.36 points (about $536 of Claude API-priced use, measured on 2026-11-18 on the local Max 20x plan with the $100 plan taken as a quarter of it, about ±10%; the same factor v2.4 used); and a plan category's efficiency ratio E is what Claude would have spent on the same kind of finished work divided by what that plan actually spent (from the author's own 28-day usage history). A run's points are its API-equivalent cost × E ÷ $100, and its cost is points ÷ 5.36 × $23.33. A Claude Opus run with an API-equivalent cost of $1.7055 (E = 1) is 0.0171 points, 0.318% of a plan week, $0.0742; a GPT-6.1 Sol run of $0.5084 is $0.5084 × 1.88 = $0.957, 0.00957 points, 0.179% of a plan week, $0.0417. The tooltips show the points, the API-equivalent cost, E and the share of the plan week. E is one value per plan category and is used for every model of that plan, not each model's own E, so one plan never has two prices:
 
 | Plan category | E | Basis |
 | --- | ---: | --- |
@@ -170,7 +174,7 @@ For the local Strata model, the running cost is a rough estimate that covers ele
 | Upkeep | $0.02 / hour | Fans, power supply and other wear parts, about $50 a year over about 2,500 loaded hours |
 | Total | about $0.09 / hour | |
 
-Because this local cost is always above 0, the logarithmic cost axis on the charts never meets 0. And because local runs are much slower than API runs, Strata works out to about $0.011–0.026 per task run; on the task-point basis that is below every Claude, GPT and Gemini configuration (the cheapest, GPT-6 Luna low, is about $0.040).
+Because this local cost is always above 0, the logarithmic cost axis on the charts never meets 0. And because local runs are much slower than API runs, Strata works out to about $0.015–0.019 per run; next to the plan-fee prices it is above the cheapest plan runs (GPT-6 Luna, Claude Haiku and Gemini low, about $0.002–0.013) and below the other plan configurations.
 
 ## Files
 
@@ -246,7 +250,7 @@ Computation and rendering are split between two modules so that the statistical 
 When maintaining configuration values or rules, update the matching files together:
 
 - **Models, weights, and visual settings**: Model order and names, harnesses, and the four reviewer weights are defined at the top of `stats.py`; model colors and the scoring version are at the top of `build.py`.
-- **Pricing**: Prices and local cost settings live in `pricing.json`. Because the page's method text reads the prices, power, electricity rate, and weights directly from `pricing.json` and `REVIEWERS`, after any pricing change you must update `checkedAt`, rebuild the page, and update the cost tables in both READMEs. The task-point factors (`taskPoints`: the point value and one E per plan category) carry their own `checkedAt` and source; refresh them from the status page's `taskpts.json` when the plans or the price lists change.
+- **Pricing**: Prices and local cost settings live in `pricing.json`. Because the page's method text reads the prices, power, electricity rate, and weights directly from `pricing.json` and `REVIEWERS`, after any pricing change you must update `checkedAt`, rebuild the page, and update the cost tables in both READMEs. The plan-week and task-point factors (`taskPoints`: the Claude $100 plan's weekly points and fee, the point value and one E per plan category) carry their own `checkedAt` and source; refresh them from the status page's `taskpts.json` when the plans or the price lists change.
 - **Statistical rules**: Agree on any change to the statistics rules first, as `AGENTS.md` describes, and update both READMEs afterwards.
 
 ## Publishing

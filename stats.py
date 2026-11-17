@@ -10,7 +10,7 @@ from pathlib import Path
 
 
 RESULTS_SCHEMA_VERSION = 1
-PRICING_SCHEMA_VERSION = 4
+PRICING_SCHEMA_VERSION = 5
 SCORING_VERSION = "r8.4"
 REVIEWERS = (
     ("code-standards-reviewer", "Code Standards", 0.20),
@@ -154,23 +154,34 @@ def plan_efficiency(pricing, vendor):
     return rule["e"] if rule else None
 
 
-def instance_cost(instance, config, pricing):
-    """Return (Claude-API USD, lower bound) for one instance, or (None, False) when unknown.
+def plan_weekly_cost(pricing):
+    """USD per week of the reference plan (the Claude $100 plan): monthly price over a 30-day month, times 7 days."""
+    plan = pricing["taskPoints"]["plan"]
+    return plan["monthlyUsd"] / plan["daysPerMonth"] * 7
 
-    A plan vendor's run is its API-equivalent USD times its plan category's E, which is the run's equivalent
-    task points times the point's Claude API value; every other vendor's cost is its own dollar rule.
-    """
-    usd, lower = instance_api_cost(instance, config, pricing)
-    e = plan_efficiency(pricing, config["vendor"])
-    return (usd, lower) if e is None or usd is None else (usd * e, lower)
+
+def plan_share(points, pricing):
+    """Share of the reference plan's weekly quota that `points` equivalent task points use (None stays None)."""
+    return None if points is None else points / pricing["taskPoints"]["plan"]["weeklyPoints"]
 
 
 def instance_task_points(instance, config, pricing):
-    """Equivalent task points one instance used; None when not a plan run or unknown."""
-    if plan_efficiency(pricing, config["vendor"]) is None:
-        return None
-    usd = instance_cost(instance, config, pricing)[0]
-    return None if usd is None else usd / pricing["taskPoints"]["pointUsd"]
+    """Equivalent task points one instance used (API-equivalent USD x E / pointUsd); None when not a plan run or unknown."""
+    e = plan_efficiency(pricing, config["vendor"])
+    usd = instance_api_cost(instance, config, pricing)[0]
+    return None if e is None or usd is None else usd * e / pricing["taskPoints"]["pointUsd"]
+
+
+def instance_cost(instance, config, pricing):
+    """Return (USD, lower bound) for one instance, or (None, False) when unknown.
+
+    A plan vendor's run costs its equivalent task points' share of the reference plan's weekly quota
+    times that plan's weekly price; every other vendor's cost is its own dollar rule.
+    """
+    points = instance_task_points(instance, config, pricing)
+    if points is None:
+        return instance_api_cost(instance, config, pricing)
+    return plan_share(points, pricing) * plan_weekly_cost(pricing), instance_api_cost(instance, config, pricing)[1]
 
 
 def mean_of(values):
@@ -220,7 +231,8 @@ def summarize_cell(instances, config, pricing):
         "tokenLowerBound": any(tokens.get("lowerBound") for tokens in token_sets),
         "cost": mean_of([cost[0] for cost in costs]), "costCount": len(costs),
         "costLowerBound": any(cost[1] for cost in costs),
-        "taskPoints": mean_of(points), "apiCost": mean_of(api_costs),
+        "taskPoints": mean_of(points), "planShare": plan_share(mean_of(points), pricing),
+        "apiCost": mean_of(api_costs),
         "efficiency": plan_efficiency(pricing, config["vendor"]),
         "speeds": speeds, "speedCounts": speed_counts,
         "speedLowerBounds": speed_bounds,
@@ -248,13 +260,14 @@ def composite(cells):
     minutes, time_count = average("minutes")
     cost, cost_count = average("cost")
     task_points, _ = average("taskPoints")
+    plan_share_value, _ = average("planShare")
     api_cost, _ = average("apiCost")
     token_cells = [cells[key]["tokens"] for key, _, _ in REVIEWERS if cells[key]["tokens"]]
     return {
         "score": score, "half": half, "minutes": minutes, "timeCount": time_count,
         "cost": cost, "costCount": cost_count,
         "costLowerBound": any(cells[key]["costLowerBound"] for key, _, _ in REVIEWERS),
-        "taskPoints": task_points, "apiCost": api_cost,
+        "taskPoints": task_points, "planShare": plan_share_value, "apiCost": api_cost,
         "efficiency": next((cells[key]["efficiency"] for key, _, _ in REVIEWERS if cells[key]["efficiency"] is not None), None),
         "tokens": ({key: mean_of([tokens[key] for tokens in token_cells]) for key in TOKEN_KEYS}
                    if token_cells else None),
