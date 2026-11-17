@@ -1,13 +1,13 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "checkedAt": "2026-10-22",
   "currency": "USD",
   "tokensPerUnit": 1000000,
-  "costBasis": "Per-instance cost averaged within each scenario, then across the four scenarios; not actual billing",
+  "costBasis": "Per-instance cost averaged within each scenario, then across the four scenarios; not actual billing. Plan runs (anthropic, openai) are priced by their share of the $100 plan's weekly quota times its weekly cost; the rest in USD",
   "instanceCost": {
     "deepseek": "Benchmark instance cost.usd: per-request official price list, peak / off-peak by request time",
-    "anthropic": "Benchmark instance cost.usd: Claude Code total_cost_usd, API-equivalent USD on a subscription run",
-    "openai": "Token counts priced at the rates below; the benchmark ran on a ChatGPT plan, so this is a reference API price",
+    "anthropic": "Benchmark instance cost.usd (Claude Code total_cost_usd, API-equivalent USD), as a share of the $100 plan's weekly quota (planCost), times the plan's weekly cost",
+    "openai": "Token counts priced at the rates below (API-equivalent USD), as a share of the $100 plan's weekly quota (planCost), times the plan's weekly cost",
     "strata": "Local running cost from the instance work seconds and the localRunningCost settings below",
     "google": "Token counts priced at the rates below (output includes thinking); the benchmark ran on a Google plan login, so this is a reference API price"
   },
@@ -62,5 +62,24 @@
       "source": "https://ai.google.dev/gemini-api/docs/pricing",
       "checkedAt": "2026-11-14"
     }
+  },
+  "planCost": {
+    "planName": "$100 plan",
+    "monthlyUsd": 100,
+    "daysPerMonth": 30,
+    "formula": "cost USD = (API-equivalent USD of the run / weeklyApiEquivalentUsd) x (monthlyUsd / daysPerMonth x 7)",
+    "weeklyApiEquivalentUsd": {
+      "anthropic": {
+        "usd": 536,
+        "plan": "Claude Max 5x ($100)",
+        "basis": "Measured on the local Claude Max 20x plan on 2026-11-18: K = 0.0466 percentage points of weekly quota per API-priced USD at 11% used (usage.sh --calibrate), so a full week is 100 / 0.0466 = about $2,146 of API-priced use; the $100 plan is taken as 1/4 of the Max 20x quota. A 1% rounding step at 11% used is about +/-9%, and Claude Code's recorded run cost uses its own price list, so treat the factor as about +/-10%."
+      },
+      "openai": {
+        "usd": 470,
+        "plan": "ChatGPT/Codex $100 plan",
+        "basis": "Measured on the local Codex $20 plan on 2026-11-18: 45% of the weekly quota used = about $21.15 of API-priced active use, so about $47.0 per week (limits/codex.json conversion, auto-review and credit-paid calls excluded); the $100 plan has 10 times the $20 plan's weekly quota (user's figure), so $470. Rates are the same as the page's OpenAI rates."
+      }
+    },
+    "checkedAt": "2026-11-18"
   }
 }

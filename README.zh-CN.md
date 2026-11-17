@@ -30,7 +30,7 @@ v2.1 在 v2.0 数据的基础上，加入了 benchmark 第三阶段补测的 GPT
 - 评分规则升级为 r8.4：分数不在 0 处截断，可以为负；模型失误（没有产出报告）记 0；诊断评分照常计入，不再乘以 0.9。
 - 每个配置每项任务计入 5 次运行（本地 Strata 为 10 次），分数图新增 95% 置信区间。
 - 新增任务速度与引擎速度（tok/s）。
-- 费用按厂商分别取计价依据，本地模型改为按本地运行成本估算（见下文）。
+- 费用按厂商分别取计价依据：套餐运行（Claude 与 GPT 模型）按占 $100 套餐周额度的比例折算，API 运行按美元，本地模型按本地运行成本估算（见下文）。
 
 受这些改动影响，`build.py` 只支持 v2.x 的数据（结果文件 schema 1）；v1 的页面和脚本保留在 Git 历史中。
 
@@ -49,11 +49,11 @@ v2.1 在 v2.0 数据的基础上，加入了 benchmark 第三阶段补测的 GPT
 
 | 代理程序 | 模型 | 推理强度 | 费用依据 |
 | --- | --- | --- | --- |
-| Codex | GPT-6.1 Sol | low、medium、high | 套餐运行，参考 API 价 |
-| Codex | GPT-6 Luna | low、medium、high、xhigh、max（xhigh、max 为补测） | 套餐运行，参考 API 价 |
+| Codex | GPT-6.1 Sol | low、medium、high | 套餐运行，按套餐额度折算 |
+| Codex | GPT-6 Luna | low、medium、high、xhigh、max（xhigh、max 为补测） | 套餐运行，按套餐额度折算 |
 | Codex | DeepSeek V4.1 Flash | low、high、max | DeepSeek 逐请求价格 |
 | Codex | Strata IQ3_XXS（本地） | low、medium、high | 本地运行成本 |
-| Claude Code | Claude Opus 5.5、Sonnet 5.5、Haiku 5.5 | low、medium、high | 套餐运行，参考 API 价 |
+| Claude Code | Claude Opus 5.5、Sonnet 5.5、Haiku 5.5 | low、medium、high | 套餐运行，按套餐额度折算 |
 | Claude Code | DeepSeek V4.1 Flash | low、high、max | DeepSeek 逐请求价格 |
 | Claude Code | Strata IQ3_XXS（本地） | low、medium、high | 本地运行成本 |
 | Antigravity | Gemini 4 Hydrogen | low、medium、high、xhigh（均为第四阶段补测） | 套餐运行，参考 API 价 |
@@ -118,15 +118,24 @@ v2.1 在 v2.0 数据的基础上，加入了 benchmark 第三阶段补测的 GPT
 
 ## 费用
 
-在各项指标中，费用需要单独制定换算规则，因为不同配置分别通过订阅套餐、按请求计费 API 和本地硬件运行。因此，页面上的所有费用都不是实际账单；具体单价于 **2026-10-22** 核对，换算规则保存在 `pricing.json` 中：
+在各项指标中，费用需要单独制定换算规则，因为不同配置分别通过订阅套餐、按请求计费 API 和本地硬件运行。因此，页面上的所有费用都不是实际账单；具体单价于 **2026-10-22** 核对（下文的套餐额度系数于 **2026-11-18** 实测），换算规则保存在 `pricing.json` 中。所有配置仍以美元计，画在同一条费用轴上：
 
 | 厂商 | 依据 |
 | --- | --- |
-| OpenAI | 套餐运行，参考 API 价：token × OpenAI Standard API 单价 |
+| OpenAI | 套餐运行，按套餐额度折算：token × OpenAI Standard API 单价，再按下文的套餐额度折算 |
 | Google | 套餐运行，参考 API 价：token × Google Gemini API 单价（输出含思考） |
-| Anthropic | 套餐运行，参考 API 价：Claude Code 报告的 API 等价费用（实例 `cost.usd`） |
+| Anthropic | 套餐运行，按套餐额度折算：Claude Code 报告的 API 等价费用（实例 `cost.usd`），再按下文的套餐额度折算 |
 | DeepSeek | 实例 `cost.usd`：按官方价逐请求计算，区分高峰 / 低谷 |
 | Strata（本地） | 本地运行成本：工作秒数 × 每小时成本 |
+
+套餐额度折算（OpenAI 与 Anthropic）：把该次运行的 API 等价费用除以 $100 套餐一周额度的 API 等价费用，得到这次运行占周额度的比例（悬停提示中以百分比显示），再乘以套餐周费用 $100 ÷ 30 × 7 = $23.33。例如占周额度 0.318% 的运行，费用为 $0.0742。周额度于 2026-11-18 在作者自己的账号上实测：
+
+| 套餐 | 周额度的 API 等价美元 | 依据 |
+| --- | ---: | --- |
+| Claude $100 套餐（Max 5x） | $536 | 本机 Max 20x 套餐实测约 $2,146 / 周（周额度已用 11%，每个 API 价美元对应 0.0466 个百分点，即 100 / 0.0466）；$100 套餐按其四分之一计。 |
+| OpenAI $100 套餐 | $470 | 本机 $20 套餐实测约 $47.0 / 周（已用 45%，只计主动调用的 API 价用量）；$100 套餐的额度是它的十倍。 |
+
+每个系数的精度约 10%，所以套餐额度口径下的费用在运行间的离散之外还带有同样大小的不确定度。Gemini 4 Hydrogen 也是套餐运行，但没有它的额度实测，仍按下方的参考 API 价计，与 Claude、GPT 的费用不在同一口径上。
 
 其中，OpenAI 模型按 token 用量乘以 OpenAI Standard API 单价（美元 / 百万 token）：
 
@@ -152,7 +161,7 @@ v2.1 在 v2.0 数据的基础上，加入了 benchmark 第三阶段补测的 GPT
 | 维护 | $0.02 / 小时 | 风扇、电源等损耗件，约每年 $50、按每年约 2,500 负载小时摊 |
 | 合计 | 约 $0.09 / 小时 | |
 
-按工作时间折算后，本地成本恒大于 0，图表中的对数费用轴不会遇到 0。同时，由于本地运行比远程 API 慢得多，Strata 在每项任务每次运行上的成本约为 $0.011–0.026，与 GPT-6 Luna low 处于同一量级。
+按工作时间折算后，本地成本恒大于 0，图表中的对数费用轴不会遇到 0。同时，由于本地运行比远程 API 慢得多，Strata 在每项任务每次运行上的成本约为 $0.011–0.026；按套餐额度折算后，它高于各档 GPT-6 Luna，与 GPT-6.1 Sol low、Claude Sonnet 5.5 low 处于同一量级。
 
 ## 文件
 
@@ -228,7 +237,7 @@ python3 -m venv .venv
 维护配置项或统计规则时，需要同步更新相关文件：
 
 - **模型、权重与视觉配置**：模型顺序与名称、代理程序以及 4 项 Reviewer 的权重定义在 `stats.py` 顶部；模型颜色和评分版本定义在 `build.py` 顶部。
-- **价格与本地成本参数**：保存在 `pricing.json`。页面方法说明中的价格、功率、电价和权重由 `pricing.json` 与 `REVIEWERS` 动态生成；调整价格或参数后，请更新 `checkedAt`、重新生成页面，并同步更新两份 README 中的费用表。
+- **价格与本地成本参数**：保存在 `pricing.json`。页面方法说明中的价格、功率、电价和权重由 `pricing.json` 与 `REVIEWERS` 动态生成；调整价格或参数后，请更新 `checkedAt`、重新生成页面，并同步更新两份 README 中的费用表。套餐额度系数（`planCost`）有各自的 `checkedAt` 和实测依据；套餐或价目变动时需重新实测。
 - **统计规则**：改动任何统计规则前，须先按 `AGENTS.md` 所述的流程确认一致，实现后同步更新两份 README。
 
 ## 发布

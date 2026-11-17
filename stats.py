@@ -10,7 +10,7 @@ from pathlib import Path
 
 
 RESULTS_SCHEMA_VERSION = 1
-PRICING_SCHEMA_VERSION = 2
+PRICING_SCHEMA_VERSION = 3
 SCORING_VERSION = "r8.4"
 REVIEWERS = (
     ("code-standards-reviewer", "Code Standards", 0.20),
@@ -128,8 +128,8 @@ def _local_cost(instance, config, pricing):
     return seconds / 3600 * hourly, False
 
 
-COST_RULES = {"deepseek": _recorded_cost, "anthropic": _recorded_cost,
-              "openai": _token_cost("openai"), "google": _token_cost("google"), "strata": _local_cost}
+API_COST_RULES = {"deepseek": _recorded_cost, "anthropic": _recorded_cost,
+                  "openai": _token_cost("openai"), "google": _token_cost("google"), "strata": _local_cost}
 
 
 def pricing_rule(pricing, section, config):
@@ -140,12 +140,44 @@ def pricing_rule(pricing, section, config):
                          f"(configuration {config['key']})") from None
 
 
-def instance_cost(instance, config, pricing):
-    """Return (USD, lower bound) for one instance, or (None, False) when unknown."""
-    rule = COST_RULES.get(config["vendor"])
+def instance_api_cost(instance, config, pricing):
+    """Return (API-priced USD, lower bound) for one instance, or (None, False) when unknown."""
+    rule = API_COST_RULES.get(config["vendor"])
     if rule is None:
         raise ValueError(f"No cost rule for vendor: {config['vendor']}")
     return rule(instance, config, pricing)
+
+
+def plan_weekly_cost(pricing):
+    """USD per week of the reference plan: its monthly price over a 30-day month, times 7 days."""
+    plan = pricing["planCost"]
+    return plan["monthlyUsd"] / plan["daysPerMonth"] * 7
+
+
+def plan_weekly_api_usd(pricing, vendor):
+    """API-priced USD that fill the reference plan's weekly quota for a plan vendor, else None."""
+    rule = pricing["planCost"]["weeklyApiEquivalentUsd"].get(vendor)
+    return rule["usd"] if rule else None
+
+
+def instance_plan_percent(instance, config, pricing):
+    """Share of the reference plan's weekly quota one instance used, in percent; None when not a plan run or unknown."""
+    weekly = plan_weekly_api_usd(pricing, config["vendor"])
+    usd = instance_api_cost(instance, config, pricing)[0]
+    return None if weekly is None or usd is None else usd / weekly * 100
+
+
+def instance_cost(instance, config, pricing):
+    """Return (USD, lower bound) for one instance, or (None, False) when unknown.
+
+    A plan vendor's cost is its quota share times the plan's weekly cost; every other vendor's cost is
+    its own dollar rule.
+    """
+    usd, lower = instance_api_cost(instance, config, pricing)
+    percent = instance_plan_percent(instance, config, pricing)
+    if percent is None:
+        return usd, lower
+    return percent / 100 * plan_weekly_cost(pricing), lower
 
 
 def mean_of(values):
@@ -165,6 +197,11 @@ def summarize_cell(instances, config, pricing):
                   if all(finite_number(instance["tokens"].get(key)) for key in TOKEN_KEYS)]
     costs = [instance_cost(instance, config, pricing) for instance in instances]
     costs = [cost for cost in costs if cost[0] is not None]
+    percents = [instance_plan_percent(instance, config, pricing) for instance in instances]
+    percents = [percent for percent in percents if percent is not None]
+    api_costs = ([instance_api_cost(instance, config, pricing)[0] for instance in instances]
+                 if percents else [])
+    api_costs = [usd for usd in api_costs if usd is not None]
     speeds, speed_counts, speed_bounds = {}, {}, {}
     for key in SPEED_KEYS:
         token_key = "output" if key.endswith("Output") else "uncachedInput"
@@ -190,6 +227,7 @@ def summarize_cell(instances, config, pricing):
         "tokenLowerBound": any(tokens.get("lowerBound") for tokens in token_sets),
         "cost": mean_of([cost[0] for cost in costs]), "costCount": len(costs),
         "costLowerBound": any(cost[1] for cost in costs),
+        "planPercent": mean_of(percents), "apiCost": mean_of(api_costs),
         "speeds": speeds, "speedCounts": speed_counts,
         "speedLowerBounds": speed_bounds,
     }
@@ -215,11 +253,14 @@ def composite(cells):
 
     minutes, time_count = average("minutes")
     cost, cost_count = average("cost")
+    plan_percent, _ = average("planPercent")
+    api_cost, _ = average("apiCost")
     token_cells = [cells[key]["tokens"] for key, _, _ in REVIEWERS if cells[key]["tokens"]]
     return {
         "score": score, "half": half, "minutes": minutes, "timeCount": time_count,
         "cost": cost, "costCount": cost_count,
         "costLowerBound": any(cells[key]["costLowerBound"] for key, _, _ in REVIEWERS),
+        "planPercent": plan_percent, "apiCost": api_cost,
         "tokens": ({key: mean_of([tokens[key] for tokens in token_cells]) for key in TOKEN_KEYS}
                    if token_cells else None),
     }
