@@ -48,7 +48,7 @@ v2.1 在 v2.0 数据的基础上，加入了 benchmark 第三阶段补测的 GPT
 
 ## 测量范围
 
-这组开发审查任务来自软件项目 ARW。在 ARW 的开发流程中，每个 Reviewer 是一个负责特定代码或文档审查任务的 AI Agent。页面汇总以下 4 项 Reviewer 任务，并按它们在流程中的比重赋予综合分数权重：
+这组开发审查任务来自软件项目 ARW。v1 任务是冻结的 ARW 760007c 加补丁（计分 r8.4，存于私有工程 qwen-strata，tag `reviewer-bench-v1`）；之后版本的题目、答案键和计分代码公开在 ARW，按提交引用。在 ARW 的开发流程中，每个 Reviewer 是一个负责特定代码或文档审查任务的 AI Agent。页面汇总以下 4 项 Reviewer 任务，并按它们在流程中的比重赋予综合分数权重：
 
 | Reviewer | 工作 | 综合分数权重 |
 | --- | --- | ---: |
@@ -76,7 +76,7 @@ v2.1 在 v2.0 数据的基础上，加入了 benchmark 第三阶段补测的 GPT
 
 - 任务以 Claude Opus 标定，产出报告也由 Opus 裁决，因此 Opus 的排名位置可能偏高。
 - 结果只反映这组固定任务上的表现，不是通用模型排名。
-- 完整场景、原始报告与隐藏用例不在本仓库内，因此可以用仓库中的快照重算图表，但不能仅靠快照重跑测量。
+- v1 的场景、原始报告与隐藏用例不公开，因此可以用仓库中的快照重算图表，但不能重跑 v1 的测量；之后版本可按其引用的 ARW 提交重跑。
 
 ## 统计规则
 
@@ -191,7 +191,7 @@ E 是滚动 28 天的测量值，会随作者的使用变化，所以页面使�
 ├── README.md
 ├── README.zh-CN.md
 ├── AGENTS.md
-├── .env.example
+├── sources.json
 └── resources/
     ├── site.css
     ├── favicon.svg
@@ -202,18 +202,16 @@ E 是滚动 28 天的测量值，会随作者的使用变化，所以页面使�
 
 - **代码与计价参数**：`stats.py` 保存统计与费用规则（纯 Python，不依赖 Plotly），`build.py` 绘制图表并组装页面，`test_build.py` 负责测试，`pricing.json` 保存计价参数。
 - **样式、字体与生成物**：`resources/site.css` 是页面唯一的样式表，`resources/fonts/` 存放预下载的字体（字体许可与来源见 `resources/fonts/README.md`）。`resources/favicon.svg` 由脚本生成并保存在仓库中；`charts.html` 则是本地生成的文件，不提交到 Git。
-- **数据快照**：`benchmark-results.json` 是输入数据的独立快照，`benchmark-results-phase4.json` 是第四阶段 Gemini 4 Hydrogen 运行的补充快照（同一格式，由构建脚本合并）。构建页面时只读取仓库中已提交的这些快照，不读取 `.env`，也不会从其他目录自动同步数据。
+- **数据快照**：`benchmark-results.json` 是输入数据的独立快照，`benchmark-results-phase4.json` 是第四阶段 Gemini 4 Hydrogen 运行的补充快照（同一格式，由构建脚本合并）。构建页面时只读取仓库中已提交的这些快照，不会从其他目录自动同步数据。`sources.json` 记下每份快照的来源（工程、提交、路径、sha256、题目套件与计分版本），`test_build.py` 会按它核对快照。主快照内的 `meta.source` 已过期，以 `sources.json` 为准。
 
-当外部 benchmark 有新数据需要同步时，维护者先将 `.env.example` 复制为已被 Git 忽略的 `.env`，在 `BENCHMARK_SOURCE_RESULTS` 中填入可信来源文件的绝对路径，然后在仓库根目录用 Bash 复制并校验新快照：
+当外部 benchmark 有新数据需要同步时，维护者从来源提交取出文件并核对哈希，再把新的提交、路径和 sha256 写进 `sources.json`。例如在仓库根目录（来源工程是本地克隆，取值来自 `sources.json`）：
 
 ```bash
-. ./.env
-: "${BENCHMARK_SOURCE_RESULTS:?请在 .env 设置 BENCHMARK_SOURCE_RESULTS}"
-cp -- "$BENCHMARK_SOURCE_RESULTS" benchmark-results.json
-cmp -- "$BENCHMARK_SOURCE_RESULTS" benchmark-results.json
+git -C "$SOURCE_REPO" show "$COMMIT:$SRC_PATH" > benchmark-results.json
+sha256sum benchmark-results.json   # 必须与 sources.json 中的 sha256 一致
 ```
 
-第四阶段快照用同样方式，从 `BENCHMARK_SOURCE_SUPPLEMENT_PHASE4` 复制到 `benchmark-results-phase4.json`。
+第四阶段快照用同样方式更新到 `benchmark-results-phase4.json`。
 
 ## 使用
 

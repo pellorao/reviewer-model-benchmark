@@ -1,10 +1,13 @@
 """Checks for the benchmark page's statistics, cost rules and page assembly."""
 
 import copy
+import hashlib
+import json
 import math
 import re
 import statistics
 import unittest
+from pathlib import Path
 
 from stats import (REVIEWERS, TOKEN_KEYS, composite, extract, instance_api_cost, instance_cost,
                    instance_task_points, load_pricing, plan_weekly_cost, summarize_cell, t_quantile)
@@ -59,6 +62,17 @@ def results(instances, configs=(CONFIGS["openai"],)):
 def full_config(config, scores=(0.6, 0.8), **fields):
     return [instance(score, config=config, scenario=scenario["id"], **fields)
             for scenario in SCENARIOS for score in scores]
+
+
+class SourcesTests(unittest.TestCase):
+    def test_snapshots_match_sources_json(self):
+        root = Path(__file__).parent
+        sources = json.loads((root / "sources.json").read_text(encoding="utf-8"))
+        self.assertEqual({item["file"] for item in sources["snapshots"]},
+                         {"benchmark-results.json", "benchmark-results-phase4.json"})
+        for item in sources["snapshots"]:
+            digest = hashlib.sha256((root / item["file"]).read_bytes()).hexdigest()
+            self.assertEqual(digest, item["sha256"], item["file"])
 
 
 class StatisticsTests(unittest.TestCase):
