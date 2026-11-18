@@ -109,7 +109,7 @@ def copy_inputs(root, clean, commit):
     names = subprocess.check_output(
         ['git', 'ls-tree', '-r', '--name-only', commit], cwd=root, text=True).splitlines()
     for name in names:
-        if not (name in ('build.py', 'stats.py', 'test_build.py', 'pricing.json')
+        if not (name in ('build.py', 'stats.py', 'test_build.py', 'pricing.json', 'sources.json')
                 or re.fullmatch(r'benchmark-results[^/]*\.json', name)
                 or name.startswith('resources/')):
             continue
