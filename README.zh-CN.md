@@ -4,6 +4,8 @@
 
 [打开已发布的 Benchmark 页面](https://reviewer-model-benchmark.pages.dev/reviewer-model-benchmark/)
 
+工具变更见[更新记录](CHANGELOG.zh-CN.md)。
+
 为代码或需求文档审查挑选 AI 模型、代理程序（harness）和推理强度时，往往需要同时权衡审查质量、耗时、token 用量、费用和速度。由于 benchmark 自身的报告只给出单项任务的结果，本工具读取同目录的 `benchmark-results.json`（benchmark 的逐实例结果快照），生成可离线打开的交互式页面 `charts.html`，将所有配置放在同一视图中对比。
 
 为了让读者从整体结论逐步深入到具体任务，页面先展示汇总四项任务的综合分数，再用三张权衡散点图（可显示帕累托前沿）对比分数与耗时、token 用量及费用的关系，最后列出分任务的分数、耗时、token、费用和速度明细。这个页面是独立的比较视图：它把分任务结果汇总为综合分数，不修改输入数据，也不替代 benchmark 自身的正式报告。
@@ -192,6 +194,8 @@ E 是滚动 28 天的测量值，会随作者的使用变化，所以页面使�
 ├── README.zh-CN.md
 ├── AGENTS.md
 ├── sources.json
+├── tools/
+│   └── import_bundle.py
 └── resources/
     ├── site.css
     ├── favicon.svg
@@ -212,6 +216,20 @@ sha256sum benchmark-results.json   # 必须与 sources.json 中的 sha256 一致
 ```
 
 第四阶段快照用同样方式更新到 `benchmark-results-phase4.json`。
+
+## 运行 benchmark 并导入 ARW 结果
+
+按照 [ARW 开发手册](https://github.com/Tranzvision/agent-repository-workflow/blob/83bdb6b4f5ec39e7b32b30862a9ece24aa9b7fc6/docs/manuals/development.md#run-the-capability-suite-with-a-command-line-model)检查模型配置、规划并运行题目套件，再用 `arw reviewer-capability pack` 生成结果包。
+导入工具接受来自干净 ARW 提交 `83bdb6b4f5ec39e7b32b30862a9ece24aa9b7fc6` 的 schema 1、tool 1 结果包，其 fixture tree 为 `4326aca3cbd04ae126f6f4a3e26867f2b740e81a`。
+
+在本仓库根目录用 Python 3.11 或更新版本运行：
+
+```bash
+python3 tools/import_bundle.py /path/to/results.tar.gz --dry-run
+python3 tools/import_bundle.py /path/to/results.tar.gz
+```
+
+导入工具检查压缩包的成员列表、字节数、SHA-256 哈希，以及每个实例记录的来源信息。它把压缩包的原始字节保存为 `snapshots/arw/<sha256>.tar.gz`，并把压缩包哈希、源文件名、ARW 提交与运行时版本、题目套件与 fixture tree、该提交的计分代码路径和代理程序（harness）一并写入 `sources.json`。再次导入相同字节会复用已有快照。新快照与登记项应一起审核并提交。这些压缩包保存原始运行结果，供之后裁决与汇总使用；页面构建读取已提交的 `benchmark-results*.json` 快照作为输入。
 
 ## 使用
 
@@ -238,7 +256,7 @@ python3 -m venv .venv
 
 ## 实现和维护
 
-如需修改代码或更新价格，请注意本工具只负责处理数据快照：它不运行 benchmark，也不修改输入 JSON。
+页面生成工具只处理已提交的 JSON 快照。benchmark 由 ARW 运行并计分，导入工具则按收到的原样保存原始结果。
 
 为了便于独立验证统计逻辑，计算与绘图拆分为两个模块：
 

@@ -1,3 +1,5 @@
+English · **[简体中文](CHANGELOG.zh-CN.md)**
+
 # Changelog
 
 ## Unreleased
