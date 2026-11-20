@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "note": "Where each committed snapshot comes from. Snapshots are never edited; update them by fetching from the recorded commit and checking sha256. The main snapshot's meta.source (qwen_strata cf9b66e) is out of date: the file was last written by 2eb7c5a (2026-11-15, merge.py added haiku-low a9/a10 and voided a7/a8 and deepseek cc-max-a4), so this file is authoritative.",
+  "note": "Provenance and SHA-256 of committed snapshots. Preserve the original bytes. For qwen-strata snapshots, fetch the file from the recorded commit. For ARW bundles, commit identifies the source of the suite and scoring code, and path is the received archive filename. The main snapshot's meta.source (qwen_strata cf9b66e) is out of date: the file was last written by 2eb7c5a (2026-11-15, merge.py added haiku-low a9/a10 and voided a7/a8 and deepseek cc-max-a4), so this file is authoritative.",
   "suite": {
     "id": "v1",
     "origin": "frozen ARW 760007c2134d7a116a20d65836eb0ea1073ab0bf plus patches",

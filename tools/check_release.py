@@ -105,17 +105,19 @@ def check_release(commit, log, local_build, deploy, limit, delay):
 
 
 def copy_inputs(root, clean, commit):
-    """Read only tracked public inputs from the requested commit, never private files."""
+    """Copy tracked build and snapshot verification inputs from the requested commit."""
     names = subprocess.check_output(
         ['git', 'ls-tree', '-r', '--name-only', commit], cwd=root, text=True).splitlines()
     for name in names:
         if not (name in ('build.py', 'stats.py', 'test_build.py', 'pricing.json', 'sources.json')
                 or re.fullmatch(r'benchmark-results[^/]*\.json', name)
+                or re.fullmatch(r'snapshots/arw/[0-9a-f]{64}\.tar\.gz', name)
                 or name.startswith('resources/')):
             continue
         target = clean / name
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_bytes(subprocess.check_output(['git', 'show', commit + ':' + name], cwd=root))
+        with target.open('wb') as stream:
+            subprocess.run(['git', 'show', commit + ':' + name], cwd=root, stdout=stream, check=True)
 
 
 def main():
