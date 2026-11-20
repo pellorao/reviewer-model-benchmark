@@ -98,7 +98,7 @@ session record afterwards; neither exists for another CLI. So the config must co
 directory (`{cwd}`) and the prompt file, may write only the report directory, and nothing else. The example does this with
 `agy` permission settings and `--sandbox`; check that your CLI enforces it. As a net the script also voids an instance
 whose command output or report mentions the ARW checkout path or `tests/fixtures/reviewer-capability` (`inspect-flags`).
-That scan is weak: it cannot see files the model read silently.
+That scan is weak: it cannot see files the model read silently. The example allows no `cat`, `grep` or `find` command, because a command allow-list entry has no path limit and would let the model read the answer keys anywhere on the disk; reading goes through `read_file({cwd})` only. Add a command only if your CLI can limit it to `{cwd}`.
 
 ## What differs from ARW's own run
 

@@ -17,8 +17,7 @@
       "permissions": {
         "allow": [
           "read_file({cwd})", "read_file({prompt_file})", "write_file({report_dir})",
-          "command(ls)", "command(cat)", "command(echo)", "command(wc)", "command(head)", "command(tail)", "command(grep)", "command(find)",
-          "command(sort)", "command(diff)", "command(git status)", "command(git diff)", "command(git log)", "command(git show)"
+          "command(ls)", "command(echo)", "command(wc)", "command(sort)", "command(git status)", "command(git diff)", "command(git log)", "command(git show)"
         ],
         "deny": ["command(sudo)", "command(rm -rf)", "command(curl)", "command(wget)", "command(git push)", "write_file({cwd}/.git)"]
       }

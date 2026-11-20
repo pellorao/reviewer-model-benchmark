@@ -59,13 +59,12 @@ STOP_EXIT = 75
 PROMPT_TEMPLATE = "{instructions}\n\n---\n\n{handoff}\n"
 MAX_FILE_BYTES = 50_000_000                         # per file inside a bundle
 MAX_BUNDLE_BYTES = 500_000_000
-CELL_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9.]*(-[A-Za-z0-9.]+)*-r[1-9][0-9]*$")
+CELL_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._]*(-[A-Za-z0-9._]+)*-r[1-9][0-9]*$")
 SAFE_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 PLACEHOLDER = re.compile(r"\{([a-z_]+(?:\.[A-Za-z0-9_.-]+)?)\}")
 # ---- end tunables ----
 
-RESULT_FILES = ("run.json", "score.json", "candidates.json", "agent.json", "driver.json")
-KNOWN_VARS = {"prompt", "prompt_file", "cwd", "report_path", "report_dir", "model", "model_id", "effort", "scenario", "settings"}
+KNOWN_VARS = {"prompt", "prompt_file", "cwd", "report_path", "report_dir", "model", "model_id", "effort", "scenario"}
 
 
 class Stop(Exception):
@@ -126,18 +125,19 @@ def arw_call(arw, args, work, timeout=ARW_CALL_TIMEOUT):
     """`node scripts/reviewer-capability.mjs ARGS` -> its JSON result. stdout goes to a file: the pinned CLI exits
     without waiting for a pipe to drain, so a result over the pipe buffer (a `score` result is about 100 KB) would be cut off."""
     out_path = Path(work) / f"arw-{secrets.token_hex(4)}.json"
-    with open(out_path, "wb") as out:
-        try:
-            done = subprocess.run(["node", str(Path(arw) / "scripts" / "reviewer-capability.mjs"), *map(str, args)], cwd=str(arw),
-                                  stdin=subprocess.DEVNULL, stdout=out, stderr=subprocess.PIPE, timeout=timeout)
-        except subprocess.TimeoutExpired:
-            return {"status": "failed", "stage": "arw-timeout"}
     try:
-        data = json.loads(out_path.read_text(encoding="utf-8").strip().splitlines()[-1])
-        if not isinstance(data, dict):
-            raise ValueError
-    except (OSError, ValueError, IndexError):
-        data = {"status": "failed", "stage": "arw-parse"}
+        with open(out_path, "wb") as out:
+            try:
+                done = subprocess.run(["node", str(Path(arw) / "scripts" / "reviewer-capability.mjs"), *map(str, args)], cwd=str(arw),
+                                      stdin=subprocess.DEVNULL, stdout=out, stderr=subprocess.PIPE, timeout=timeout)
+            except subprocess.TimeoutExpired:
+                return {"status": "failed", "stage": "arw-timeout"}
+        try:
+            data = json.loads(out_path.read_text(encoding="utf-8").strip().splitlines()[-1])
+            if not isinstance(data, dict):
+                raise ValueError
+        except (OSError, ValueError, IndexError):
+            data = {"status": "failed", "stage": "arw-parse"}
     finally:
         with contextlib.suppress(OSError):
             out_path.unlink()
@@ -221,10 +221,11 @@ def call_model(argv, cwd, env, stdin_text, timeout):
 def parse_usage(text):
     """Token counts from a JSON result with a `usage` object (what `agy -p --output-format json` prints); None fields when absent."""
     try:
-        usage = json.loads(text).get("usage") or {}
+        usage = json.loads(text).get("usage")
     except (ValueError, AttributeError):
-        usage = {}
-    number = lambda key: int(usage[key]) if isinstance(usage.get(key), (int, float)) else None
+        usage = None
+    usage = usage if isinstance(usage, dict) else {}
+    number = lambda key: int(usage[key]) if isinstance(usage.get(key), (int, float)) and math.isfinite(usage[key]) else None
     inp, cached = number("input_tokens"), number("cache_read_tokens")
     return {"uncachedInput": None if inp is None or cached is None else max(0, inp - cached), "cachedInput": cached, "output": number("output_tokens")}
 
@@ -232,7 +233,8 @@ def parse_usage(text):
 def scan_leaks(arw, texts):
     """Answer-key locations seen in what the command printed or the report says. A weak stand-in for ARW's `inspect`, which needs
     the session records of Codex or Claude Code; the real barrier is the read permission given to the command (README)."""
-    markers = {str(Path(arw).resolve()), str(Path(arw).resolve()).replace("\\", "/"), FIXTURES}
+    root = str(Path(arw).resolve())
+    markers = {root + "/", root.replace("\\", "/") + "/", root + os.sep, FIXTURES}
     return sorted(m for m in markers if m and any(m in text for text in texts))
 
 
@@ -362,7 +364,7 @@ class Runner:
             prompt_file.write_text(prompt, encoding="utf-8")
             variables = {"prompt": prompt, "prompt_file": prompt_file, "cwd": spec["cwd"], "report_path": spec["reportPath"],
                          "report_dir": Path(spec["reportPath"]).parent, "model": self.args.model, "model_id": self.args.model_id or self.args.model,
-                         "effort": effort, "scenario": scenario, "settings": ""}
+                         "effort": effort, "scenario": scenario}
             for name, template in self.config["files"].items():
                 text = render(template, variables) if isinstance(template, str) else json.dumps(render(template, variables))
                 (side / name).write_text(text, encoding="utf-8")
@@ -485,12 +487,8 @@ def pending_tasks(args, out, attempts):
     return [t for t in tasks if not (Path(out) / "runs" / t["cell"] / "driver.json").exists() and attempts.counted(t["cell"]) < ATTEMPTS_PER_CELL]
 
 
-def run_lane(runner, args, out, guard, attempts, sleep=time.sleep):
+def run_lane(runner, args, out, guard, attempts, tasks):
     """Run every pending cell, one attempt at a time, until all are done or a stop rule fires. Returns the exit code."""
-    tasks = pending_tasks(args, out, attempts)
-    if not tasks:
-        log(out, "nothing pending")
-        return 0
     queue = list(tasks)
     while queue:
         if (Path(out) / "STOP").exists():
@@ -585,6 +583,8 @@ def import_bundle(bundle_path, runs_dir, pin, replace=False, dry_run=False):
     runs_dir = Path(runs_dir)
     taken = {}
     for existing in runs_dir.glob("*/run.json") if runs_dir.is_dir() else []:
+        if existing.parent.name.startswith(".import-"):
+            continue
         taken[(read_json(existing, {}) or {}).get("id")] = existing.parent.name
     expected = set()
     for cell in manifest["cells"]:
@@ -669,18 +669,18 @@ def parse_args(argv):
     return args
 
 
-def setup_run(args, ack=None):
+def setup_run(args):
     pin = load_pin()
     provenance = check_arw(Path(args.arw), pin)
     config = load_config(args.config)
-    out = Path(args.out)
+    out = Path(args.out).resolve()
     out.mkdir(parents=True, exist_ok=True)
-    work = Path(args.work) if args.work else out / "work"
+    work = Path(args.work).resolve() if args.work else out / "work"
     work.mkdir(parents=True, exist_ok=True)
-    return pin, provenance, config, out, work
+    return provenance, config, out, work
 
 
-def show_plan(args, tasks, guard, config):
+def show_plan(args, tasks, guard):
     limits = guard.expectation()
     print(f"cells pending: {len(tasks)} ({args.model}; efforts {','.join(args.efforts)}; scenarios {','.join(args.scenarios or SCENARIOS)}; n={args.n})")
     print(f"expected usage: {limits['calls']} model calls (one per instance, each up to {RUN_LIMIT_SECONDS // 60} min), about {limits['seconds'] / 3600:.1f} h of model time at "
@@ -689,12 +689,16 @@ def show_plan(args, tasks, guard, config):
           f"it stops after {VOID_STREAK} void attempts in a row ({NO_COMPLETION_STREAK} for no-completion) or {FAIL_STREAK} failed ones")
 
 
+def on_term(*_):
+    raise KeyboardInterrupt
+
+
 def cmd_plan_or_run(args, execute):
-    pin, provenance, config, out, work = setup_run(args)
+    provenance, config, out, work = setup_run(args)
     attempts = Attempts(out)
     tasks = pending_tasks(args, out, attempts)
     guard = Guard(out, len(tasks))
-    show_plan(args, tasks, guard, config)
+    show_plan(args, tasks, guard)
     runner = Runner(args, config, provenance, out, work)
     if config.get("version_command"):
         done = subprocess.run(config["version_command"], capture_output=True, text=True, timeout=60)
@@ -710,19 +714,20 @@ def cmd_plan_or_run(args, execute):
     if not tasks:
         print("nothing pending")
         return 0
-    signal.signal(signal.SIGTERM, lambda *_: (_ for _ in ()).throw(KeyboardInterrupt()))
+    signal.signal(signal.SIGTERM, on_term)
     try:
-        code = run_lane(runner, args, out, guard, attempts)
+        code = run_lane(runner, args, out, guard, attempts, tasks)
     except KeyboardInterrupt:
         log(out, "interrupted; run again to resume")
         code = 130
     finally:
-        shutil.rmtree(work, ignore_errors=True) if not args.work else None
+        if not args.work:
+            shutil.rmtree(work, ignore_errors=True)
     return code
 
 
 def cmd_check(args):
-    pin, provenance, config, out, work = setup_run(args)
+    provenance, config, out, work = setup_run(args)
     for tool in (["node", "--version"], ["git", "--version"]):
         done = subprocess.run(tool, capture_output=True, text=True, timeout=30)
         print(f"{tool[0]}: {done.stdout.strip()}")
@@ -755,7 +760,8 @@ def cmd_check(args):
         shutil.rmtree(side, ignore_errors=True)
         if call["timed_out"] or call["rc"] != 0:
             return 1
-    shutil.rmtree(work, ignore_errors=True) if not args.work else None
+    if not args.work:
+        shutil.rmtree(work, ignore_errors=True)
     return 0
 
 

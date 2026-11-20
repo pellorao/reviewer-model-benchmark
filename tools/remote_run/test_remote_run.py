@@ -102,6 +102,17 @@ class SmallPieces(unittest.TestCase):
         self.assertEqual(rr.scan_leaks("/x/arw", ["nothing"]), [])
         self.assertIn(rr.FIXTURES, rr.scan_leaks("/x/arw", [f"cat {rr.FIXTURES}/a/expected.json"]))
 
+    def test_parse_usage_ignores_non_dict_and_nan(self):
+        for text in ('{"usage": [1]}', '{"usage": "x"}', '[]', '{"usage": {"output_tokens": NaN}}'):
+            self.assertEqual(rr.parse_usage(text)["output"], None)
+
+    def test_scan_leaks_ignores_a_sibling_directory_with_the_same_prefix(self):
+        self.assertEqual(rr.scan_leaks("/x/arw", ["/x/arw-work/i-1/prompt.md"]), [])
+        self.assertTrue(rr.scan_leaks("/x/arw", ["/x/arw/fixtures"]))
+
+    def test_cell_names_allow_underscore_from_model_and_effort(self):
+        self.assertTrue(rr.CELL_RE.match("gemini_pro-extra_high-s1-r2"))
+
     def test_check_arw_pin_dirty_and_tree(self):
         answers = {"rev-parse HEAD": PIN["arw_commit"], f"rev-parse HEAD:{rr.FIXTURES}": PIN["fixture_tree"], "status --porcelain --untracked-files=no": ""}
         fake = lambda arw, *a: answers[" ".join(a)]
@@ -224,8 +235,9 @@ class Loop(Base):
         args = args or Args()
         runner = self.runner(FakeArw(), model)
         attempts = rr.Attempts(self.out)
-        guard = rr.Guard(self.out, len(rr.pending_tasks(args, self.out, attempts)))
-        return rr.run_lane(runner, args, self.out, guard, attempts), attempts
+        tasks = rr.pending_tasks(args, self.out, attempts)
+        guard = rr.Guard(self.out, len(tasks))
+        return rr.run_lane(runner, args, self.out, guard, attempts, tasks), attempts
 
     def test_run_resumes_and_skips_finished_cells(self):
         with patch("builtins.print"):
@@ -252,7 +264,7 @@ class Loop(Base):
             attempts = rr.Attempts(self.out)
             guard = rr.Guard(self.out, 1)
             guard.calls = 2
-            code = rr.run_lane(runner, Args(), self.out, guard, attempts)
+            code = rr.run_lane(runner, Args(), self.out, guard, attempts, rr.pending_tasks(Args(), self.out, attempts))
         self.assertEqual(code, rr.STOP_EXIT)
         self.assertEqual(attempts.rows[0]["outcome"], "valid")
 
