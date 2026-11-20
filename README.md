@@ -223,7 +223,9 @@ Follow the [ARW development manual](https://github.com/Tranzvision/agent-reposit
 to check the model configuration, plan and run the suite, and create a result bundle with `arw reviewer-capability pack`.
 The importer accepts schema 1, tool 1 bundles from clean ARW commit
 `83bdb6b4f5ec39e7b32b30862a9ece24aa9b7fc6` with fixture tree
-`4326aca3cbd04ae126f6f4a3e26867f2b740e81a`.
+`4326aca3cbd04ae126f6f4a3e26867f2b740e81a`. It also accepts bundles made by this repository's retired
+`tools/remote_run` packer, which pinned clean ARW commit `6ca23a9d5b9d1116a9690bbbc39b42a408b8df07` with the same
+fixture tree; for those bundles the archive may also hold the packer's unlisted `attempts.jsonl` log. No other commit is accepted.
 
 From this repository's root, run with Python 3.11 or newer:
 

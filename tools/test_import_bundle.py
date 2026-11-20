@@ -104,6 +104,30 @@ class ImportTests(unittest.TestCase):
         self.assertEqual(importer.import_bundle(self.bundle, self.root), result)
         self.assertEqual(self.sources.read_bytes(), saved_sources)
 
+    def test_accepts_the_retired_remote_run_origin_and_records_its_commit(self):
+        legacy = importer.LEGACY_ARW_ORIGIN
+        self.assertNotEqual(legacy["commit"], self.origin["commit"])
+        self.assertEqual(legacy["fixtureTree"], self.origin["fixtureTree"])
+        self.origin, self.run["arw"] = dict(legacy), dict(legacy)
+        self.make_bundle(self.members())
+        result = importer.import_bundle(self.bundle, self.root)
+        entry = json.loads(self.sources.read_bytes())["snapshots"][-1]
+        self.assertEqual((entry["file"], entry["commit"], entry["fixtureTree"]),
+                         (result["snapshot"], legacy["commit"], legacy["fixtureTree"]))
+
+    def test_attempt_log_is_accepted_only_with_the_retired_remote_run_origin(self):
+        members = self.members() + [("attempts.jsonl", b'{"cell": "x"}\n')]
+        self.make_bundle(members)
+        self.assert_rejected("members differ")
+        self.origin, self.run["arw"] = dict(importer.LEGACY_ARW_ORIGIN), dict(importer.LEGACY_ARW_ORIGIN)
+        self.make_bundle(self.members() + [("attempts.jsonl", b'{"cell": "x"}\n')])
+        self.assertEqual(importer.import_bundle(self.bundle, self.root, dry_run=True), {"cells": 1})
+
+    def test_refuses_instance_origin_that_differs_from_the_manifest_origin(self):
+        self.run["arw"] = dict(importer.LEGACY_ARW_ORIGIN)
+        self.make_bundle(self.members())
+        self.assert_rejected("provenance")
+
     def test_reports_and_repair_are_relative_and_optional(self):
         self.run.update(report="report.jsonl", repair="repair.json")
         files = self.files()
@@ -125,7 +149,9 @@ class ImportTests(unittest.TestCase):
                            ("arw", {**self.origin, "fixtureTree": "0" * 40}),
                            ("arw", {**self.origin, "commit": "0" * 40}),
                            ("arw", {**self.origin, "treeDirty": True}),
-                           ("arw", {**self.origin, "treeDirty": 0}), ("harness", {"provider": "test-cli"})):
+                           ("arw", {**self.origin, "treeDirty": 0}),
+                           ("arw", {**importer.LEGACY_ARW_ORIGIN, "fixtureTree": "0" * 40}),
+                           ("arw", {**importer.LEGACY_ARW_ORIGIN, "treeDirty": True}), ("harness", {"provider": "test-cli"})):
             with self.subTest(key=key, value=value):
                 manifest = self.manifest(cells)
                 manifest[key] = value

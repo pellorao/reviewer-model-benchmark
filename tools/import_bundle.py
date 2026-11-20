@@ -18,6 +18,10 @@ ARW_ORIGIN = {
     "fixtureTree": "4326aca3cbd04ae126f6f4a3e26867f2b740e81a",
     "treeDirty": False,
 }
+# Bundles packed by the retired tools/remote_run pin this earlier ARW commit; the fixture tree is the same.
+# That packer also stored its unlisted attempt log, attempts.jsonl, in the archive.
+LEGACY_ARW_ORIGIN = {**ARW_ORIGIN, "commit": "6ca23a9d5b9d1116a9690bbbc39b42a408b8df07"}
+ARW_ORIGINS = (ARW_ORIGIN, LEGACY_ARW_ORIGIN)
 SCENARIOS = ("commit-audit", "code-spec", "code-standards", "spec-readiness")
 LABEL = r"[A-Za-z0-9][A-Za-z0-9._]*(?:-[A-Za-z0-9._]+)*"
 CELL_NAME = re.compile(rf"(?P<labels>{LABEL})-(?:{'|'.join(SCENARIOS)})-r[1-9][0-9]*")
@@ -90,8 +94,8 @@ def manifest_files(manifest):
             or datetime.fromisoformat(created).utcoffset() != timedelta(0)):
         raise ValueError("Manifest created must be a UTC ISO 8601 timestamp")
     origin = manifest.get("arw")
-    if origin != ARW_ORIGIN or origin["treeDirty"] is not False:
-        raise ValueError("Bundle must use the pinned clean ARW commit and fixture tree")
+    if origin not in ARW_ORIGINS or origin["treeDirty"] is not False:
+        raise ValueError("Bundle must use a pinned clean ARW commit and fixture tree")
     harness = manifest.get("harness")
     if (not isinstance(harness, dict) or not isinstance(harness.get("provider"), str)
             or not isinstance(harness.get("version"), str)
@@ -155,12 +159,15 @@ def verify_bundle(bundle):
             manifest = read_object(content.read(), "manifest.json")
         cells = manifest_files(manifest)
         expected = {f"runs/{name}/{file}" for name, files in cells.items() for file in files}
-        if members.keys() != expected | {"manifest.json"}:
+        unlisted = {"manifest.json"}
+        if manifest["arw"] == LEGACY_ARW_ORIGIN:
+            unlisted |= members.keys() & {"attempts.jsonl"}
+        if members.keys() != expected | unlisted:
             raise ValueError("Archive members differ from the manifest")
 
         instance_ids = set()
         for path, member in members.items():
-            if path == "manifest.json":
+            if path in unlisted:
                 continue
             _, name, filename = path.split("/")
             record = cells[name][filename]
@@ -201,11 +208,11 @@ def save_snapshot(root, stage, bundle, source_name, manifest):
     sources["snapshots"].append({
         "file": path,
         "project": "ARW",
-        "commit": ARW_ORIGIN["commit"],
+        "commit": manifest["arw"]["commit"],
         "path": source_name,
         "sha256": digest,
         "suite": "tests/fixtures/reviewer-capability",
-        "fixtureTree": ARW_ORIGIN["fixtureTree"],
+        "fixtureTree": manifest["arw"]["fixtureTree"],
         "scoring": "lib/reviewer-capability/scoring.mjs",
         "arwVersion": manifest["arwVersion"],
         "harness": manifest["harness"],
@@ -249,7 +256,7 @@ def import_bundle(bundle, root=ROOT, dry_run=False):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("bundle", type=Path, help="gzip-compressed tar from arw reviewer-capability pack")
+    parser.add_argument("bundle", type=Path, help="gzip-compressed tar from arw reviewer-capability pack (or the retired remote_run pack)")
     parser.add_argument("--dry-run", action="store_true", help="Verify without saving a snapshot")
     args = parser.parse_args(argv)
     try:

@@ -22,6 +22,21 @@
       "path": "benchmarks/multi-model-v1/runners/hydrogen-1114/results/phase4/benchmark-results.json",
       "sha256": "419935253cfeec9c5519dc238228a63784c17438b7e81609f1892565a135e7d2",
       "note": "supplement-only; its meta.source is 8942e0e with treeDirty true"
+    },
+    {
+      "file": "snapshots/arw/de4969d1c6df4122c9dfd73937c8329ad284353fe852fa28bfb388d815fdee23.tar.gz",
+      "project": "ARW",
+      "commit": "6ca23a9d5b9d1116a9690bbbc39b42a408b8df07",
+      "path": "bundle-20261121-073741.tar.gz",
+      "sha256": "de4969d1c6df4122c9dfd73937c8329ad284353fe852fa28bfb388d815fdee23",
+      "suite": "tests/fixtures/reviewer-capability",
+      "fixtureTree": "4326aca3cbd04ae126f6f4a3e26867f2b740e81a",
+      "scoring": "lib/reviewer-capability/scoring.mjs",
+      "arwVersion": "0.5.4",
+      "harness": {
+        "provider": "agy",
+        "version": "1.5.13"
+      }
     }
   ]
 }
