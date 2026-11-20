@@ -6,7 +6,10 @@ import tempfile
 import unittest
 from unittest.mock import MagicMock, patch
 
-from tools import check_release as release
+if __package__:
+    from . import check_release as release
+else:
+    import check_release as release
 
 
 class ReleaseTests(unittest.TestCase):
@@ -133,14 +136,22 @@ class ReleaseTests(unittest.TestCase):
         self.assertEqual(run.call_count, 1)
 
     def test_export_reads_commit_blobs_and_excludes_private_files(self):
-        names = b'build.py\nresources/site.css\nbenchmark-results-phase4.json\n.env\nprivate.log\n'
-        def git(command, **kwargs):
-            return names.decode() if command[1] == 'ls-tree' else b'committed'
+        bundle = 'snapshots/arw/' + 'b' * 64 + '.tar.gz'
+        copied = ['benchmark-results-phase4.json', 'build.py', 'resources/site.css', bundle]
+        names = '\n'.join(copied + ['.env', 'private.log', 'snapshots/arw/private.tar.gz'])
+        def git_show(command, *, cwd, stdout, check):
+            self.assertEqual(command[:2], ['git', 'show'])
+            self.assertEqual(cwd, self.root)
+            self.assertTrue(check)
+            stdout.write(command[2].encode())
         clean = self.root / 'clean'
-        with patch.object(release.subprocess, 'check_output', side_effect=git):
-            release.copy_inputs(self.root, clean, 'a'*40)
+        commit = 'a' * 40
+        with patch.object(release.subprocess, 'check_output', return_value=names), \
+                patch.object(release.subprocess, 'run', side_effect=git_show):
+            release.copy_inputs(self.root, clean, commit)
         self.assertEqual(sorted(str(p.relative_to(clean)) for p in clean.rglob('*') if p.is_file()),
-                         ['benchmark-results-phase4.json', 'build.py', 'resources/site.css'])
+                         copied)
+        self.assertEqual((clean / bundle).read_text(), f'{commit}:{bundle}')
 
 
 if __name__ == '__main__':

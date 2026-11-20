@@ -6,8 +6,12 @@ import json
 import math
 import re
 import statistics
+import sys
 import unittest
 from pathlib import Path
+
+# Isolated Python excludes the script directory from its import path.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from stats import (REVIEWERS, TOKEN_KEYS, composite, extract, instance_api_cost, instance_cost,
                    instance_task_points, load_pricing, plan_weekly_cost, summarize_cell, t_quantile)
@@ -68,10 +72,12 @@ class SourcesTests(unittest.TestCase):
     def test_snapshots_match_sources_json(self):
         root = Path(__file__).parent
         sources = json.loads((root / "sources.json").read_text(encoding="utf-8"))
-        self.assertEqual({item["file"] for item in sources["snapshots"]},
-                         {"benchmark-results.json", "benchmark-results-phase4.json"})
+        names = {item["file"] for item in sources["snapshots"]}
+        self.assertEqual(len(names), len(sources["snapshots"]))
+        self.assertLessEqual({"benchmark-results.json", "benchmark-results-phase4.json"}, names)
         for item in sources["snapshots"]:
-            digest = hashlib.sha256((root / item["file"]).read_bytes()).hexdigest()
+            with (root / item["file"]).open("rb") as stream:
+                digest = hashlib.file_digest(stream, "sha256").hexdigest()
             self.assertEqual(digest, item["sha256"], item["file"])
 
 

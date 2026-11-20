@@ -4,6 +4,8 @@ English · **[简体中文](README.zh-CN.md)**
 
 [Open the published benchmark page](https://reviewer-model-benchmark.pages.dev/reviewer-model-benchmark/)
 
+See the [changelog](CHANGELOG.md) for tooling changes.
+
 When choosing an AI model, agent harness, and reasoning effort for code or specification review, you need to weigh review quality against work time, token usage, cost, and speed across all tasks at once. Because the benchmark's own reports give per-task results only, this tool reads `benchmark-results.json` (a snapshot of the benchmark's per-run results) and builds `charts.html`, an offline interactive page that brings every configuration into one comparison view.
 
 To let you move from the big picture to individual tasks, the page shows the overall weighted score first, then maps score against work time, token usage, and cost in three trade-off scatter plots (with an optional Pareto front), and finally breaks down per-task score, work time, token usage, cost, and speed. This page is an independent comparison view: it summarizes the per-task results into a weighted score without modifying the input data or replacing the benchmark's own reports.
@@ -192,6 +194,8 @@ Once you understand what the page shows and how its metrics are defined, you can
 ├── README.zh-CN.md
 ├── AGENTS.md
 ├── sources.json
+├── tools/
+│   └── import_bundle.py
 └── resources/
     ├── site.css
     ├── favicon.svg
@@ -212,6 +216,28 @@ sha256sum benchmark-results.json   # must equal the sha256 in sources.json
 ```
 
 The phase-4 snapshot is updated the same way into `benchmark-results-phase4.json`.
+
+## Run the benchmark and import ARW results
+
+Follow the [ARW development manual](https://github.com/Tranzvision/agent-repository-workflow/blob/83bdb6b4f5ec39e7b32b30862a9ece24aa9b7fc6/docs/manuals/development.md#run-the-capability-suite-with-a-command-line-model)
+to check the model configuration, plan and run the suite, and create a result bundle with `arw reviewer-capability pack`.
+The importer accepts schema 1, tool 1 bundles from clean ARW commit
+`83bdb6b4f5ec39e7b32b30862a9ece24aa9b7fc6` with fixture tree
+`4326aca3cbd04ae126f6f4a3e26867f2b740e81a`.
+
+From this repository's root, run with Python 3.11 or newer:
+
+```bash
+python3 tools/import_bundle.py /path/to/results.tar.gz --dry-run
+python3 tools/import_bundle.py /path/to/results.tar.gz
+```
+
+The importer checks the archive member set, byte counts, SHA-256 hashes, and each instance's recorded provenance.
+It saves the original archive bytes as `snapshots/arw/<sha256>.tar.gz` and adds the archive hash, source filename,
+ARW commit and runtime version, suite and fixture tree, scoring code path at that commit, and harness to `sources.json`.
+Importing identical bytes again reuses the existing snapshot. Review and commit the new snapshot and registry entry
+together. These archives hold raw runs for later adjudication and aggregation. The page build takes the committed
+`benchmark-results*.json` snapshots as inputs.
 
 ## Usage
 
@@ -238,7 +264,7 @@ Once `charts.html` is built, open it directly in a browser—viewing it needs no
 
 ## Implementation and maintenance
 
-If you are modifying the code or updating prices, keep in mind that this tool only processes the snapshot: it does not run the benchmark or modify the input JSON.
+The page builder processes the committed JSON snapshots. ARW runs and scores the benchmark, and the bundle importer stores the raw results as received.
 
 Computation and rendering are split between two modules so that the statistical logic can be tested on its own:
 
