@@ -18,6 +18,8 @@ else:
 
 CELL = "example-model-high-code-spec-r1"
 PREFIX = f"runs/{CELL}/"
+AGY_COMMIT = "3901f02e1fe234b76bba722fd9fe5f4ccaedc264"
+AGY_RECORD = b'{"type":"init"}\n'
 
 
 def encode(value):
@@ -114,6 +116,43 @@ class ImportTests(unittest.TestCase):
         entry = json.loads(self.sources.read_bytes())["snapshots"][-1]
         self.assertEqual((entry["file"], entry["commit"], entry["fixtureTree"]),
                          (result["snapshot"], legacy["commit"], legacy["fixtureTree"]))
+
+    def test_agy_record_import_checks_integrity_and_records_gemini_origin(self):
+        self.origin = {**self.origin, "commit": AGY_COMMIT}
+        self.run["arw"] = dict(self.origin)
+        self.driver.update(inspection="agy-record", inspect={"calls": 0})
+        files = {**self.files(), "agy.jsonl": AGY_RECORD}
+        manifest = self.manifest({CELL: files})
+        for data, error in ((b"", "byte count"), (b"x" * len(AGY_RECORD), "SHA-256")):
+            with self.subTest(error=error):
+                self.make_bundle(self.members({CELL: {**files, "agy.jsonl": data}}, manifest))
+                self.assert_rejected(r"agy\.jsonl: " + error)
+
+        self.make_bundle(self.members({CELL: files}))
+        result = importer.import_bundle(self.bundle, self.root)
+        entry = json.loads(self.sources.read_bytes())["snapshots"][-1]
+        self.assertEqual((entry["file"], entry["commit"], entry["fixtureTree"]),
+                         (result["snapshot"], AGY_COMMIT, self.origin["fixtureTree"]))
+
+    def test_refuses_invalid_agy_inspection_records(self):
+        agy_origin = {**self.origin, "commit": AGY_COMMIT}
+        agy_driver = {"inspection": "agy-record", "inspect": {"calls": 0}}
+        agy_file = {"agy.jsonl": AGY_RECORD}
+        for origin, driver, extra_files, error in (
+            (agy_origin, agy_driver, {}, r"requires agy\.jsonl in the manifest"),
+            (agy_origin, {"inspection": "portable-scan"}, agy_file, r"agy\.jsonl requires agy-record"),
+            (self.origin, agy_driver, agy_file, "requires the pinned agy ARW origin"),
+            (importer.LEGACY_ARW_ORIGIN, agy_driver, agy_file, "requires the pinned agy ARW origin"),
+            (agy_origin, {"inspection": "agy-record"}, agy_file, "requires an inspect object"),
+            (agy_origin, {**agy_driver, "inspect": []}, agy_file, "requires an inspect object"),
+        ):
+            with (
+                self.subTest(commit=origin["commit"], driver=driver, files=list(extra_files)),
+                patch.dict(self.driver, driver),
+            ):
+                self.origin, self.run["arw"] = dict(origin), dict(origin)
+                self.make_bundle(self.members({CELL: {**self.files(), **extra_files}}))
+                self.assert_rejected(error)
 
     def test_attempt_log_is_accepted_only_with_the_retired_remote_run_origin(self):
         members = self.members() + [("attempts.jsonl", b'{"cell": "x"}\n')]

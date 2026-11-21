@@ -21,13 +21,14 @@ ARW_ORIGIN = {
 # Bundles packed by the retired tools/remote_run pin this earlier ARW commit; the fixture tree is the same.
 # That packer also stored its unlisted attempt log, attempts.jsonl, in the archive.
 LEGACY_ARW_ORIGIN = {**ARW_ORIGIN, "commit": "6ca23a9d5b9d1116a9690bbbc39b42a408b8df07"}
-ARW_ORIGINS = (ARW_ORIGIN, LEGACY_ARW_ORIGIN)
+AGY_ARW_ORIGIN = {**ARW_ORIGIN, "commit": "3901f02e1fe234b76bba722fd9fe5f4ccaedc264"}
+ARW_ORIGINS = (ARW_ORIGIN, LEGACY_ARW_ORIGIN, AGY_ARW_ORIGIN)
 SCENARIOS = ("commit-audit", "code-spec", "code-standards", "spec-readiness")
 LABEL = r"[A-Za-z0-9][A-Za-z0-9._]*(?:-[A-Za-z0-9._]+)*"
 CELL_NAME = re.compile(rf"(?P<labels>{LABEL})-(?:{'|'.join(SCENARIOS)})-r[1-9][0-9]*")
 REQUIRED = {"run.json", "driver.json", "agent.json", "score.json"}
 REPORTS = {"report.txt", "report.md", "report.jsonl"}
-ALLOWED = REQUIRED | REPORTS | {"candidates.json", "repair.json"}
+ALLOWED = REQUIRED | REPORTS | {"candidates.json", "repair.json", "agy.jsonl"}
 MAX_FILE_BYTES = 50_000_000
 MAX_BUNDLE_BYTES = 500_000_000
 MAX_TAR_METADATA_BYTES = 64 * 1024
@@ -142,11 +143,21 @@ def verify_run(name, files, run, manifest, instance_ids):
         raise ValueError(f"{name}: report or repair path does not match the bundled file")
 
 
-def verify_driver(name, driver, manifest):
+def verify_driver(name, files, driver, manifest):
     if driver.get("harnessVersion") != manifest["harness"]["version"]:
         raise ValueError(f"{name}: driver provenance differs from the manifest")
-    if driver.get("inspection") != "portable-scan" or driver.get("outcome") not in ("valid", "timeout"):
-        raise ValueError(f"{name}: driver must record a completed instance with portable-scan inspection")
+    inspection = driver.get("inspection")
+    if inspection not in ("portable-scan", "agy-record") or driver.get("outcome") not in ("valid", "timeout"):
+        raise ValueError(f"{name}: driver must record a completed instance with portable-scan or agy-record inspection")
+    if inspection == "agy-record":
+        if manifest["arw"] != AGY_ARW_ORIGIN:
+            raise ValueError(f"{name}: agy-record inspection requires the pinned agy ARW origin")
+        if "agy.jsonl" not in files:
+            raise ValueError(f"{name}: agy-record inspection requires agy.jsonl in the manifest")
+        if not isinstance(driver.get("inspect"), dict):
+            raise ValueError(f"{name}: agy-record inspection requires an inspect object")
+    elif "agy.jsonl" in files:
+        raise ValueError(f"{name}: agy.jsonl requires agy-record inspection")
 
 
 def verify_bundle(bundle):
@@ -184,7 +195,7 @@ def verify_bundle(bundle):
             if filename == "run.json":
                 verify_run(name, cells[name], read_object(data, path), manifest, instance_ids)
             elif filename == "driver.json":
-                verify_driver(name, read_object(data, path), manifest)
+                verify_driver(name, cells[name], read_object(data, path), manifest)
     return manifest
 
 
