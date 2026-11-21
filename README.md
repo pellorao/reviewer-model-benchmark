@@ -221,11 +221,16 @@ The phase-4 snapshot is updated the same way into `benchmark-results-phase4.json
 
 Follow the [ARW development manual](https://github.com/Tranzvision/agent-repository-workflow/blob/83bdb6b4f5ec39e7b32b30862a9ece24aa9b7fc6/docs/manuals/development.md#run-the-capability-suite-with-a-command-line-model)
 to check the model configuration, plan and run the suite, and create a result bundle with `arw reviewer-capability pack`.
-The importer accepts schema 1, tool 1 bundles from clean ARW commit
-`83bdb6b4f5ec39e7b32b30862a9ece24aa9b7fc6` with fixture tree
-`4326aca3cbd04ae126f6f4a3e26867f2b740e81a`. It also accepts bundles made by this repository's retired
-`tools/remote_run` packer, which pinned clean ARW commit `6ca23a9d5b9d1116a9690bbbc39b42a408b8df07` with the same
-fixture tree; for those bundles the archive may also hold the packer's unlisted `attempts.jsonl` log. No other commit is accepted.
+The importer accepts schema 1, tool 1 bundles with fixture tree `4326aca3cbd04ae126f6f4a3e26867f2b740e81a`
+from one of three clean ARW commits:
+
+- `83bdb6b4f5ec39e7b32b30862a9ece24aa9b7fc6`, the primary commit.
+- `6ca23a9d5b9d1116a9690bbbc39b42a408b8df07`, pinned by this repository's retired `tools/remote_run` packer; for those
+  bundles the archive may also hold the packer's unlisted `attempts.jsonl` log.
+- `3901f02e1fe234b76bba722fd9fe5f4ccaedc264`, for bundles recorded with the `agy-record` inspection; the archive must
+  then hold `agy.jsonl`. Only this commit may use `agy-record`, and bundles from the other two commits may not hold `agy.jsonl`.
+
+No other commit is accepted.
 
 From this repository's root, run with Python 3.11 or newer:
 

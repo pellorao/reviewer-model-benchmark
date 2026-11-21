@@ -220,7 +220,13 @@ sha256sum benchmark-results.json   # 必须与 sources.json 中的 sha256 一致
 ## 运行 benchmark 并导入 ARW 结果
 
 按照 [ARW 开发手册](https://github.com/Tranzvision/agent-repository-workflow/blob/83bdb6b4f5ec39e7b32b30862a9ece24aa9b7fc6/docs/manuals/development.md#run-the-capability-suite-with-a-command-line-model)检查模型配置、规划并运行题目套件，再用 `arw reviewer-capability pack` 生成结果包。
-导入工具接受来自干净 ARW 提交 `83bdb6b4f5ec39e7b32b30862a9ece24aa9b7fc6` 的 schema 1、tool 1 结果包，其 fixture tree 为 `4326aca3cbd04ae126f6f4a3e26867f2b740e81a`。它也接受本仓库已撤掉的 `tools/remote_run` 打包工具生成的结果包，这类包固定干净 ARW 提交 `6ca23a9d5b9d1116a9690bbbc39b42a408b8df07`，fixture tree 相同；压缩包里还可以带该打包工具写入、清单未列出的 `attempts.jsonl` 日志。不接受其他提交。
+导入工具接受 fixture tree 为 `4326aca3cbd04ae126f6f4a3e26867f2b740e81a`、来自以下三个干净 ARW 提交之一的 schema 1、tool 1 结果包：
+
+- `83bdb6b4f5ec39e7b32b30862a9ece24aa9b7fc6`，主提交。
+- `6ca23a9d5b9d1116a9690bbbc39b42a408b8df07`，本仓库已撤掉的 `tools/remote_run` 打包工具所固定的提交；这类压缩包里还可以带该打包工具写入、清单未列出的 `attempts.jsonl` 日志。
+- `3901f02e1fe234b76bba722fd9fe5f4ccaedc264`，用于检查记录为 `agy-record` 的结果包；压缩包内须有 `agy.jsonl`。只有这个提交可以使用 `agy-record`，另两个提交的包不得含 `agy.jsonl`。
+
+不接受其他提交。
 
 在本仓库根目录用 Python 3.11 或更新版本运行：
 
