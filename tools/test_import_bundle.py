@@ -154,6 +154,28 @@ class ImportTests(unittest.TestCase):
                 self.make_bundle(self.members({CELL: {**self.files(), **extra_files}}))
                 self.assert_rejected(error)
 
+    def test_agy_bundle_lists_attempts_and_harness_version_in_the_manifest(self):
+        self.origin = {**self.origin, "commit": AGY_COMMIT}
+        self.run["arw"] = dict(self.origin)
+        self.driver.update(inspection="agy-record", inspect={"calls": 0})
+        extra = {"attempts.jsonl": b'{"cell": "x"}\n', "harness-version.json": b'"1.5.16"\n'}
+        manifest = {**self.manifest({CELL: {**self.files(), "agy.jsonl": AGY_RECORD}}),
+                    "files": {name: file_entry(data) for name, data in extra.items()}}
+        members = self.members({CELL: {**self.files(), "agy.jsonl": AGY_RECORD}}, manifest) + list(extra.items())
+        self.make_bundle(members)
+        self.assertEqual(importer.import_bundle(self.bundle, self.root, dry_run=True), {"cells": 1})
+        for name, data in (("attempts.jsonl", b"{}\n"), ("harness-version.json", b'"x"\n')):
+            self.make_bundle([(n, data if n == name else d) for n, d in members])
+            self.assert_rejected(r"byte count|SHA-256")
+        bad = {**manifest, "files": {**manifest["files"], "other.json": file_entry(b"{}")}}
+        self.make_bundle(self.members({CELL: {**self.files(), "agy.jsonl": AGY_RECORD}}, bad) + list(extra.items()) + [("other.json", b"{}")])
+        self.assert_rejected("Unsupported top-level file")
+        self.origin, self.run["arw"] = dict(importer.ARW_ORIGIN), dict(importer.ARW_ORIGIN)
+        self.driver.update(inspection="portable-scan")
+        self.driver.pop("inspect")
+        self.make_bundle(self.members(manifest={**self.manifest({CELL: self.files()}), "files": manifest["files"]}) + list(extra.items()))
+        self.assert_rejected("only for the pinned agy ARW origin")
+
     def test_attempt_log_is_accepted_only_with_the_retired_remote_run_origin(self):
         members = self.members() + [("attempts.jsonl", b'{"cell": "x"}\n')]
         self.make_bundle(members)

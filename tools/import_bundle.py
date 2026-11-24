@@ -28,6 +28,7 @@ LABEL = r"[A-Za-z0-9][A-Za-z0-9._]*(?:-[A-Za-z0-9._]+)*"
 CELL_NAME = re.compile(rf"(?P<labels>{LABEL})-(?:{'|'.join(SCENARIOS)})-r[1-9][0-9]*")
 REQUIRED = {"run.json", "driver.json", "agent.json", "score.json"}
 REPORTS = {"report.txt", "report.md", "report.jsonl"}
+TOP_LEVEL_FILES = {"attempts.jsonl", "harness-version.json"}
 ALLOWED = REQUIRED | REPORTS | {"candidates.json", "repair.json", "agy.jsonl"}
 MAX_FILE_BYTES = 50_000_000
 MAX_BUNDLE_BYTES = 500_000_000
@@ -125,6 +126,22 @@ def manifest_files(manifest):
     return directories
 
 
+def top_level_files(manifest):
+    """Run-level files (attempt log, harness version) that `arw reviewer-capability pack` lists in manifest.files; only the agy origin has them."""
+    files = manifest.get("files")
+    if files is None:
+        return {}
+    if manifest["arw"] != AGY_ARW_ORIGIN:
+        raise ValueError("Top-level manifest files are accepted only for the pinned agy ARW origin")
+    if not isinstance(files, dict) or not files.keys() <= TOP_LEVEL_FILES:
+        raise ValueError("Unsupported top-level file in the manifest")
+    for filename, record in files.items():
+        if (not isinstance(record, dict) or type(record.get("bytes")) is not int or record["bytes"] < 0
+                or not isinstance(record.get("sha256"), str) or not re.fullmatch(r"[0-9a-f]{64}", record["sha256"])):
+            raise ValueError(f"{filename}: invalid manifest byte count or SHA-256")
+    return files
+
+
 def verify_run(name, files, run, manifest, instance_ids):
     instance_id = run.get("id")
     if (not isinstance(instance_id, str) or not re.fullmatch(r"i-[0-9a-f]{12}", instance_id)
@@ -169,7 +186,8 @@ def verify_bundle(bundle):
         with archive.extractfile(members["manifest.json"]) as content:
             manifest = read_object(content.read(), "manifest.json")
         cells = manifest_files(manifest)
-        expected = {f"runs/{name}/{file}" for name, files in cells.items() for file in files}
+        top = top_level_files(manifest)
+        expected = {f"runs/{name}/{file}" for name, files in cells.items() for file in files} | top.keys()
         unlisted = {"manifest.json"}
         if manifest["arw"] == LEGACY_ARW_ORIGIN:
             unlisted |= members.keys() & {"attempts.jsonl"}
@@ -180,8 +198,11 @@ def verify_bundle(bundle):
         for path, member in members.items():
             if path in unlisted:
                 continue
-            _, name, filename = path.split("/")
-            record = cells[name][filename]
+            if path in top:
+                name, filename, record = path, path, top[path]
+            else:
+                _, name, filename = path.split("/")
+                record = cells[name][filename]
             if member.size != record["bytes"]:
                 raise ValueError(f"{path}: byte count differs from the manifest")
             with archive.extractfile(member) as content:
