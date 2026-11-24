@@ -21,7 +21,7 @@ ARW_ORIGIN = {
 # Bundles packed by the retired tools/remote_run pin this earlier ARW commit; the fixture tree is the same.
 # That packer also stored its unlisted attempt log, attempts.jsonl, in the archive.
 LEGACY_ARW_ORIGIN = {**ARW_ORIGIN, "commit": "6ca23a9d5b9d1116a9690bbbc39b42a408b8df07"}
-AGY_ARW_ORIGIN = {**ARW_ORIGIN, "commit": "5a4e304250dfd927be14026a9a327a0de4c05385"}
+AGY_ARW_ORIGIN = {**ARW_ORIGIN, "commit": "37f18fbd7603338e3e78a5acabac01730447cad2"}
 ARW_ORIGINS = (ARW_ORIGIN, LEGACY_ARW_ORIGIN, AGY_ARW_ORIGIN)
 SCENARIOS = ("commit-audit", "code-spec", "code-standards", "spec-readiness")
 LABEL = r"[A-Za-z0-9][A-Za-z0-9._]*(?:-[A-Za-z0-9._]+)*"

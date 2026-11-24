@@ -18,7 +18,7 @@ else:
 
 CELL = "example-model-high-code-spec-r1"
 PREFIX = f"runs/{CELL}/"
-AGY_COMMIT = "5a4e304250dfd927be14026a9a327a0de4c05385"
+AGY_COMMIT = "37f18fbd7603338e3e78a5acabac01730447cad2"
 AGY_RECORD = b'{"type":"init"}\n'
 
 

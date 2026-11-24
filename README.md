@@ -227,7 +227,7 @@ from one of three clean ARW commits:
 - `83bdb6b4f5ec39e7b32b30862a9ece24aa9b7fc6`, the primary commit.
 - `6ca23a9d5b9d1116a9690bbbc39b42a408b8df07`, pinned by this repository's retired `tools/remote_run` packer; for those
   bundles the archive may also hold the packer's unlisted `attempts.jsonl` log.
-- `5a4e304250dfd927be14026a9a327a0de4c05385`, for bundles recorded with the `agy-record` inspection; the archive must
+- `37f18fbd7603338e3e78a5acabac01730447cad2`, for bundles recorded with the `agy-record` inspection; the archive must
   then hold `agy.jsonl`. Only this commit may use `agy-record`, and bundles from the other two commits may not hold `agy.jsonl`.
 
 No other commit is accepted.
