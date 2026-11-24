@@ -227,7 +227,7 @@ from one of three clean ARW commits:
 - `83bdb6b4f5ec39e7b32b30862a9ece24aa9b7fc6`, the primary commit.
 - `6ca23a9d5b9d1116a9690bbbc39b42a408b8df07`, pinned by this repository's retired `tools/remote_run` packer; for those
   bundles the archive may also hold the packer's unlisted `attempts.jsonl` log.
-- `a715a8d7db1a2dd340d674b705d324f68f0f152d`, for bundles recorded with the `agy-record` inspection; the archive must
+- `f26c2fa7dc236eaa6ec059485f8a5a668249bbd0`, for bundles recorded with the `agy-record` inspection; the archive must
   then hold `agy.jsonl`. Only this commit may use `agy-record`, and bundles from the other two commits may not hold `agy.jsonl`.
   Its bundles may also list `attempts.jsonl` and `harness-version.json` in `manifest.files`; both are then verified by size and SHA-256.
 
