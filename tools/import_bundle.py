@@ -118,12 +118,15 @@ def manifest_files(manifest):
                 or len(REPORTS & files.keys()) > 1):
             raise ValueError(f"{name}: invalid instance file set")
         for filename, record in files.items():
-            if (not isinstance(record, dict) or type(record.get("bytes")) is not int
-                    or record["bytes"] < 0 or not isinstance(record.get("sha256"), str)
-                    or not re.fullmatch(r"[0-9a-f]{64}", record["sha256"])):
+            if not valid_record(record):
                 raise ValueError(f"{name}/{filename}: invalid manifest byte count or SHA-256")
         directories[name] = files
     return directories
+
+
+def valid_record(record):
+    return (isinstance(record, dict) and type(record.get("bytes")) is int and record["bytes"] >= 0
+            and isinstance(record.get("sha256"), str) and re.fullmatch(r"[0-9a-f]{64}", record["sha256"]) is not None)
 
 
 def top_level_files(manifest):
@@ -136,8 +139,7 @@ def top_level_files(manifest):
     if not isinstance(files, dict) or not files.keys() <= TOP_LEVEL_FILES:
         raise ValueError("Unsupported top-level file in the manifest")
     for filename, record in files.items():
-        if (not isinstance(record, dict) or type(record.get("bytes")) is not int or record["bytes"] < 0
-                or not isinstance(record.get("sha256"), str) or not re.fullmatch(r"[0-9a-f]{64}", record["sha256"])):
+        if not valid_record(record):
             raise ValueError(f"{filename}: invalid manifest byte count or SHA-256")
     return files
 
