@@ -224,7 +224,7 @@ sha256sum benchmark-results.json   # 必须与 sources.json 中的 sha256 一致
 
 - `83bdb6b4f5ec39e7b32b30862a9ece24aa9b7fc6`，主提交。
 - `6ca23a9d5b9d1116a9690bbbc39b42a408b8df07`，本仓库已撤掉的 `tools/remote_run` 打包工具所固定的提交；这类压缩包里还可以带该打包工具写入、清单未列出的 `attempts.jsonl` 日志。
-- `37f18fbd7603338e3e78a5acabac01730447cad2`，用于检查记录为 `agy-record` 的结果包；压缩包内须有 `agy.jsonl`。只有这个提交可以使用 `agy-record`，另两个提交的包不得含 `agy.jsonl`。
+- `a715a8d7db1a2dd340d674b705d324f68f0f152d`，用于检查记录为 `agy-record` 的结果包；压缩包内须有 `agy.jsonl`。只有这个提交可以使用 `agy-record`，另两个提交的包不得含 `agy.jsonl`。
 
 不接受其他提交。
 
