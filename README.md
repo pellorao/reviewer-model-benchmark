@@ -229,6 +229,7 @@ from one of three clean ARW commits:
   bundles the archive may also hold the packer's unlisted `attempts.jsonl` log.
 - `a715a8d7db1a2dd340d674b705d324f68f0f152d`, for bundles recorded with the `agy-record` inspection; the archive must
   then hold `agy.jsonl`. Only this commit may use `agy-record`, and bundles from the other two commits may not hold `agy.jsonl`.
+  Its bundles may also list `attempts.jsonl` and `harness-version.json` in `manifest.files`; both are then verified by size and SHA-256.
 
 No other commit is accepted.
 
