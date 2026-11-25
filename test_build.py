@@ -364,7 +364,14 @@ class ExtractTests(unittest.TestCase):
 
 class BankIsolationTests(unittest.TestCase):
     def test_no_tracked_path_is_under_the_private_bank(self):
-        names = subprocess.run(["git", "ls-files", "-z"], cwd=Path(__file__).resolve().parent,
+        here = Path(__file__).resolve().parent
+        top = subprocess.run(["git", "rev-parse", "--show-toplevel"], cwd=here,
+                             capture_output=True, text=True).stdout.strip()
+        if not top or Path(top).resolve() != here:
+            # The release check runs a clean copy that is not a repository root (it sits under
+            # the outer repo's .tmp/); git ls-files there would list the outer repo or nothing.
+            self.skipTest("not a repository root (clean copy)")
+        names = subprocess.run(["git", "ls-files", "-z"], cwd=here,
                                capture_output=True, text=True, check=True).stdout.split("\0")
         self.assertEqual([n for n in names if n == ".bank" or n.startswith(".bank/")], [])
 
