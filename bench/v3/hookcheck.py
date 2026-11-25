@@ -21,6 +21,13 @@ def git(root, *args, data=False):
     return done.stdout if data else done.stdout.decode("utf-8", "replace")
 
 
+def blob_text(root, spec):
+    """Blob bytes, or b"" when it is over the scan limit (checked before reading it)."""
+    if int(git(root, "cat-file", "-s", spec)) > leakcheck.MAX_BYTES:
+        return b""
+    return git(root, "cat-file", "blob", spec, data=True)
+
+
 def is_bank_path(path):
     return path == ".bank" or path.startswith(".bank/") or "/.bank/" in path
 
@@ -38,7 +45,7 @@ def check_staged(root):
         if is_bank_path(name):
             problems.append(f"{name}: path under .bank is staged")
             continue
-        for kind, line in leakcheck.scan_bytes(git(root, "show", f":{name}", data=True), manifest):
+        for kind, line in leakcheck.scan_bytes(blob_text(root, f":{name}"), manifest):
             problems.append(f"{name}:{line}: {kind}")
     return problems, notes
 
@@ -58,7 +65,7 @@ def check_commit(root, sha, manifest):
     short = sha[:10]
     for kind, line in leakcheck.scan_text(git(root, "log", "-1", "--format=%B", sha), manifest):
         problems.append(f"{short} message:{line}: {kind}")
-    raw = git(root, "diff-tree", "-r", "-m", "--root", "--no-commit-id", "-z", "--raw", sha)
+    raw = git(root, "diff-tree", "-r", "-m", "--root", "--no-renames", "--no-commit-id", "-z", "--raw", sha)
     fields = raw.split("\0")
     seen = set()
     for meta, name in zip(fields[0::2], fields[1::2]):
@@ -69,7 +76,7 @@ def check_commit(root, sha, manifest):
             problems.append(f"{short} {name}: path under .bank")
         elif status != "D" and mode != "160000" and blob not in seen:
             seen.add(blob)
-            for kind, line in leakcheck.scan_bytes(git(root, "cat-file", "blob", blob, data=True), manifest):
+            for kind, line in leakcheck.scan_bytes(blob_text(root, blob), manifest):
                 problems.append(f"{short} {name}:{line}: {kind}")
     return problems
 

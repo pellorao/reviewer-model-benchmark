@@ -78,6 +78,15 @@ class PushTests(support.TempCase):
     def test_new_branch_covers_all_commits_not_on_the_remote(self):
         self.assertEqual(len(self.push(self.head, hookcheck.ZERO)), 2)
 
+    def test_rename_commit_is_parsed(self):
+        root = support.new_repo(self.tmp / "rename")
+        support.commit_file(root, "old.txt", "some stable text of a file\n" * 5, "init")
+        base = support.git(root, "rev-parse", "HEAD")
+        support.git(root, "mv", "old.txt", "new.txt")
+        support.git(root, "commit", "-q", "-m", "rename")
+        line = f"refs/heads/main {support.git(root, 'rev-parse', 'HEAD')} refs/heads/main {base}"
+        self.assertEqual(hookcheck.check_push(root, "origin", [line])[0], [])
+
     def test_clean_range_and_delete_pass(self):
         first = support.git(self.root, "rev-list", "--reverse", "HEAD").split()[1]
         self.assertEqual(self.push(first, self.base), [])
