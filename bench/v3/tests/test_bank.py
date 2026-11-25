@@ -54,6 +54,31 @@ class KeyAndSealTests(support.TempCase):
         self.assertEqual((self.tmp / "opened" / "q2.txt").read_text(), "two")
 
 
+class UnpackTests(support.TempCase):
+    def test_unpack_refuses_to_overwrite_and_leaves_everything_untouched(self):
+        src = self.tmp / "plain"
+        (src / "sub").mkdir(parents=True)
+        (src / "sub" / "a.txt").write_text("new a")
+        (src / "b.txt").write_text("new b")
+        data = bank.pack_dir(src)
+        dest = self.tmp / "dest"
+        (dest / "sub").mkdir(parents=True)
+        (dest / "b.txt").write_text("mine")
+        with self.assertRaisesRegex(FileExistsError, "1 file"):
+            bank.unpack_dir(data, dest)
+        self.assertEqual((dest / "b.txt").read_text(), "mine")
+        self.assertFalse((dest / "sub" / "a.txt").exists())
+
+    def test_unpack_into_existing_directories_without_clash(self):
+        src = self.tmp / "plain2"
+        (src / "sub").mkdir(parents=True)
+        (src / "sub" / "a.txt").write_text("a")
+        dest = self.tmp / "dest2"
+        (dest / "sub").mkdir(parents=True)
+        bank.unpack_dir(bank.pack_dir(src), dest)
+        self.assertEqual((dest / "sub" / "a.txt").read_text(), "a")
+
+
 class InitAndCheckTests(support.TempCase):
     def test_init_builds_skeleton_without_remote_and_refuses_push(self):
         root = support.new_repo(self.tmp / "outer")

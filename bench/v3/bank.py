@@ -74,8 +74,16 @@ def pack_dir(src):
 
 
 def unpack_dir(data, dest):
+    """Extract into dest; refuse (touching nothing) when a file would be overwritten."""
     with tarfile.open(fileobj=io.BytesIO(data)) as tar:
-        tar.extractall(dest, filter="data")
+        members = tar.getmembers()
+        clashes = [m for m in members
+                   if not m.isdir() and os.path.lexists(Path(dest, m.name))]
+        if clashes:
+            # Only the count is reported: member names are bank content.
+            raise FileExistsError(f"{len(clashes)} file(s) in {dest} would be overwritten; "
+                                  "open into an empty or new directory")
+        tar.extractall(dest, members=members, filter="data")
 
 
 def seal(src, out, key):
