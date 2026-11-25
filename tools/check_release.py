@@ -109,7 +109,9 @@ def copy_inputs(root, clean, commit):
     names = subprocess.check_output(
         ['git', 'ls-tree', '-r', '--name-only', commit], cwd=root, text=True).splitlines()
     for name in names:
-        if not (name in ('build.py', 'stats.py', 'test_build.py', 'pricing.json', 'sources.json')
+        # bench/v3/leakcheck.py is public detection logic that test_build.py imports.
+        if not (name in ('build.py', 'stats.py', 'test_build.py', 'pricing.json', 'sources.json',
+                         'bench/v3/leakcheck.py')
                 or re.fullmatch(r'benchmark-results[^/]*\.json', name)
                 or re.fullmatch(r'snapshots/arw/[0-9a-f]{64}\.tar\.gz', name)
                 or name.startswith('resources/')):

@@ -137,8 +137,9 @@ class ReleaseTests(unittest.TestCase):
 
     def test_export_reads_commit_blobs_and_excludes_private_files(self):
         bundle = 'snapshots/arw/' + 'b' * 64 + '.tar.gz'
-        copied = ['benchmark-results-phase4.json', 'build.py', 'resources/site.css', bundle]
-        names = '\n'.join(copied + ['.env', 'private.log', 'snapshots/arw/private.tar.gz'])
+        copied = ['bench/v3/leakcheck.py', 'benchmark-results-phase4.json', 'build.py', 'resources/site.css', bundle]
+        names = '\n'.join(copied + ['.env', 'private.log', 'snapshots/arw/private.tar.gz',
+                                     'bench/v3/bank.py', 'bench/v3/tests/test_leakcheck.py'])
         def git_show(command, *, cwd, stdout, check):
             self.assertEqual(command[:2], ['git', 'show'])
             self.assertEqual(cwd, self.root)
