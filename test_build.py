@@ -6,12 +6,16 @@ import json
 import math
 import re
 import statistics
+import subprocess
 import sys
 import unittest
 from pathlib import Path
 
 # Isolated Python excludes the script directory from its import path.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(1, str(Path(__file__).resolve().parent / "bench" / "v3"))
+
+import leakcheck
 
 from stats import (REVIEWERS, TOKEN_KEYS, composite, extract, instance_api_cost, instance_cost,
                    instance_task_points, load_pricing, plan_weekly_cost, summarize_cell, t_quantile)
@@ -358,6 +362,13 @@ class ExtractTests(unittest.TestCase):
             extract(results(stray), PRICING)
 
 
+class BankIsolationTests(unittest.TestCase):
+    def test_no_tracked_path_is_under_the_private_bank(self):
+        names = subprocess.run(["git", "ls-files", "-z"], cwd=Path(__file__).resolve().parent,
+                               capture_output=True, text=True, check=True).stdout.split("\0")
+        self.assertEqual([n for n in names if n == ".bank" or n.startswith(".bank/")], [])
+
+
 @unittest.skipIf(build is None, "plotly is not installed")
 class PageTests(unittest.TestCase):
     @classmethod
@@ -425,6 +436,11 @@ class PageTests(unittest.TestCase):
         for language in ("en", "zh"):
             self.assertIn("$23.33", copy_text[language]["cost_score_desc"])
             self.assertIn("1/100", copy_text[language]["cost_score_read"])
+
+    def test_page_has_no_bank_path_and_no_question_bank_material(self):
+        manifest, _ = leakcheck.load_manifest(Path(__file__).resolve().parent / ".bank" / "manifest")
+        self.assertNotIn(".bank", self.html)
+        self.assertEqual(leakcheck.scan_text(self.html, manifest), [])
 
     def test_page_version_is_2_6_3(self):
         self.assertEqual(build.PAGE_VERSION, "2.6.3")
