@@ -37,6 +37,38 @@
         "provider": "agy",
         "version": "1.5.13"
       }
+    },
+    {
+      "file": "snapshots/arw/d157c5c91d7c6bd57aa6d5a1a2f460b2f8b53ccd88df88efb1a592c97b9ea0bb.tar.gz",
+      "project": "ARW",
+      "commit": "f26c2fa7dc236eaa6ec059485f8a5a668249bbd0",
+      "path": "hydrogen.tar.gz",
+      "sha256": "d157c5c91d7c6bd57aa6d5a1a2f460b2f8b53ccd88df88efb1a592c97b9ea0bb",
+      "suite": "tests/fixtures/reviewer-capability",
+      "fixtureTree": "4326aca3cbd04ae126f6f4a3e26867f2b740e81a",
+      "scoring": "lib/reviewer-capability/scoring.mjs",
+      "arwVersion": "0.5.4",
+      "harness": {
+        "provider": "agy",
+        "version": "1.5.16",
+        "configSha256": "fa6601aecb5a902195e9c188b33cb8fbba5d13c6dfb77a70c21a9e584be97ccb"
+      }
+    },
+    {
+      "file": "snapshots/arw/dc5818644c99e9cab784613a8d0b688e6aa11b827a17504ecdbeb87f9da99b5c.tar.gz",
+      "project": "ARW",
+      "commit": "f26c2fa7dc236eaa6ec059485f8a5a668249bbd0",
+      "path": "neon.tar.gz",
+      "sha256": "dc5818644c99e9cab784613a8d0b688e6aa11b827a17504ecdbeb87f9da99b5c",
+      "suite": "tests/fixtures/reviewer-capability",
+      "fixtureTree": "4326aca3cbd04ae126f6f4a3e26867f2b740e81a",
+      "scoring": "lib/reviewer-capability/scoring.mjs",
+      "arwVersion": "0.5.4",
+      "harness": {
+        "provider": "agy",
+        "version": "1.5.16",
+        "configSha256": "fa6601aecb5a902195e9c188b33cb8fbba5d13c6dfb77a70c21a9e584be97ccb"
+      }
     }
   ]
 }
