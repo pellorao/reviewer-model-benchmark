@@ -69,6 +69,30 @@
         "version": "1.5.16",
         "configSha256": "fa6601aecb5a902195e9c188b33cb8fbba5d13c6dfb77a70c21a9e584be97ccb"
       }
+    },
+    {
+      "file": "snapshots/v2/export.json",
+      "project": "reviewer-bench v2 driver",
+      "path": ".tasks/reviewer-bench/v2/data/export-final.json (driver.py export dsflash glm haiku hydrogen luna neon opus sol sonnet strata terra)",
+      "sha256": "9c1e225b362aa66b00b7757119025090e557853b4772527065e9e882711ccc96",
+      "suite": "v2"
+    },
+    {
+      "file": "snapshots/v2/supplement.json",
+      "project": "reviewer-bench v2 driver",
+      "path": "tools/v2_supplement.py output (runs, export, pricing-v2.json, restored void rows)",
+      "sha256": "7f2023ffdadc698977d5ea22b2a0a6562a8a8541b7fb00be0421459884e05702",
+      "suite": "v2"
     }
-  ]
+  ],
+  "suites": {
+    "v2": {
+      "id": "v2",
+      "arwCommit": "6ca23a9d5b9d1116a9690bbbc39b42a408b8df07",
+      "fixtureTree": "4326aca3cbd04ae126f6f4a3e26867f2b740e81a",
+      "scoring": "r8.5 (ARW score pin 7e1b348)",
+      "judge": "gpt-6.2-sol high, blind",
+      "note": "Arms ran at other ARW commits: hydrogen and neon f26c2fa, terra code-spec and code-standards 068d885 (completed handoff), strata 104d038. Built by tools/v2_supplement.py from the driver's saved runs; the page build reads only these two files."
+    }
+  }
 }

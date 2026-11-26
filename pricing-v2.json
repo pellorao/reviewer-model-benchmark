@@ -1,0 +1,217 @@
+{
+  "schemaVersion": 6,
+  "suite": "v2",
+  "checkedAt": "2026-11-26",
+  "currency": "USD",
+  "tokensPerUnit": 1000000,
+  "costBasis": "Per-instance cost averaged within each scenario, then across the four scenarios; not actual billing. Subscription-plan runs (Claude, GPT, Gemini) are priced as their share of the Claude $100 plan's weekly quota times that plan's weekly price (taskPoints); DeepSeek V4.1 Flash and GLM 5.3 (run through OpenCode Go) are at official API list prices in USD, and Strata at its local running cost",
+  "instanceCost": {
+    "anthropic": "Per-request tokens from the saved session (agent.json measurementFacts) at the anthropic rates below (cache writes at the 1-hour rate; Haiku by prompt length), API-equivalent USD, times the Claude plan's E (1 by definition); then the plan-fee conversion",
+    "openai": "Token counts at the openai rates below (API-equivalent USD) times the Codex plan's E, then the plan-fee conversion",
+    "google": "Token counts at the google rates below (output includes thinking) times Gemini's estimated E, then the plan-fee conversion",
+    "opencode": "Per-request tokens at the official list price of the model (deepseek: peak/off-peak by request completion time; glm: one rate), USD. The runs used an OpenCode Go plan whose per-token prices are not published, so no plan conversion applies unless taskPoints.efficiency.opencode is added",
+    "strata": "Local running cost from the instance work seconds and the localRunningCost settings below"
+  },
+  "openai": {
+    "gpt-6.2-sol": {
+      "referenceProfile": "standard-short-context",
+      "rates": {
+        "uncachedInput": 2.0,
+        "cachedInput": 0.1,
+        "output": 10.0
+      },
+      "cacheWriteRate": 2.5,
+      "longContext": "input above 272K: input and cache x2, output x1.5 (not applied: records hold totals only)",
+      "source": "https://developers.openai.com/api/docs/models/gpt-6.2-sol"
+    },
+    "gpt-6.1-terra": {
+      "referenceProfile": "standard-short-context",
+      "rates": {
+        "uncachedInput": 1.0,
+        "cachedInput": 0.05,
+        "output": 5.0
+      },
+      "cacheWriteRate": 1.25,
+      "longContext": "as sol",
+      "source": "https://developers.openai.com/api/docs/models/gpt-6.1-terra"
+    },
+    "gpt-6-luna": {
+      "referenceProfile": "standard-short-context",
+      "rates": {
+        "uncachedInput": 0.1,
+        "cachedInput": 0.01,
+        "output": 0.5
+      },
+      "cacheWriteRate": 0.125,
+      "longContext": "as sol",
+      "source": "https://developers.openai.com/api/docs/models/gpt-6-luna"
+    }
+  },
+  "google": {
+    "gemini-4-hydrogen": {
+      "referenceProfile": "standard",
+      "rates": {
+        "uncachedInput": 1.5,
+        "cachedInput": 0.075,
+        "output": 7.5
+      },
+      "outputIncludesThinking": true,
+      "source": "https://aistudio.google.com/docs/pricing",
+      "checkedAt": "2026-11-26"
+    },
+    "gemini-4-neon": {
+      "referenceProfile": "standard",
+      "rates": {
+        "uncachedInput": 3.0,
+        "cachedInput": 0.15,
+        "output": 15.0
+      },
+      "outputIncludesThinking": true,
+      "source": "https://aistudio.google.com/docs/pricing",
+      "checkedAt": "2026-11-26"
+    }
+  },
+  "anthropic": {
+    "opus": {
+      "model": "claude-opus-5-5",
+      "input": 4.0,
+      "cacheRead": 0.2,
+      "cacheWrite5m": 5.0,
+      "cacheWrite1h": 8.0,
+      "output": 20.0,
+      "source": "https://platform.claude.com/docs/en/about-claude/pricing"
+    },
+    "sonnet": {
+      "model": "claude-sonnet-5-5",
+      "input": 2.0,
+      "cacheRead": 0.1,
+      "cacheWrite5m": 2.5,
+      "cacheWrite1h": 4.0,
+      "output": 10.0,
+      "source": "https://platform.claude.com/docs/en/about-claude/pricing"
+    },
+    "haiku": {
+      "model": "claude-haiku-5-5",
+      "input": 0.1,
+      "cacheRead": 0.01,
+      "cacheWrite5m": 0.125,
+      "cacheWrite1h": 0.2,
+      "output": 0.5,
+      "longPromptThreshold": 100000,
+      "long": {
+        "input": 0.5,
+        "cacheRead": 0.05,
+        "cacheWrite5m": 0.625,
+        "cacheWrite1h": 1.0,
+        "output": 2.5
+      },
+      "source": "https://platform.claude.com/docs/en/about-claude/pricing"
+    }
+  },
+  "opencode": {
+    "deepseek-v4.1-flash": {
+      "offPeak": {
+        "input": 0.15,
+        "cacheRead": 0.003,
+        "output": 0.6
+      },
+      "peak": {
+        "input": 0.3,
+        "cacheRead": 0.006,
+        "output": 1.2
+      },
+      "peakUtc": {
+        "weekdays": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ],
+        "hours": [
+          [
+            1,
+            4
+          ],
+          [
+            6,
+            10
+          ]
+        ]
+      },
+      "source": "https://api-docs.deepseek.com/quick_start/pricing/",
+      "checkedAt": "2026-11-26"
+    },
+    "glm-5.3": {
+      "rates": {
+        "input": 1.4,
+        "cacheRead": 0.26,
+        "output": 4.4
+      },
+      "source": "https://docs.z.ai/guides/overview/pricing",
+      "checkedAt": "2026-11-26"
+    }
+  },
+  "localRunningCost": {
+    "strata-iq3_xxs": {
+      "wallPowerWatts": 400,
+      "electricityUsdPerKwh": 0.174,
+      "maintenanceUsdPerHour": 0.02,
+      "excluded": [
+        "hardware purchase",
+        "setup",
+        "idle time between instances"
+      ],
+      "notes": "Home PC with an RTX 3080 Ti 12 GB, i9-13900 and 64 GB RAM. 400 W is a rough whole-system load estimate (350 W GPU board limit; memory-bound decoding usually draws less). Electricity is the Q1 2026 world household average (country-weighted). Maintenance covers wear parts at about USD 50 a year over about 2,500 loaded hours.",
+      "sources": [
+        "https://www.globalpetrolprices.com/electricity_prices/",
+        "https://inventivehq.com/blog/gpu-power-limit-tokens-per-watt"
+      ]
+    }
+  },
+  "taskPoints": {
+    "pointUsd": 100,
+    "pointUsdSource": "TASK_POINT_USD in ~/.claude/lib/conversion.py: one equivalent task point is worth $100 of Claude API (1/20 of a Max 20x weekly quota)",
+    "plan": {
+      "name": "Claude $100 plan",
+      "monthlyUsd": 100,
+      "daysPerMonth": 30,
+      "weeklyPoints": 5.36,
+      "weeklyPointsBasis": "One week of the Claude $100 plan is about $536 of Claude API-priced use (= 5.36 points at pointUsd 100, E = 1 for Claude). Measured on the local Claude Max 20x plan on 2026-11-18 (usage.sh --calibrate: 0.0466 percentage points of weekly quota per API-priced USD at 11% used, so a full 20x week is about $2,146); the $100 plan is taken as 1/4 of the 20x quota. About +/-10% (a 1% rounding step at 11% used is about +/-9%; Claude Code's run cost uses its own price list). The status page's nominal convention (point = 1/20 of a 20x week) would give 5.0 points, 7% lower, inside that error. Carried over unchanged from the v2.4 factor so that Claude runs keep their v2.4 costs.",
+      "weeklyPointsCheckedAt": "2026-11-18"
+    },
+    "formula": "cost USD = (equivalent task points of the run / plan.weeklyPoints) x weekly price of the plan, where weekly price = plan.monthlyUsd / plan.daysPerMonth x 7; equivalent task points = API-equivalent USD of the run x E of the plan category / pointUsd. Every plan run is multiplied by the same constant relative to API-equivalent USD x E, so ratios between plan runs equal the ratios of their task points.",
+    "efficiencyMeaning": "E = Claude's historical cost of the same kind of finished work / this plan category's cost of it (taskpts.py); the category aggregate is used for every model of the plan, not each model's own E",
+    "checkedAt": "2026-11-18",
+    "efficiency": {
+      "anthropic": {
+        "e": 1.0,
+        "category": "Claude plan",
+        "estimate": false,
+        "source": "taskpts.json scope claude (model null) on 2026-11-18 04:01; 1 by definition (coverage 80%, 28-day window)"
+      },
+      "openai": {
+        "e": 1.8826,
+        "category": "Codex plan",
+        "estimate": false,
+        "interval95": [
+          1.554,
+          2.335
+        ],
+        "coverage": 0.525,
+        "source": "taskpts.json scope codex (model null) on 2026-11-18 04:01 (28-day window, 146 covered finished items); used for Sol and Luna alike, Luna's own E is hidden by the page's coverage rule"
+      },
+      "google": {
+        "e": 1.19,
+        "category": "Antigravity Gemini plan",
+        "estimate": true,
+        "coverage": [
+          0.32,
+          0.48
+        ],
+        "source": "Estimate from .tasks/common/taskpts-boot-report-1116.md section 7 (Gemini aggregate, baseline weighted by Claude's real review counts: 1.19, coverage 48%; 1.08 to 1.15 under the other baselines). Below the status page's display threshold, and the Antigravity pipeline was removed on 2026-11-17, so it will not be updated."
+      }
+    },
+    "provisionalNote": "Copied from the v1 snapshot of 2026-11-18; refresh once at publication (v2-publish, D5) and record the date"
+  }
+}

@@ -270,6 +270,17 @@ Because the page loads `resources/` by relative path, any custom output director
 
 Once `charts.html` is built, open it directly in a browser—viewing it needs no Python, network, or web server. Note that the footer's "Updated" date is the build date, not the measurement or price-check date.
 
+### Benchmark v2 page
+
+The v2 page (page version 3.0.0, scoring r8.5) is built from ARW's `export` output plus a supplement file that the driver's saved runs produce, because the export carries no cost, harness version, severity units or scenario hash:
+
+```bash
+python3 tools/v2_supplement.py --runs <v2 data>/runs --export <v2 data>/export-final.json --restored-voids restored.json --out snapshots/v2/supplement.json
+.venv/bin/python build.py ignored.json charts-v2.html --v2 snapshots/v2/export.json snapshots/v2/supplement.json
+```
+
+`pricing-v2.json` holds the v2 prices (Claude per request with one-hour cache writes and Haiku's long-prompt tier, DeepSeek peak and off-peak, GLM, GPT and Gemini). Its `taskPoints` are copied from v1 and not yet refreshed, so plan-converted costs are provisional. The v2 page shows two task speeds only, the version switch links to `v1/` (the v1 page gets a one-line archive banner linking back), and the data notes state the three-batch judging pools, the Terra handoff, the Strata machine and Codex version, the per-arm retry counts and the answer-key points per severity. The tool's tests run with `python3 -m unittest tools.test_v2_supplement` from this directory (or `cd tools && python3 -m unittest test_v2_supplement`).
+
 ## Implementation and maintenance
 
 The page builder processes the committed JSON snapshots. ARW runs and scores the benchmark, and the bundle importer stores the raw results as received.

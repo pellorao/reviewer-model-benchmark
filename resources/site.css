@@ -795,3 +795,10 @@ h2 {
   .summary-item span { font-size: 9px; }
   .page-footer { width: calc(100% - 32px); }
 }
+
+.suite-switch { margin: 0 0 14px; font-size: 14px; }
+.method-section h3 { margin: 22px 0 8px; font-size: 18px; }
+.table-scroll { overflow-x: auto; margin: 6px 0 14px; }
+.data-table { border-collapse: collapse; font-size: 14px; }
+.data-table th, .data-table td { padding: 6px 14px 6px 0; text-align: left; border-bottom: 1px solid var(--line, #e2dccf); white-space: nowrap; }
+.data-table th { font-weight: 600; }

@@ -10,6 +10,7 @@ import subprocess
 import sys
 import unittest
 from pathlib import Path
+import stats
 
 # Isolated Python excludes the script directory from its import path.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -501,6 +502,65 @@ class PageTests(unittest.TestCase):
             'aria-pressed="true">Log</button></div>')
         self.assertIn('aria-pressed="true">A</button><button type="button" data-speed="1"',
                       build.segment_control("c", [(0, "a", "A"), (1, "b", "B")], "speed", "l", "L"))
+
+
+class V2Tests(unittest.TestCase):
+    """The v2 page from the committed export and supplement snapshots (one page build shared by the cases)."""
+
+    @classmethod
+    def setUpClass(cls):
+        root = Path(__file__).parent / "snapshots" / "v2"
+        cls.export = json.loads((root / "export.json").read_text(encoding="utf-8"))
+        cls.supplement = json.loads((root / "supplement.json").read_text(encoding="utf-8"))
+        cls.pricing = build.load_pricing(Path(__file__).with_name("pricing-v2.json"))
+        cls.v2 = stats.extract_v2(cls.export, cls.supplement, cls.pricing)
+        cls.html = build.page(None, cls.pricing, (), cls.v2)
+
+    def test_every_cell_holds_five_scored_runs(self):
+        records, meta = self.v2
+        self.assertEqual(len(records), 35)
+        self.assertTrue(all(cell["n"] == 5 for record in records for cell in record["cells"].values()))
+        self.assertEqual(meta["failures"], 9)
+
+    def test_record_for_one_arm_has_harness_cost_and_two_speeds(self):
+        record = next(r for r in self.v2[0] if r["key"] == "claude-code/opus/high")
+        self.assertEqual((record["vendor"], record["lane"]), ("anthropic", "opus"))
+        self.assertGreater(record["cost"], 0)
+        counts = record["cells"]["code-standards-reviewer"]["speedCounts"]
+        self.assertEqual([counts[key] for key in stats.V2_SPEED_KEYS], [5, 5])
+        self.assertEqual((counts["engineOutput"], counts["engineInput"]), (0, 0))
+
+    def test_unpriced_plan_vendors_have_no_task_points_but_a_list_price_cost(self):
+        deepseek = next(r for r in self.v2[0] if r["lane"] == "dsflash")
+        self.assertIsNone(deepseek["taskPoints"])
+        self.assertGreater(deepseek["cost"], 0)
+
+    def test_a_cell_with_the_wrong_run_count_fails(self):
+        export = copy.deepcopy(self.export)
+        export["instances"].pop()
+        with self.assertRaises(ValueError):
+            stats.extract_v2(export, self.supplement, self.pricing)
+
+    def test_an_instance_missing_from_the_supplement_fails(self):
+        supplement = copy.deepcopy(self.supplement)
+        supplement["instances"].pop(self.export["instances"][0]["id"])
+        with self.assertRaises(ValueError):
+            stats.extract_v2(self.export, supplement, self.pricing)
+
+    def test_page_states_the_batches_handoffs_and_versions(self):
+        for text in ("3 batches by repeat number", "068d885", "Codex 0.172.0", "not reviewed by hand", "Claude Code 2.1.327"):
+            self.assertIn(text, self.html)
+        self.assertIn('content="3.0.0"', self.html)
+        self.assertIn('content="r8.5"', self.html)
+
+    def test_page_has_two_speed_buttons_and_the_suite_switch(self):
+        self.assertIn('href="v1/"', self.html)
+        self.assertNotIn("Engine output", re.sub(r"<script.*?</script>", "", self.html, flags=re.S))
+        self.assertEqual(len(re.findall(r'data-speed="\d"', self.html)), 2)
+
+    def test_v1_page_links_to_v2_and_keeps_its_version(self):
+        self.assertIn("archived v1 benchmark", PageTests.html)
+        self.assertIn(f'content="{build.PAGE_VERSION}"', PageTests.html)
 
 
 if __name__ == "__main__":

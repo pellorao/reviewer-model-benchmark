@@ -261,6 +261,17 @@ python3 -m venv .venv
 
 生成完毕后，用浏览器直接打开 `charts.html` 即可查看，无需 Python 环境、网络连接或 Web 服务器。注意页脚显示的“更新于”是页面的构建日期，不代表测量日期或价格核对日期。
 
+### 基准 v2 页面
+
+v2 页面（页面版本 3.0.0，评分 r8.5）由 ARW 的 `export` 输出加一份补充文件生成，补充文件由驱动保存的运行产生，因为导出里没有费用、代理程序版本、严重度分值和场景哈希：
+
+```bash
+python3 tools/v2_supplement.py --runs <v2 data>/runs --export <v2 data>/export-final.json --restored-voids restored.json --out snapshots/v2/supplement.json
+.venv/bin/python build.py ignored.json charts-v2.html --v2 snapshots/v2/export.json snapshots/v2/supplement.json
+```
+
+`pricing-v2.json` 存放 v2 的价格（Claude 逐请求、缓存写入按一小时档、Haiku 长提示档，DeepSeek 分峰谷，GLM，GPT 与 Gemini）。其中的 `taskPoints` 沿用 v1，尚未更新，所以套餐换算的费用是暂定值。v2 页只给两项任务速度，版本切换链接到 `v1/`（v1 页加一行存档提示并链回 v2），数据说明写明三批分池盲裁，Terra 的交接，Strata 所在机器与 Codex 版本，各组重跑次数以及各严重度的答案键分值。工具的测试在本目录运行 `cd tools && python3 -m unittest test_v2_supplement`。
+
 ## 实现和维护
 
 页面生成工具只处理已提交的 JSON 快照。benchmark 由 ARW 运行并计分，导入工具则按收到的原样保存原始结果。

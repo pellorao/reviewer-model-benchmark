@@ -12,15 +12,22 @@ from pathlib import Path
 import plotly.graph_objects as go
 import plotly.io as pio
 
-from stats import (EFFORTS, HARNESS_NAMES, MODEL_NAMES, REVIEWERS, SCORING_VERSION, SPEED_KEYS,
+from stats import (V2_SCORING_VERSION, V2_SPEED_KEYS, EFFORTS, HARNESS_NAMES, MODEL_NAMES, REVIEWERS, SCORING_VERSION, SPEED_KEYS,
                    TOKEN_KEYS,
-                   extract, load_pricing, plan_weekly_cost)
+                   extract, extract_v2, load_pricing, plan_weekly_cost)
 
 
+V1_SPEED_KEYS = SPEED_KEYS
 PAGE_VERSION = "2.6.3"
+V2_PAGE_VERSION = "3.0.0"
 # Model colors in MODEL_NAMES order (stats.py); series follow harness order, then this model order.
 MODEL_COLORS = {
     "gpt-6.1-sol": "#4c78b8",
+    "gpt-6.2-sol": "#4c78b8",
+    "gpt-6.1-terra": "#3a9ab8",
+    "gemini-4-neon": "#8a6bd7",
+    "deepseek-v4.1-flash": "#d07849",
+    "glm-5.3": "#a8a037",
     "gpt-6-luna": "#b47627",
     "opus": "#8659b9",
     "sonnet": "#bb5272",
@@ -152,6 +159,7 @@ PLAN_BASIS = ("Price converted to plan subscription fee", "换算成套餐订阅
 COST_BASIS = {
     "openai": PLAN_BASIS, "google": PLAN_BASIS, "anthropic": PLAN_BASIS,
     "deepseek": ("DeepSeek price per request", "DeepSeek 逐请求价格"),
+    "opencode": ("Official list price per request", "官方标价逐请求价格"),
     "strata": ("Local running cost", "本地运行成本"),
 }
 
@@ -1064,9 +1072,224 @@ SOURCE_LINKS = (
 )
 
 
-def page(results, pricing, supplements=()):
-    records = extract(results, pricing, supplements)
+V2_ARM_ORDER = ("sol", "terra", "luna", "opus", "sonnet", "haiku", "hydrogen", "neon", "dsflash", "glm", "strata")
+V2_ARM_NAMES = {"sol": "GPT-6.2 Sol", "terra": "GPT-6.1 Terra", "luna": "GPT-6 Luna", "opus": "Claude Opus 5.5",
+                "sonnet": "Claude Sonnet 5.5", "haiku": "Claude Haiku 5.5", "hydrogen": "Gemini 4 Hydrogen",
+                "neon": "Gemini 4 Neon", "dsflash": "DeepSeek V4.1 Flash", "glm": "GLM 5.3", "strata": "Strata IQ3_XXS"}
+V2_CLI_NAMES = {"codex": "Codex", "claude": "Claude Code", "agy": "Antigravity"}
+V2_SCENARIO_NAMES = {"code-standards": "Code Standards", "code-spec": "Code Spec", "commit-audit": "Commit Audit",
+                     "spec-readiness": "Spec Readiness"}
+
+
+def v2_overrides(copy, records, meta, pricing):
+    """Replace the v1 wording with v2's in both languages. Wording not named here is shared by both suites."""
+    runs = run_count_method_values(records)
+    total = sum(cell["n"] for record in records for cell in record["cells"].values())
+    failures, retries = meta["failures"], sum(arm["retries"] or 0 for arm in meta["arms"].values())
+    e = {vendor: f"{rule['e']:.3g}" for vendor, rule in pricing["taskPoints"]["efficiency"].items()}
+    week = usd(round(plan_weekly_cost(pricing), 2))
+    en, zh = copy["en"], copy["zh"]
+    en.update({
+        "lead": ("A Reviewer is an AI agent assigned a software review task. Here, {model_count} models run four such "
+                 "tasks through three agent harnesses, Codex, Claude Code and Antigravity, at different reasoning effort "
+                 "settings; the charts compare their task performance, time and cost."),
+        "version_title": f"Benchmark v2 · page {V2_PAGE_VERSION}",
+        "version_summary": (f"Benchmark v2 is a new run: the {total} scored runs here (5 per task cell) were made on the same "
+                            f"four tasks with a newer scoring ({V2_SCORING_VERSION}), a blind judge (GPT-6.2 Sol, high effort, "
+                            "itself one of the tested models) and new models (GPT-6.2 Sol, GPT-6.1 Terra, Gemini 4 Neon, GLM 5.3). "
+                            "Its scores are not comparable with v1, whose judge was Claude Opus; the v1 page stays online as an archive."),
+        "score_context": ("Effort labels are requested settings, not equal compute across models. The reports were judged "
+                          "blind (the judge did not see which model wrote which report) by GPT-6.2 Sol at high effort, which is also "
+                          "a tested model; the judge's own agreement with a second reading of anchor pools was 1.0."),
+        "score_models": ("DeepSeek V4.1 Flash and GLM 5.3 ran through OpenCode Go in the Codex harness. Strata IQ3_XXS is a "
+                         "3-bit quantization of Qwen3.8-Flash-Next run locally on one RTX 3080 Ti (12 GB), with only 20 runs (one effort, 5 per task)."),
+        "cost_score_desc": ("Cost per run averages each task's per-run cost, then the four tasks. The bases differ by vendor "
+                            "and none is an actual bill: for every subscription-plan run (Claude, GPT and Gemini models), the "
+                            f"share of the Claude $100 plan's weekly fee ({week}) that the run used up; for DeepSeek and GLM, "
+                            "their official per-token list prices; and for the local Strata model, estimated electricity and upkeep."),
+        "cost_score_read": ("Higher score is better; farther left is a lower cost per run. Hover a point for its values. "
+                            "Plan runs are a share of the plan fee, DeepSeek and GLM are list-price dollars and Strata is "
+                            "running cost, so compare across those groups with care. Use Linear / Log above the chart to switch the cost axis."),
+        "time_score_read": ("Higher score is better; farther left is a shorter run. Work time excludes setup and loading. "
+                            "Codex counts the agent's accumulated work time; Claude Code and Antigravity the session's wall time. "
+                            "A void run (a harness fault or a time-limit stop) is rerun and not counted."),
+        "time_cost_read": ("Farther left is a shorter run; lower is a lower cost per run. The cost bases differ by vendor "
+                           "(see Cost per run vs. score). This plot does not encode quality, so use it alongside the score charts."),
+        "detail_token_read": ("Each bar stacks mean non-cached input, cached input and output tokens per run. Claude Code counts "
+                              "cache writes as non-cached input; Strata on Codex includes its guardian requests. Hover for exact counts."),
+        "detail_cost_read": ("Each bar is one task's mean cost per run. OpenAI, Claude and Gemini runs used subscriptions, so "
+                             "theirs are a share of the Claude $100 plan's weekly fee; DeepSeek and GLM are list-price dollars and "
+                             "Strata is running cost (see Data notes). Use Linear / Log above the chart to switch the cost axis."),
+        "detail_speed_read": ("A speed is total tokens divided by total seconds, never an average of per-run speeds. Task "
+                              "speeds divide non-cached input or output tokens by work time: the speed a user perceives. "
+                              "v2 reports only these two task speeds."),
+        "method_selection": (f"The data are ARW's exported per-run results, scored by ARW scoring {V2_SCORING_VERSION}. Scored runs per cell: "
+                             f"{runs['en_counts']}. {retries} runs were repeated after a harness fault or a void (they are listed per arm "
+                             f"below); {failures} runs ended without a usable report and count as 0. "
+                             "A run is counted when it is valid and scored; 700 runs were scored in total."),
+        "method_score": (f"A run's score (scoring {V2_SCORING_VERSION}) credits the answer-key problems a report finds and deducts "
+                         "its false findings. It is not cut at 0, so it can be negative, and a run that produced no report scores 0. "
+                         f"A task score is the mean of its 5 runs, with a 95% interval from the t distribution. The weighted score is "
+                         f"100 × (0.20 Code Standards + 0.20 Code Spec + 0.25 Commit Audit + 0.35 Spec Readiness); its interval "
+                         "combines the four standard errors with Welch–Satterthwaite degrees of freedom."),
+        "method_cost": (f"Cost per run: Claude, GPT and Gemini models ran on subscription plans and are converted into one "
+                        f"subscription price, the Claude $100 plan's weekly fee ({week}): a run's cost is the share of that plan's "
+                        "weekly quota it uses, times the weekly fee. The share is found through equivalent task points "
+                        f"(one point is $100 of Claude API spending; a plan week holds {pricing['taskPoints']['plan']['weeklyPoints']:g} points; "
+                        "a plan category's efficiency ratio E is what Claude would have spent on the same kind of finished work divided "
+                        f"by what that plan spent). E is Claude {e['anthropic']}, Codex {e['openai']}, Gemini {e['google']}; "
+                        "these are carried over from the v1 measurement and not yet refreshed, so treat the plan-converted costs as "
+                        "provisional. The API-equivalent cost is, for Claude, each saved request's tokens at Anthropic's list price "
+                        "(cache writes at the one-hour rate, Haiku above 100,000 prompt tokens at its long-prompt rate); for GPT and Gemini, token "
+                        "counts at the vendors' list prices. DeepSeek V4.1 Flash is priced per request at DeepSeek's list price "
+                        "(off-peak and peak hours) and GLM 5.3 at its list price; OpenCode Go is a subscription, so these are list "
+                        "prices rather than the amount paid. Strata uses work time × (400 W × $0.174 per kWh plus $0.02 per hour of "
+                        "upkeep), excluding hardware purchase. Prices were checked on 2026-11-26."),
+        "method_missing": ("Missing values are not zero: a task mean uses only the runs with data, and the notes under each "
+                           "chart list where that happens."),
+        "v2_pools_title": "Judging pools",
+        "v2_pools": ("The blind judge compares reports in pools. For Code Spec, Code Standards and Spec Readiness, one group of "
+                     "reports was larger than the judge's pool limit, so those pools were built in 3 batches by repeat number; "
+                     "anchor reports shared by the batches check that the three batches judge consistently (agreement 1.0 across the 127 pools)."),
+        "v2_lists_title": "Finding lists",
+        "v2_lists": ("The judge sorted the findings of each report into supported (1184) and contested-unsupported (275). These two "
+                     "lists were not reviewed by hand; the scores use them as the judge produced them."),
+        "v2_gpt_title": "GPT-6.1 Terra handoff",
+        "v2_gpt": ("GPT-6.1 Terra refused all 30 runs of Code Spec and Code Standards under the original handoff, which gave no request "
+                   "file. Its counted results for those two tasks come from a rerun with a completed handoff (ARW commit 068d885); "
+                   "all other cells use the original handoff (ARW commit 6ca23a9)."),
+        "v2_strata_title": "Strata run.",
+        "v2_strata": ("It ran on another machine with Codex 0.172.0, the other Codex arms with 0.171.0; its ARW commit is 104d038. "
+                      "Seven of its 11 retries are not in the driver's void log and were restored from the saved attempt numbers."),
+        "v2_arms_title": "Arms",
+        "v2_arms_head": ("Arm", "Harness", "Runs", "Retries", "Unusable reports"),
+        "v2_severity_title": "Answer-key points per task",
+        "v2_severity_note": ("The table splits each task's answer-key points (the score's denominator) by severity. A score's "
+                             "value does not depend on this split, because the report range is all three severities."),
+        "v2_severity_head": ("Task", "High", "Medium", "Low"),
+        "suite_label": "Suite:",
+        "suite_link": "Open the v1 archive",
+    })
+    zh.update({
+        "lead": ("Reviewer 是被安排做软件审核任务的 AI 代理. 这里 {model_count} 个模型通过三种代理程序 (Codex, Claude Code, "
+                 "Antigravity), 在不同推理强度设置下完成四项这样的任务; 图表比较它们的任务表现, 耗时与费用."),
+        "version_title": f"基准 v2 · 页面 {V2_PAGE_VERSION}",
+        "version_summary": (f"基准 v2 是一次新的测量: 本页 {total} 次计分运行 (每个任务格 5 次) 做的是同样四项任务, 但使用了更新的评分 "
+                            f"({V2_SCORING_VERSION}), 盲裁 (裁决者 GPT-6.2 Sol, high 强度, 它本身也是被测模型) 和新的模型 (GPT-6.2 Sol, "
+                            "GPT-6.1 Terra, Gemini 4 Neon, GLM 5.3). 分数不能与 v1 比较 (v1 由 Claude Opus 裁决); v1 页面作为存档保留."),
+        "score_context": ("推理强度标签是请求设置, 不代表不同模型使用了相同的计算量. 报告由 GPT-6.2 Sol (high 强度) 盲裁 (裁决者看不到报告出自哪个模型), "
+                          "它也是被测模型; 对锚点池的二次阅读, 裁决一致率为 1.0."),
+        "score_models": ("DeepSeek V4.1 Flash 与 GLM 5.3 通过 OpenCode Go 在 Codex 代理程序中运行. Strata IQ3_XXS 是 Qwen3.8-Flash-Next 的 "
+                         "3 比特量化, 在一块 RTX 3080 Ti (12 GB) 上本地运行, 只有 20 次运行 (一个强度, 每项任务 5 次)."),
+        "cost_score_desc": ("单次运行费用先对每项任务的单次费用求平均, 再对四项任务求平均. 各厂商口径不同, 都不是实际账单: 订阅套餐的运行 "
+                            f"(Claude, GPT 与 Gemini 模型) 是该运行用掉的 Claude $100 套餐周费用 ({week}) 的份额; DeepSeek 与 GLM 按官方标价逐 token 计; "
+                            "本地 Strata 模型按估算的电费与维护费计."),
+        "cost_score_read": ("分数越高越好, 越靠左单次费用越低. 悬停可看各点数值. 套餐运行是套餐费的份额, DeepSeek 与 GLM 是标价美元, "
+                            "Strata 是运行成本, 跨组比较要谨慎. 用图上方的 Linear / Log 切换费用轴."),
+        "time_score_read": ("分数越高越好, 越靠左单次运行越短. 工作时间不含准备与加载. Codex 计代理累计的工作时间; Claude Code 与 Antigravity "
+                            "计会话的墙钟时间. 作废的运行 (代理程序故障或触到时限) 会重跑, 不计入."),
+        "time_cost_read": ("越靠左单次运行越短, 越低单次费用越低. 各厂商费用口径不同 (见费用对分数一图). 这张图不含质量, 请与分数图一起看."),
+        "detail_token_read": ("每根柱叠加单次运行平均的未缓存输入, 缓存输入与输出 token. Claude Code 把缓存写入计作未缓存输入; "
+                              "Codex 上的 Strata 含其 guardian 请求. 悬停可看精确数字."),
+        "detail_cost_read": ("每根柱是一项任务的单次平均费用. OpenAI, Claude 与 Gemini 的运行用订阅, 所以按 Claude $100 套餐周费用的份额计; "
+                             "DeepSeek 与 GLM 是标价美元, Strata 是运行成本 (见数据说明). 用图上方的 Linear / Log 切换费用轴."),
+        "detail_speed_read": ("速度是总 token 除以总秒数, 不对单次速度求平均. 任务速度用未缓存输入或输出 token 除以工作时间, 即用户感受到的速度. "
+                              "v2 只给这两项任务速度."),
+        "method_selection": (f"数据是 ARW 导出的逐次运行结果, 评分 {V2_SCORING_VERSION}. 各格计分运行数: {runs['zh_counts']}. 另有 {retries} 次运行因代理程序故障或作废重跑 "
+                             f"(按组列在下面); {failures} 次运行没有可用报告, 计 0 分. 有效且已计分的运行才计入, 共 700 次."),
+        "method_score": (f"单次运行的分数 (评分 {V2_SCORING_VERSION}) 按报告找到的答案键问题加分, 按错误发现扣分. 分数不在 0 处截断, 所以可以为负; "
+                         "没有产出报告的运行记 0 分. 任务分数是 5 次运行的平均值, 95% 区间按 t 分布计算. 综合分数 = 100 × (0.20 Code Standards + "
+                         "0.20 Code Spec + 0.25 Commit Audit + 0.35 Spec Readiness); 其区间合并四项的标准误, 自由度按 Welch–Satterthwaite 计算."),
+        "method_cost": (f"单次运行费用: Claude, GPT 与 Gemini 模型为套餐运行, 都换算成同一个订阅价格, 即 Claude $100 套餐的周费用 ({week}): "
+                        "一次运行的费用 = 它用掉的该套餐周额度的份额 × 周费用. 份额通过等效任务点求得 "
+                        f"(1 点是 $100 的 Claude API 花费, 套餐一周有 {pricing['taskPoints']['plan']['weeklyPoints']:g} 点; "
+                        "套餐类别的效率比 E 是 Claude 做同类已完成的活会花的钱除以该套餐实际花的钱). "
+                        f"E: Claude {e['anthropic']}, Codex {e['openai']}, Gemini {e['google']}; 这些沿用 v1 的测量, 尚未更新, 所以套餐换算的费用只是暂定值. "
+                        "API 等价费用: Claude 按保存的逐请求 token 乘 Anthropic 标价 (缓存写入按一小时档, Haiku 提示超过 100,000 token 时按长提示档); "
+                        "GPT 与 Gemini 按各厂商标价换算 token. DeepSeek V4.1 Flash 按 DeepSeek 标价逐请求计 (分平峰时段), GLM 5.3 按其标价计; "
+                        "OpenCode Go 是订阅, 所以这是标价, 不是实付金额. Strata 按耗时 × (400 W × $0.174/kWh + 每小时维护费 $0.02) 计算, "
+                        "不含硬件购置. 价格已于 2026-11-26 核对."),
+        "method_missing": "缺失值不是 0: 任务均值只用有数据的运行, 各图下方的说明会列出这些情况.",
+        "v2_pools_title": "裁决分池",
+        "v2_pools": ("盲裁者分池比较报告. Code Spec, Code Standards 与 Spec Readiness 各有一组报告超过裁决者的池上限, 所以这些池按重复序号分 3 批建立; "
+                     "各批共用的锚点报告用来核对三批裁决是否一致 (127 个池一致率 1.0)."),
+        "v2_lists_title": "发现列表",
+        "v2_lists": "裁决者把各报告的发现分为有依据 (1184 条) 与有争议且无依据 (275 条). 这两张列表没有人工复核, 分数按裁决者给出的结果使用.",
+        "v2_gpt_title": "GPT-6.1 Terra 的交接",
+        "v2_gpt": ("原交接没有给出请求文件, GPT-6.1 Terra 在 Code Spec 与 Code Standards 上拒审了全部 30 次. 它这两项任务计入的成绩来自补全交接后的重跑 "
+                   "(ARW 提交 068d885); 其余各格都用原交接 (ARW 提交 6ca23a9)."),
+        "v2_strata_title": "Strata 的运行.",
+        "v2_strata": ("在另一台机器上用 Codex 0.172.0 运行, 其他 Codex 组为 0.171.0; 它的 ARW 提交是 104d038. "
+                      "它的 11 次重跑中有 7 次不在驱动的作废记录里, 按保存的尝试序号补回."),
+        "v2_arms_title": "各组",
+        "v2_arms_head": ("组", "代理程序", "运行", "重跑", "无可用报告"),
+        "v2_severity_title": "各任务答案键分值",
+        "v2_severity_note": "表中把每项任务的答案键分值 (分数的分母) 按严重度拆开. 报告范围是全部三级, 所以分数不依赖这个拆分.",
+        "v2_severity_head": ("任务", "高", "中", "低"),
+        "suite_label": "基准套件:",
+        "suite_link": "打开 v1 存档",
+    })
+
+
+def v2_flatten_heads(copy):
+    """Table headers are tuples above; the language switch reads one text per key, so split them."""
+    for texts in copy.values():
+        for key in [k for k in texts if k.endswith("_head")]:
+            for index, text in enumerate(texts.pop(key)):
+                texts[f"{key}_{index}"] = text
+
+
+def v2_notes_html(meta, records, en):
+    """The v2-only data notes: pools, finding lists, handoffs, per-arm table, question counts (English first; the
+    language switch swaps the text through data-i18n)."""
+    def block(title_key, key):
+        return (f'<p><strong data-i18n="{title_key}">{html.escape(en[title_key], quote=False)}</strong> '
+                f'<span data-i18n="{key}">{html.escape(en[key], quote=False)}</span></p>')
+
+    def table(title_key, head_key, rows, note_key=None):
+        head = "".join(f'<th data-i18n="{head_key}_{i}">{html.escape(en[f"{head_key}_{i}"], quote=False)}</th>'
+                       for i in range(5) if f"{head_key}_{i}" in en)
+        body = "".join("<tr>" + "".join(f"<td>{html.escape(str(cell), quote=False)}</td>" for cell in row) + "</tr>"
+                       for row in rows)
+        note = f'<p data-i18n="{note_key}">{html.escape(en[note_key], quote=False)}</p>' if note_key else ""
+        return (f'<h3 data-i18n="{title_key}">{html.escape(en[title_key], quote=False)}</h3>{note}'
+                f'<div class="table-scroll"><table class="data-table"><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table></div>')
+
+    arm_rows = []
+    for lane in V2_ARM_ORDER:
+        arm = meta["arms"].get(lane)
+        if arm is None:
+            continue
+        harness = ", ".join(f"{V2_CLI_NAMES.get(h['cli'], h['cli'])} {h['version']}" for h in arm["harnesses"])
+        arm_rows.append((V2_ARM_NAMES[lane], harness, arm["instances"],
+                         "n/a" if arm["retries"] is None else arm["retries"], arm["modelFailures"]))
+    severity_rows = []
+    for scenario in ("code-standards", "code-spec", "commit-audit", "spec-readiness"):
+        for name, info in meta["scenarios"].items():
+            if name.endswith("/" + scenario):
+                weights = info["severityWeights"]
+                severity_rows.append((V2_SCENARIO_NAMES[scenario], weights["high"], weights["medium"], weights["low"]))
+    return (block("v2_pools_title", "v2_pools") + block("v2_lists_title", "v2_lists")
+            + block("v2_gpt_title", "v2_gpt") + block("v2_strata_title", "v2_strata")
+            + table("v2_arms_title", "v2_arms_head", arm_rows)
+            + table("v2_severity_title", "v2_severity_head", severity_rows, "v2_severity_note"))
+
+
+def page(results, pricing, supplements=(), v2=None):
+    """Render the page. `v2` is (records, meta) from stats.extract_v2; then `results` is unused and the page
+    takes the v2 wording, the two task speeds and the extra data notes."""
+    global SPEED_KEYS
+    SPEED_KEYS = V2_SPEED_KEYS if v2 else V1_SPEED_KEYS
+    records = v2[0] if v2 else extract(results, pricing, supplements)
     copy = page_copy(pricing, records)
+    if v2:
+        v2_overrides(copy, v2[0], v2[1], pricing)
+        v2_flatten_heads(copy)
+    else:
+        copy["en"]["suite_banner"] = ("This is the archived v1 benchmark (scoring r8.4, Claude Opus as judge). "
+                                      "The current benchmark is v2:")
+        copy["zh"]["suite_banner"] = "这是已归档的 v1 基准 (评分 r8.4, 由 Claude Opus 裁决). 当前基准是 v2:"
+        copy["en"]["suite_link"], copy["zh"]["suite_link"] = "Open v2", "打开 v2"
     model_count = len({record["model"] for record in records})
     run_count = sum(cell["n"] for record in records for cell in record["cells"].values())
     for language in ("en", "zh"):
@@ -1091,6 +1314,11 @@ def page(results, pricing, supplements=()):
     def missing(key):
         return phrase(key, "p", "metric-missing-note") if en[key] else ""
 
+    suite_line = (f'<p class="suite-switch">{phrase("suite_label")} <strong>v2</strong> · '
+                  f'<a href="v1/" data-i18n="suite_link">{en["suite_link"]}</a></p>' if v2 else
+                  f'<p class="suite-switch">{phrase("suite_banner")} '
+                  f'<a href="../" data-i18n="suite_link">{en["suite_link"]}</a></p>')
+    extra_notes = v2_notes_html(v2[1], v2[0], en) if v2 else ""
     effort_html = effort_score_chart(records)
     grouped_html = task_score_chart(records)
     series_count = len({record["series"] for record in records})
@@ -1154,8 +1382,8 @@ def page(results, pricing, supplements=()):
                     for index, language in enumerate(("en", "zh"))}
     return f"""<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>Reviewer Model Benchmark</title>
-<meta name="benchmark-version" content="{PAGE_VERSION}">
-<meta name="benchmark-scoring-version" content="{SCORING_VERSION}">
+<meta name="benchmark-version" content="{V2_PAGE_VERSION if v2 else PAGE_VERSION}">
+<meta name="benchmark-scoring-version" content="{V2_SCORING_VERSION if v2 else SCORING_VERSION}">
 <link rel="icon" type="image/svg+xml" href="resources/favicon.svg">
 <link rel="stylesheet" href="resources/fonts/fonts.css"><link rel="stylesheet" href="resources/site.css"></head><body><div class="app-shell">
 <aside class="sidebar"><div class="brand">{icon('brand', 'brand-mark')}{phrase('brand')}</div><div><div class="side-label" data-i18n="nav_label">{en['nav_label']}</div><nav class="side-nav" aria-label="Page sections">
@@ -1174,14 +1402,14 @@ def page(results, pricing, supplements=()):
 <a href="#method" data-i18n="nav_method">{en['nav_method']}</a></nav></div>
 </aside>
 <main class="content"><div class="topbar">{phrase('topbar_context', 'span', 'topbar-context')}<div class="language-group" id="language-group" role="group" aria-label="Language"><button id="language-en" type="button" aria-pressed="true">English</button><button id="language-zh" type="button" aria-pressed="false">中文</button></div></div>
-<section class="hero" id="overview">{phrase('eyebrow', 'div', 'eyebrow')}{phrase('headline', 'h1')}{phrase('lead', 'p', 'lead')}<div class="version-note">{phrase('version_title', 'strong')} {phrase('version_summary')} {phrase('version_readme')} {readme_link}.</div><div class="summary-strip"><div class="summary-item">{icon('models', 'summary-mark')}<strong>{model_count}</strong>{phrase('stat_models')}</div><div class="summary-item">{icon('configurations', 'summary-mark')}<strong>{len(records)}</strong>{phrase('stat_configurations')}</div><div class="summary-item">{icon('benchmark', 'summary-mark')}<strong>{len(REVIEWERS)}</strong>{phrase('stat_benchmarks')}</div><div class="summary-item">{icon('benchmark', 'summary-mark')}<strong>{run_count}</strong>{phrase('stat_runs')}</div></div></section>
+<section class="hero" id="overview">{suite_line}{phrase('eyebrow', 'div', 'eyebrow')}{phrase('headline', 'h1')}{phrase('lead', 'p', 'lead')}<div class="version-note">{phrase('version_title', 'strong')} {phrase('version_summary')} {phrase('version_readme')} {readme_link}.</div><div class="summary-strip"><div class="summary-item">{icon('models', 'summary-mark')}<strong>{model_count}</strong>{phrase('stat_models')}</div><div class="summary-item">{icon('configurations', 'summary-mark')}<strong>{len(records)}</strong>{phrase('stat_configurations')}</div><div class="summary-item">{icon('benchmark', 'summary-mark')}<strong>{len(REVIEWERS)}</strong>{phrase('stat_benchmarks')}</div><div class="summary-item">{icon('benchmark', 'summary-mark')}<strong>{run_count}</strong>{phrase('stat_runs')}</div></div></section>
 <section class="chart-section" id="score"><div class="section-heading">{phrase('score_kicker', 'div', 'section-kicker')}{phrase('score_title', 'h2')}{phrase('score_desc', 'p')}<p class="section-context">{phrase('score_context')} {phrase('score_models')} {phrase('readme_more')} {readme_link}.</p></div>
 <article class="panel"><div class="bar-tooltip" id="benchmark-bar-tooltip-effort" hidden></div><div class="bar-viewport"><div class="bar-scroll" style="--groups:{series_count}">{effort_html}</div></div>{reading('score_read')}</article></section>
 <section class="chart-section" id="tradeoffs"><div class="section-heading">{phrase('trade_kicker', 'div', 'section-kicker')}{phrase('trade_title', 'h2')}{phrase('trade_intro', 'p')}</div>{''.join(scatter_sections)}</section>
 <section class="chart-section" id="reviewers"><div class="section-heading">{phrase('review_kicker', 'div', 'section-kicker')}{phrase('review_title', 'h2')}{phrase('review_desc', 'p')}</div>
 <div class="reviewer-guide">{phrase('reviewer_guide_title', 'h3', 'reviewer-guide-heading')}<div class="reviewer-grid">{''.join(reviewer_guide)}</div></div>
 <article class="panel" id="review-score"><div class="chart-panel-heading">{phrase('detail_score_title', 'h3')}</div><div class="bar-tooltip" id="benchmark-bar-tooltip-grouped" hidden></div><div class="bar-frame"><div class="bar-axis-overlay" aria-hidden="true" hidden></div><div class="bar-viewport"><div class="bar-scroll" style="--groups:{len(records)}">{grouped_html}</div></div></div>{reading('detail_score_read')}</article>{''.join(detail_panels)}</section>
-<section class="method-section" id="method"><div class="section-heading">{phrase('method_kicker', 'div', 'section-kicker')}{phrase('method_title', 'h2')}</div><div class="panel">{phrase('method_selection', 'p')}{phrase('method_score', 'p')}{phrase('method_runtime', 'p')}{phrase('method_cost', 'p', 'cost-note')}{phrase('method_missing', 'p')}<div class="source-links">{source_links}</div></div></section>
+<section class="method-section" id="method"><div class="section-heading">{phrase('method_kicker', 'div', 'section-kicker')}{phrase('method_title', 'h2')}</div><div class="panel">{phrase('method_selection', 'p')}{phrase('method_score', 'p')}{phrase('method_runtime', 'p')}{phrase('method_cost', 'p', 'cost-note')}{phrase('method_missing', 'p')}{extra_notes}<div class="source-links">{source_links}</div></div></section>
 </main></div><footer class="page-footer"><div class="footer-brand">{phrase('footer_name', 'span', 'footer-name')}{phrase('footer_copyright', 'span', 'footer-copyright')}</div>{phrase('footer_updated', 'span', 'footer-updated')}</footer><script>
 const translations = {i18n_json};
 // Tooltip titles end with the harness name, which is shown in a quieter gray.
@@ -1343,12 +1571,21 @@ if __name__ == "__main__":
                         default=Path(__file__).with_name("charts.html"))
     parser.add_argument("--supplement", type=Path, action="append", default=None,
                         help="supplement-only results file (default: benchmark-results-phase4.json next to build.py)")
+    parser.add_argument("--v2", nargs=2, type=Path, metavar=("EXPORT", "SUPPLEMENT"),
+                        help="build the v2 page from an ARW export and its supplement file (results_json is ignored)")
+    parser.add_argument("--pricing", type=Path, help="pricing file (default pricing.json; pricing-v2.json with --v2)")
     args = parser.parse_args()
     supplements = args.supplement if args.supplement is not None else [
         path for path in [Path(__file__).with_name("benchmark-results-phase4.json")] if path.is_file()]
-    args.output.write_text(page(json.loads(args.results_json.read_text(encoding="utf-8")), load_pricing(),
-                                [json.loads(path.read_text(encoding="utf-8")) for path in supplements]),
-                           encoding="utf-8")
+    if args.v2:
+        pricing = load_pricing(args.pricing or Path(__file__).with_name("pricing-v2.json"))
+        v2 = extract_v2(json.loads(args.v2[0].read_text(encoding="utf-8")),
+                        json.loads(args.v2[1].read_text(encoding="utf-8")), pricing)
+        text = page(None, pricing, (), v2)
+    else:
+        text = page(json.loads(args.results_json.read_text(encoding="utf-8")), load_pricing(*([args.pricing] if args.pricing else [])),
+                    [json.loads(path.read_text(encoding="utf-8")) for path in supplements])
+    args.output.write_text(text, encoding="utf-8")
     favicon_path = args.output.parent / "resources" / "favicon.svg"
     if favicon_path.parent.is_dir():  # the default output has resources/; elsewhere it is not created
         favicon_path.write_text(favicon_svg(), encoding="utf-8")

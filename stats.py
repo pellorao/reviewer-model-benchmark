@@ -22,14 +22,20 @@ TOKEN_KEYS = ("uncachedInput", "cachedInput", "output")
 SPEED_KEYS = ("taskOutput", "taskInput", "engineOutput", "engineInput")
 EFFORTS = {"low": 0, "medium": 1, "high": 2, "xhigh": 2.5, "max": 3}
 # Model and harness display names; series follow harness order, then this model order.
+# The v1 page and the v2 page share this table; each page shows only the models its data has.
 MODEL_NAMES = {
+    "gpt-6.2-sol": "GPT-6.2 Sol",
     "gpt-6.1-sol": "GPT-6.1 Sol",
+    "gpt-6.1-terra": "GPT-6.1 Terra",
     "gpt-6-luna": "GPT-6 Luna",
     "opus": "Claude Opus 5.5",
     "sonnet": "Claude Sonnet 5.5",
     "haiku": "Claude Haiku 5.5",
     "gemini-4-hydrogen": "Gemini 4 Hydrogen",
+    "gemini-4-neon": "Gemini 4 Neon",
     "deepseek-flash": "DeepSeek V4.1 Flash",
+    "deepseek-v4.1-flash": "DeepSeek V4.1 Flash",
+    "glm-5.3": "GLM 5.3",
     "strata-iq3_xxs": "Strata IQ3_XXS",
 }
 HARNESS_NAMES = {"codex": "Codex", "claude-code": "Claude Code", "antigravity": "Antigravity"}
@@ -128,7 +134,7 @@ def _local_cost(instance, config, pricing):
     return seconds / 3600 * hourly, False
 
 
-API_COST_RULES = {"deepseek": _recorded_cost, "anthropic": _recorded_cost,
+API_COST_RULES = {"deepseek": _recorded_cost, "anthropic": _recorded_cost, "opencode": _recorded_cost,
                   "openai": _token_cost("openai"), "google": _token_cost("google"), "strata": _local_cost}
 
 
@@ -355,3 +361,114 @@ def extract(results, pricing, supplements=()):
     records.sort(key=lambda record: (model_order.index(record["model"]), -EFFORTS[record["effort"]],
                                      harness_order.index(record["harness"])))
     return records
+
+
+# ---- Benchmark v2 (ARW export plus the driver's supplement file; statspec 2026-11-19 D1 to D8) ----
+
+V2_PRICING_SCHEMA_VERSION = 6
+V2_SCORING_VERSION = "r8.5"
+V2_SPEED_KEYS = ("taskOutput", "taskInput")  # D8: v2 has no engine speeds
+V2_CELL_RUNS = 5
+V2_FIXTURE_TREE = "4326aca3cbd04ae126f6f4a3e26867f2b740e81a"
+# Export provider -> (cost vendor, harness shown on the page).
+V2_PROVIDERS = {"openai": ("openai", "codex"), "anthropic": ("anthropic", "claude-code"),
+                "agy": ("google", "antigravity"), "qwen_strata": ("strata", "codex"),
+                "opencode-go": ("opencode", "codex")}
+# Export model id -> key in MODEL_NAMES and pricing.json.
+V2_MODELS = {"hydrogen": "gemini-4-hydrogen", "neon": "gemini-4-neon",
+             "qwen3.8-flash-next-iq3_xxs": "strata-iq3_xxs"}
+
+
+def _v2_instance(raw, extra, config_key):
+    """One export instance in the shape summarize_cell reads (task speeds only; the cost comes from the supplement)."""
+    seconds, tokens = raw["time"]["durationSeconds"], raw["tokens"]
+    speeds = {key: (tokens[token] / seconds if finite_number(seconds) and seconds > 0 else None)
+              for key, token in (("taskOutput", "output"), ("taskInput", "uncachedInput"))}
+    usd = extra.get("apiUsd")
+    return {"id": raw["id"], "configKey": config_key, "scenario": raw["scenario"], "scoring": raw["scoring"],
+            "time": raw["time"], "tokens": dict(tokens), "speeds": {**speeds, "lowerBounds": []},
+            "cost": {"usd": usd} if usd is not None else None}
+
+
+def _check_v2_instance(raw, extra, scenario_sha):
+    problems = []
+    if not raw["validity"]["valid"] or not finite_number(raw["scoring"].get("score")):
+        problems.append("not valid or not scored")
+    if raw["scoring"].get("status") not in ("final", "modelFailure"):
+        problems.append(f"scoring status {raw['scoring'].get('status')}")
+    if raw["arw"]["treeDirty"] or raw["arw"]["fixtureTree"] != V2_FIXTURE_TREE or not raw["runtime"]["matchesCheckout"]:
+        problems.append("ARW checkout is dirty, off the fixture tree, or differs from the runtime")
+    if extra["scenarioSha256"] != scenario_sha:
+        problems.append("scenario hash differs from the scenario's recorded one")
+    if problems:
+        raise ValueError(f"v2 instance {raw['id']}: " + "; ".join(problems))
+
+
+def extract_v2(export, supplement, pricing):
+    """Group a v2 export into configuration records like `extract`; returns (records, meta).
+
+    Timed-out instances are counted when the export scored them (the export holds only scored ones; the
+    supplement says which timed out). Every cell must hold exactly five runs; anything else fails the build.
+    """
+    if export.get("status") != "succeeded" or export.get("schemaVersion") != 1:
+        raise ValueError("Expected a succeeded schema-version-1 ARW export.")
+    if pricing.get("schemaVersion") != V2_PRICING_SCHEMA_VERSION:
+        raise ValueError(f"Expected a schema-version-{V2_PRICING_SCHEMA_VERSION} pricing file.")
+    if supplement.get("schemaVersion") != 1 or supplement.get("suite") != "v2":
+        raise ValueError("Expected a schema-version-1 v2 supplement file.")
+    extras = supplement["instances"]
+    scenario_reviewers = {}
+    for scenario in {instance["scenario"] for instance in export["instances"]}:
+        scenario_reviewers[scenario] = scenario.split("/")[1] + "-reviewer"
+    if sorted(scenario_reviewers.values()) != sorted(key for key, _, _ in REVIEWERS):
+        raise ValueError("The export must contain exactly the four weighted reviewers.")
+    configs, cells, pins, timeouts = {}, {}, {}, {}
+    for raw in export["instances"]:
+        extra = extras.get(raw["id"])
+        if extra is None:
+            raise ValueError(f"v2 instance {raw['id']} has no supplement entry")
+        _check_v2_instance(raw, extra, supplement["scenarios"][raw["scenario"]]["scenarioSha256"])
+        settings = raw["settings"]
+        if settings["modelProvider"] not in V2_PROVIDERS:
+            raise ValueError(f"Unknown v2 provider: {settings['modelProvider']}")
+        vendor, harness = V2_PROVIDERS[settings["modelProvider"]]
+        model = V2_MODELS.get(settings["model"], settings["model"])
+        effort = settings["reasoningEffort"]
+        if model not in MODEL_NAMES or effort not in EFFORTS:
+            raise ValueError(f"Unknown v2 configuration: {settings['model']} / {effort}")
+        key = f"{harness}/{model}/{effort}"
+        config = configs.setdefault(key, {"key": key, "harness": harness, "model": model, "effort": effort,
+                                          "vendor": vendor, "kind": "main", "lane": extra["lane"]})
+        reviewer = scenario_reviewers[raw["scenario"]]
+        cells.setdefault((key, reviewer), []).append(_v2_instance(raw, extra, key))
+        pins.setdefault(extra["lane"], set()).add(raw["arw"]["commit"])
+        if extra["timeout"]:
+            timeouts[(key, reviewer)] = timeouts.get((key, reviewer), 0) + 1
+    records = []
+    series_order = [(harness, model) for model in MODEL_NAMES for harness in HARNESS_NAMES]
+    for key, config in configs.items():
+        record_cells = {}
+        for reviewer, name, _ in REVIEWERS:
+            cell_instances = cells.get((key, reviewer), [])
+            if len(cell_instances) != V2_CELL_RUNS:
+                raise ValueError(f"{key} / {name}: {len(cell_instances)} runs, expected {V2_CELL_RUNS}")
+            record_cells[reviewer] = summarize_cell(cell_instances, config, pricing)
+            record_cells[reviewer]["timeouts"] = timeouts.get((key, reviewer), 0)
+        harness, model, effort = config["harness"], config["model"], config["effort"]
+        records.append({"key": key, "harness": harness, "model": model, "effort": effort,
+                        "vendor": config["vendor"], "lane": config["lane"],
+                        "series": series_order.index((harness, model)),
+                        "label": f"{MODEL_NAMES[model]} · {effort} · {HARNESS_NAMES[harness]}",
+                        "cells": record_cells, **composite(record_cells)})
+    records.sort(key=lambda r: (list(MODEL_NAMES).index(r["model"]), -EFFORTS[r["effort"]],
+                                list(HARNESS_NAMES).index(r["harness"])))
+    arms = {}
+    for lane, info in supplement["arms"].items():
+        lane_records = [r for r in records if r["lane"] == lane]
+        arms[lane] = {**info, "models": sorted({r["model"] for r in lane_records}),
+                      "pins": sorted(pins.get(lane, ())),
+                      "modelFailures": sum(cell["failures"] for r in lane_records for cell in r["cells"].values())}
+    meta = {"arms": arms, "scenarios": supplement["scenarios"], "restoredVoids": supplement.get("restoredVoids", []),
+            "timeouts": sum(timeouts.values()),
+            "failures": sum(cell["failures"] for r in records for cell in r["cells"].values())}
+    return records, meta
