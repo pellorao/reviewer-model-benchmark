@@ -134,13 +134,7 @@ def _local_cost(instance, config, pricing):
     return seconds / 3600 * hourly, False
 
 
-def _unpriced(instance, config, pricing):
-    # OpenCode Go is a subscription plan with no published per-token price and no measured E,
-    # so its runs have no place on the shared cost axis (statspec 2.7): cost stays unknown.
-    return None, False
-
-
-API_COST_RULES = {"deepseek": _recorded_cost, "anthropic": _recorded_cost, "opencode": _unpriced,
+API_COST_RULES = {"deepseek": _recorded_cost, "anthropic": _recorded_cost, "opencode": _recorded_cost,
                   "openai": _token_cost("openai"), "google": _token_cost("google"), "strata": _local_cost}
 
 
@@ -160,15 +154,30 @@ def instance_api_cost(instance, config, pricing):
     return rule(instance, config, pricing)
 
 
+def plan_cost_rule(pricing, config):
+    """v2 plan of the config's vendor as (monthly USD, weekly quota in API-equivalent USD), else None (no planCost, or no plan)."""
+    plan = pricing.get("planCost", {}).get("plans", {}).get(config["vendor"])
+    if plan is None:
+        return None
+    weekly = plan["weeklyApiUsdByModel"][config["model"]] if "weeklyApiUsdByModel" in plan else plan["weeklyApiUsd"]
+    return plan["monthlyUsd"], weekly
+
+
+def plan_cost(usd, config, pricing):
+    """Cost of `usd` API-equivalent dollars on the plan (v2): usd / weekly quota x weekly price (monthly / days x 7)."""
+    monthly, weekly = plan_cost_rule(pricing, config)
+    return usd / weekly * (monthly / pricing["planCost"]["daysPerMonth"] * 7)
+
+
 def plan_efficiency(pricing, vendor):
     """Efficiency ratio E of a plan vendor's quota category (Claude's cost of the same work / this plan's cost), else None."""
-    rule = pricing["taskPoints"]["efficiency"].get(vendor)
+    rule = pricing.get("taskPoints", {}).get("efficiency", {}).get(vendor)
     return rule["e"] if rule else None
 
 
 def plan_efficiency_estimate(pricing, vendor):
     """True when E of the vendor's plan category is an estimate (no direct quota measurement)."""
-    rule = pricing["taskPoints"]["efficiency"].get(vendor)
+    rule = pricing.get("taskPoints", {}).get("efficiency", {}).get(vendor)
     return bool(rule and rule.get("estimate"))
 
 
@@ -185,6 +194,8 @@ def plan_share(points, pricing):
 
 def instance_task_points(instance, config, pricing):
     """Equivalent task points one instance used (API-equivalent USD x E / pointUsd); None when not a plan run or unknown."""
+    if "planCost" in pricing:
+        return None  # v2 has no task points: cost is the run's share of the plan's own weekly quota
     e = plan_efficiency(pricing, config["vendor"])
     usd = instance_api_cost(instance, config, pricing)[0]
     return None if e is None or usd is None else usd * e / pricing["taskPoints"]["pointUsd"]
@@ -196,6 +207,9 @@ def instance_cost(instance, config, pricing):
     A plan vendor's run costs its equivalent task points' share of the reference plan's weekly quota
     times that plan's weekly price; every other vendor's cost is its own dollar rule.
     """
+    if "planCost" in pricing and plan_cost_rule(pricing, config) is not None:
+        usd, bound = instance_api_cost(instance, config, pricing)
+        return (None, False) if usd is None else (plan_cost(usd, config, pricing), bound)
     points = instance_task_points(instance, config, pricing)
     if points is None:
         return instance_api_cost(instance, config, pricing)
@@ -222,7 +236,7 @@ def summarize_cell(instances, config, pricing):
     points = [instance_task_points(instance, config, pricing) for instance in instances]
     points = [value for value in points if value is not None]
     api_costs = ([instance_api_cost(instance, config, pricing)[0] for instance in instances]
-                 if points else [])
+                 if points or ("planCost" in pricing and plan_cost_rule(pricing, config)) else [])
     api_costs = [usd for usd in api_costs if usd is not None]
     speeds, speed_counts, speed_bounds = {}, {}, {}
     for key in SPEED_KEYS:
@@ -371,7 +385,7 @@ def extract(results, pricing, supplements=()):
 
 # ---- Benchmark v2 (ARW export plus the driver's supplement file; statspec 2026-11-19 D1 to D8) ----
 
-V2_PRICING_SCHEMA_VERSION = 6
+V2_PRICING_SCHEMA_VERSION = 7
 V2_SCORING_VERSION = "r8.5"
 V2_SPEED_KEYS = ("taskOutput", "taskInput")  # D8: v2 has no engine speeds
 V2_CELL_RUNS = 5

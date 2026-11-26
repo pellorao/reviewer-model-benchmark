@@ -270,7 +270,7 @@ python3 tools/v2_supplement.py --runs <v2 data>/runs --export <v2 data>/export-f
 .venv/bin/python build.py ignored.json charts-v2.html --v2 snapshots/v2/export.json snapshots/v2/supplement.json
 ```
 
-`pricing-v2.json` 存放 v2 的价格（Claude 逐请求、缓存写入按一小时档、Haiku 长提示档，DeepSeek 分峰谷，GLM，GPT 与 Gemini）。其中的 `taskPoints` 是发布时刷新的状态页测量快照（2026-11-26；套餐周点数沿用 2026-11-18 的校准）。DeepSeek 与 GLM 用 OpenCode Go 套餐，该套餐没有效率比 E，所以它们没有费用，费用图里不画（标价数字只留在补充文件里备查）。Terra 的 Code Spec 与 Code Standards 两格是用修正后的交接（ARW 068d885）重跑的，页面已注明。v2 页只给两项任务速度，版本切换链接到 `v1/`（v1 页加一行存档提示并链回 v2），数据说明写明三批分池盲裁，Terra 的交接，Strata 所在机器与 Codex 版本，各组重跑次数以及各严重度的答案键分值。工具的测试在本目录运行 `cd tools && python3 -m unittest test_v2_supplement`。
+`pricing-v2.json` 存放 v2 的价格（Claude 逐请求、缓存写入按一小时档、Haiku 长提示档，DeepSeek 分峰谷，GLM，GPT 与 Gemini）。其中的 `planCost` 一节按每次运行所用的套餐计价：费用 = 该次运行的 API 等价美元 ÷ 该套餐周额度（API 等价美元）× 该套餐周费用（月价 ÷ 30 × 7）。各套餐：Claude Max 20x（月价 $200，周额度 $2,250.73，取自状态页 2026-11-26 的读数），Codex $200 套餐（$200，$942.20：本机只有 $100 套餐，取其实测 $471.10 的 2 倍），Gemini $200 套餐（$200，$2,104.97，作者 2026-11-26 提供），OpenCode Go（$10；按模型的周额度：DeepSeek V4.1 Flash $50，GLM 5.3 $100）。套餐费用已于 2026-11-26 核对。v2 不再使用效率比 E 与任务点：套餐的效率已包含在它的额度里。DeepSeek 与 GLM 按补充文件里的逐请求标价计费，在费用图上显示。Terra 的 Code Spec 与 Code Standards 两格是用修正后的交接（ARW 068d885）重跑的，页面已注明。v2 页只给两项任务速度，版本切换链接到 `v1/`（v1 页加一行存档提示并链回 v2），数据说明写明三批分池盲裁，Terra 的交接，Strata 所在机器与 Codex 版本，各组重跑次数以及各严重度的答案键分值。工具的测试在本目录运行 `cd tools && python3 -m unittest test_v2_supplement`。
 
 ## 实现和维护
 

@@ -534,13 +534,34 @@ class V2Tests(unittest.TestCase):
         self.assertEqual([counts[key] for key in stats.V2_SPEED_KEYS], [5, 5])
         self.assertEqual((counts["engineOutput"], counts["engineInput"]), (0, 0))
 
-    def test_opencode_plan_models_have_no_cost_and_no_task_points(self):
-        # statspec 2.7: a plan category without E stays off the shared cost axis.
-        for lane in ("dsflash", "glm"):
+    def test_plan_run_cost_is_its_share_of_the_plans_own_weekly_quota_times_its_weekly_fee(self):
+        plans = self.pricing["planCost"]["plans"]
+        days = self.pricing["planCost"]["daysPerMonth"]
+        for lane, vendor in (("opus", "anthropic"), ("sol", "openai"), ("neon", "google"), ("dsflash", "opencode"), ("glm", "opencode")):
+            plan = plans[vendor]
             for record in (r for r in self.v2[0] if r["lane"] == lane):
                 self.assertIsNone(record["taskPoints"])
-                self.assertIsNone(record["cost"])
-                self.assertEqual(record["costCount"], 0)
+                self.assertIsNone(record["efficiency"])
+                weekly = plan["weeklyApiUsdByModel"][record["model"]] if "weeklyApiUsdByModel" in plan else plan["weeklyApiUsd"]
+                self.assertGreater(record["apiCost"], 0)
+                self.assertAlmostEqual(record["cost"], record["apiCost"] / weekly * plan["monthlyUsd"] / days * 7)
+
+    def test_plan_cost_fixed_example(self):
+        config = {"vendor": "opencode", "model": "glm-5.3", "key": "k"}
+        # $1 of GLM list price on a $10 plan whose GLM week holds $100: 1/100 of a $2.33 week.
+        self.assertAlmostEqual(stats.plan_cost(1.0, config, self.pricing), 10 / 30 * 7 / 100)
+
+    def test_pricing_has_no_task_point_section(self):
+        self.assertNotIn("taskPoints", self.pricing)
+        self.assertEqual(self.pricing["planCost"]["plans"]["google"]["weeklyApiUsd"], 2104.97)
+
+    def test_page_prices_deepseek_and_glm_and_drops_the_efficiency_ratio(self):
+        self.assertNotIn("efficiency ratio", self.html)
+        self.assertNotIn("task points", self.html)
+        self.assertNotIn("等效任务点", self.html)
+        for name in ("DeepSeek V4.1 Flash", "GLM 5.3"):
+            records = [r for r in self.v2[0] if stats.MODEL_NAMES[r["model"]] == name]
+            self.assertTrue(records and all(r["cost"] is not None and r["costCount"] == 4 for r in records))
 
     def test_a_cell_with_the_wrong_run_count_fails(self):
         export = copy.deepcopy(self.export)
