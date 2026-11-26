@@ -299,4 +299,4 @@ cp -R resources/. _site/reviewer-model-benchmark/resources/
 .venv/bin/python build.py benchmark-results.json _site/reviewer-model-benchmark/index.html
 ```
 
-由于页面资源全部使用相对路径，部署后即可在 `/reviewer-model-benchmark/` 子路径下正常访问。本地生成的 `charts.html` 和 `_site/` 不加入 Git，自定义域名则在仓库外部配置。
+这一条命令同时发布两个页面：`build.py` 把名为 `index.html` 的输出（且未加 `--v2`）视为站点构建，在该路径写 v2 页面（读 `snapshots/v2/`），并在同目录的 `v1/index.html` 写已归档的 v1 页面，后者从 `../` 加载共用的 `resources/`。由于页面资源全部使用相对路径，部署后两个页面都可在 `/reviewer-model-benchmark/` 子路径下正常访问。`tools/check_release.py` 在干净副本里渲染同样的两个页面，并与线上逐一比对。本地生成的 `charts.html` 和 `_site/` 不加入 Git，自定义域名则在仓库外部配置。

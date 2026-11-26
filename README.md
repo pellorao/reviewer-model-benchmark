@@ -308,4 +308,4 @@ cp -R resources/. _site/reviewer-model-benchmark/resources/
 .venv/bin/python build.py benchmark-results.json _site/reviewer-model-benchmark/index.html
 ```
 
-Because page assets use relative paths, the published page works under that `/reviewer-model-benchmark/` subpath. Neither the local `charts.html` nor `_site/` is committed to Git, and the custom domain is configured outside the repository.
+This one command publishes both pages: `build.py` treats an output named `index.html` (with no `--v2`) as the site build and writes the v2 page there (from `snapshots/v2/`) and the archived v1 page to `v1/index.html` beside it, which loads the shared `resources/` from `../`. Because page assets use relative paths, the published pages work under that `/reviewer-model-benchmark/` subpath. `tools/check_release.py` renders the same two pages in a clean copy and compares both with the live site. Neither the local `charts.html` nor `_site/` is committed to Git, and the custom domain is configured outside the repository.
