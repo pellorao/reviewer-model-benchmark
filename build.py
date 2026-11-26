@@ -1,6 +1,7 @@
 """Build the offline Reviewer Model Benchmark page from local benchmark-results.json."""
 
 import argparse
+import hashlib
 import colorsys
 import html
 import json
@@ -1579,8 +1580,9 @@ if __name__ == "__main__":
         path for path in [Path(__file__).with_name("benchmark-results-phase4.json")] if path.is_file()]
     if args.v2:
         pricing = load_pricing(args.pricing or Path(__file__).with_name("pricing-v2.json"))
-        v2 = extract_v2(json.loads(args.v2[0].read_text(encoding="utf-8")),
-                        json.loads(args.v2[1].read_text(encoding="utf-8")), pricing)
+        export_bytes = args.v2[0].read_bytes()
+        v2 = extract_v2(json.loads(export_bytes), json.loads(args.v2[1].read_text(encoding="utf-8")), pricing,
+                        hashlib.sha256(export_bytes).hexdigest())
         text = page(None, pricing, (), v2)
     else:
         text = page(json.loads(args.results_json.read_text(encoding="utf-8")), load_pricing(*([args.pricing] if args.pricing else [])),

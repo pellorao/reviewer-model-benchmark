@@ -541,6 +541,11 @@ class V2Tests(unittest.TestCase):
         with self.assertRaises(ValueError):
             stats.extract_v2(export, self.supplement, self.pricing)
 
+    def test_a_supplement_from_another_export_file_fails(self):
+        with self.assertRaises(ValueError):
+            stats.extract_v2(self.export, self.supplement, self.pricing, "0" * 64)
+        stats.extract_v2(self.export, self.supplement, self.pricing, self.supplement["exportSha256"])
+
     def test_an_instance_missing_from_the_supplement_fails(self):
         supplement = copy.deepcopy(self.supplement)
         supplement["instances"].pop(self.export["instances"][0]["id"])

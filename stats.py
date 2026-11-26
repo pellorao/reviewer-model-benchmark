@@ -404,7 +404,7 @@ def _check_v2_instance(raw, extra, scenario_sha):
         raise ValueError(f"v2 instance {raw['id']}: " + "; ".join(problems))
 
 
-def extract_v2(export, supplement, pricing):
+def extract_v2(export, supplement, pricing, export_sha256=None):
     """Group a v2 export into configuration records like `extract`; returns (records, meta).
 
     Timed-out instances are counted when the export scored them (the export holds only scored ones; the
@@ -416,6 +416,8 @@ def extract_v2(export, supplement, pricing):
         raise ValueError(f"Expected a schema-version-{V2_PRICING_SCHEMA_VERSION} pricing file.")
     if supplement.get("schemaVersion") != 1 or supplement.get("suite") != "v2":
         raise ValueError("Expected a schema-version-1 v2 supplement file.")
+    if export_sha256 is not None and export_sha256 != supplement.get("exportSha256"):
+        raise ValueError("The supplement was made from a different export file.")
     extras = supplement["instances"]
     scenario_reviewers = {}
     for scenario in {instance["scenario"] for instance in export["instances"]}:
