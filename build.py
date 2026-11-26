@@ -15,7 +15,7 @@ import plotly.io as pio
 
 from stats import (V2_SCORING_VERSION, V2_SPEED_KEYS, EFFORTS, HARNESS_NAMES, MODEL_NAMES, REVIEWERS, SCORING_VERSION, SPEED_KEYS,
                    TOKEN_KEYS,
-                   extract, extract_v2, load_pricing, plan_weekly_api_usd, plan_weekly_cost)
+                   extract, extract_v2, load_pricing, plan_weekly_cost)
 
 
 V1_SPEED_KEYS = SPEED_KEYS
@@ -1094,10 +1094,9 @@ def v2_overrides(copy, records, meta, pricing):
     total = sum(cell["n"] for record in records for cell in record["cells"].values())
     failures, retries = meta["failures"], sum(arm["retries"] or 0 for arm in meta["arms"].values())
     plans = pricing["planCost"]["plans"]
-    days = pricing["planCost"]["daysPerMonth"]
-    fee = {vendor: usd(round(plan["monthlyUsd"] / days * 7, 2)) for vendor, plan in plans.items()}
-    quota = {vendor: usd(plan["weeklyApiUsd"]) for vendor, plan in plans.items() if "weeklyApiUsd" in plan}
-    oc = {model: round(plan_weekly_api_usd(plans["opencode"], model, days), 2) for model in plans["opencode"]["monthlyApiUsdByModel"]}
+    fee = {vendor: usd(plan["monthlyUsd"]) for vendor, plan in plans.items()}
+    quota = {vendor: usd(plan["monthlyApiUsd"]) for vendor, plan in plans.items() if "monthlyApiUsd" in plan}
+    oc = plans["opencode"]["monthlyApiUsdByModel"]
     checked = pricing["planCost"]["checkedAt"]
     en, zh = copy["en"], copy["zh"]
     en.update({
@@ -1118,11 +1117,11 @@ def v2_overrides(copy, records, meta, pricing):
                          "3-bit quantization of Qwen3.8-Flash-Next run locally on one RTX 3080 Ti (12 GB), with only 20 runs (one effort, 5 per task)."),
         "cost_score_desc": ("Cost per run averages each task's per-run cost, then the four tasks. The bases differ by vendor "
                             "and none is an actual bill: for every subscription-plan run (Claude, GPT, Gemini, and DeepSeek and GLM "
-                            "through OpenCode Go), the run's API-equivalent cost as a share of that plan's weekly quota, times the "
-                            f"plan's weekly fee (Claude Max 20x {fee['anthropic']}, Codex $200 plan {fee['openai']}, Gemini $200 plan {fee['google']}, "
+                            "through OpenCode Go), the run's API-equivalent cost as a share of that plan's monthly quota, times the "
+                            f"plan's monthly fee (Claude Max 20x {fee['anthropic']}, Codex $200 plan {fee['openai']}, Gemini $200 plan {fee['google']}, "
                             f"OpenCode Go {fee['opencode']}); and for the local Strata model, estimated electricity and upkeep."),
         "cost_score_read": ("Higher score is better; farther left is a lower cost per run. Hover a point for its values. "
-                            "Each plan's weekly quota differs, so plan runs are priced against their own plan, and Strata is running cost: compare "
+                            "Each plan's monthly quota differs, so plan runs are priced against their own plan, and Strata is running cost: compare "
                             "across those groups with care (see Data notes). Use Linear / Log above the chart to switch the cost axis."),
         "time_score_read": ("Higher score is better; farther left is a shorter run. Work time excludes setup and loading. "
                             "Codex counts the agent's accumulated work time; Claude Code and Antigravity the session's wall time. "
@@ -1132,7 +1131,7 @@ def v2_overrides(copy, records, meta, pricing):
         "detail_token_read": ("Each bar stacks mean non-cached input, cached input and output tokens per run. Claude Code counts "
                               "cache writes as non-cached input; Strata on Codex includes its guardian requests. Hover for exact counts."),
         "detail_cost_read": ("Each bar is one task's mean cost per run. Claude, GPT, Gemini, DeepSeek and GLM runs used subscriptions, so "
-                             "theirs are the run's share of its own plan's weekly quota times that plan's weekly fee; Strata is running cost "
+                             "theirs are the run's share of its own plan's monthly quota times that plan's monthly fee; Strata is running cost "
                              "(see Data notes). Use Linear / Log above the chart to switch the cost axis."),
         "detail_speed_read": ("A speed is total tokens divided by total seconds, never an average of per-run speeds. Task "
                               "speeds divide non-cached input or output tokens by work time: the speed a user perceives. "
@@ -1147,21 +1146,21 @@ def v2_overrides(copy, records, meta, pricing):
                          f"100 × (0.20 Code Standards + 0.20 Code Spec + 0.25 Commit Audit + 0.35 Spec Readiness); its interval "
                          "combines the four standard errors with Welch–Satterthwaite degrees of freedom."),
         "method_cost": ("Cost per run: Claude, GPT, Gemini, DeepSeek V4.1 Flash and GLM 5.3 models ran on subscription plans, and each run is priced "
-                        "against the plan it used: cost = the run's API-equivalent cost ÷ the plan's weekly quota (in API-equivalent dollars) × the "
-                        "plan's weekly fee, where the weekly fee is the monthly price over a 30-day month, times 7 days. "
-                        f"Claude uses Max 20x ({usd(plans['anthropic']['monthlyUsd'])} a month, {fee['anthropic']} a week; weekly quota {quota['anthropic']}, "
-                        "the status-page reading of the local Max 20x plan on 2026-11-26). "
-                        f"Codex uses the $200 plan ({usd(plans['openai']['monthlyUsd'])} a month, {fee['openai']} a week); only a $100 plan was available, so its weekly "
-                        f"quota {quota['openai']} is twice the $100 plan's measured one (the $200 plan is taken as double). "
-                        f"Gemini uses a $200 plan ({usd(plans['google']['monthlyUsd'])} a month, {fee['google']} a week; weekly quota {quota['google']}, provided by the author 2026-11-26). "
-                        f"DeepSeek and GLM use OpenCode Go ({usd(plans['opencode']['monthlyUsd'])} a month, {fee['opencode']} a week); its weekly allowance depends on the model "
-                        f"(DeepSeek V4.1 Flash {usd(oc['deepseek-v4.1-flash'])}, GLM 5.3 {usd(oc['glm-5.3'])}, the monthly limit OpenCode publishes for each, divided by 30 and times 7). "
+                        "against the plan it used: cost = the run's API-equivalent cost ÷ the plan's monthly quota (in API-equivalent dollars) × the "
+                        "plan's monthly price. "
+                        f"Claude uses Max 20x ({fee['anthropic']} a month; monthly quota {quota['anthropic']} = the status-page weekly reading "
+                        "of the local Max 20x plan on 2026-11-26, $2,250.73, × 30 ÷ 7). "
+                        f"Codex uses the $200 plan ({fee['openai']} a month); only a $100 plan was available, so its monthly "
+                        f"quota {quota['openai']} is twice the $100 plan's measured weekly reading ($471.10) × 30 ÷ 7 (the $200 plan is taken as double). "
+                        f"Gemini uses a $200 plan ({fee['google']} a month; monthly quota {quota['google']} = the author's weekly figure $2,104.97 × 30 ÷ 7, provided 2026-11-26). "
+                        f"DeepSeek and GLM use OpenCode Go ({fee['opencode']} a month); its monthly allowance depends on the model "
+                        f"(DeepSeek V4.1 Flash {usd(oc['deepseek-v4.1-flash'])}, GLM 5.3 {usd(oc['glm-5.3'])}, the monthly limit OpenCode publishes for each). "
                         "Because every run is divided by its plan's quota and multiplied by its plan's fee, the efficiency of a plan (what a "
                         "dollar of API price buys of the plan) is built into the cost, and no further factor is applied. "
                         "The API-equivalent cost is, for Claude, each saved request's tokens at Anthropic's list price "
                         "(cache writes at the one-hour rate, Haiku above 100,000 prompt tokens at its long-prompt rate); for GPT and Gemini, token "
                         f"counts at the vendors' list prices; for DeepSeek and GLM, each request at the list price (DeepSeek at its peak and off-peak rates). "
-                        "The weekly quotas are readings of the author's plans and carry some error (the Claude and Codex readings about a few percent), so "
+                        "The quotas are readings of the author's plans and carry some error (the Claude and Codex readings about a few percent), so "
                         "small differences between vendors are not meaningful. Strata uses work time × (400 W × $0.174 per kWh plus $0.02 per hour of "
                         f"upkeep), excluding hardware purchase. Prices and plan fees were checked on {checked}."),
         "method_missing": ("Missing values are not zero: a task mean uses only the runs with data, and the notes under each "
@@ -1203,10 +1202,10 @@ def v2_overrides(copy, records, meta, pricing):
         "score_models": ("DeepSeek V4.1 Flash 与 GLM 5.3 通过 OpenCode Go 在 Codex 代理程序中运行. Strata IQ3_XXS 是 Qwen3.8-Flash-Next 的 "
                          "3 比特量化, 在一块 RTX 3080 Ti (12 GB) 上本地运行, 只有 20 次运行 (一个强度, 每项任务 5 次)."),
         "cost_score_desc": ("单次运行费用先对每项任务的单次费用求平均, 再对四项任务求平均. 各厂商口径不同, 都不是实际账单: 订阅套餐的运行 "
-                            "(Claude, GPT, Gemini, 以及经 OpenCode Go 的 DeepSeek 与 GLM) 按该次运行的 API 等价费用占其所用套餐周额度的份额, 乘该套餐的周费用 "
+                            "(Claude, GPT, Gemini, 以及经 OpenCode Go 的 DeepSeek 与 GLM) 按该次运行的 API 等价费用占其所用套餐月额度的份额, 乘该套餐的月费用 "
                             f"(Claude Max 20x {fee['anthropic']}, Codex $200 套餐 {fee['openai']}, Gemini $200 套餐 {fee['google']}, OpenCode Go {fee['opencode']}); "
                             "本地 Strata 模型按估算的电费与维护费计."),
-        "cost_score_read": ("分数越高越好, 越靠左单次费用越低. 悬停可看各点数值. 各套餐的周额度不同, 套餐运行按各自所用的套餐计价, Strata 是运行成本, "
+        "cost_score_read": ("分数越高越好, 越靠左单次费用越低. 悬停可看各点数值. 各套餐的月额度不同, 套餐运行按各自所用的套餐计价, Strata 是运行成本, "
                             "跨组比较要谨慎 (见数据说明). 用图上方的 Linear / Log 切换费用轴."),
         "time_score_read": ("分数越高越好, 越靠左单次运行越短. 工作时间不含准备与加载. Codex 计代理累计的工作时间; Claude Code 与 Antigravity "
                             "计会话的墙钟时间. 作废的运行 (代理程序故障或触到时限) 会重跑, 不计入."),
@@ -1223,16 +1222,16 @@ def v2_overrides(copy, records, meta, pricing):
                          "没有产出报告的运行记 0 分. 任务分数是 5 次运行的平均值, 95% 区间按 t 分布计算. 综合分数 = 100 × (0.20 Code Standards + "
                          "0.20 Code Spec + 0.25 Commit Audit + 0.35 Spec Readiness); 其区间合并四项的标准误, 自由度按 Welch–Satterthwaite 计算."),
         "method_cost": (f"单次运行费用: Claude, GPT, Gemini, DeepSeek V4.1 Flash 与 GLM 5.3 模型都是套餐运行, 每次运行按它所用的套餐计价: "
-                        "费用 = 该次运行的 API 等价费用 ÷ 该套餐的周额度 (以 API 等价美元计) × 该套餐的周费用, 周费用是月价按 30 天一个月折成每天再乘 7 天. "
-                        f"Claude 用 Max 20x (每月 {usd(plans['anthropic']['monthlyUsd'])}, 每周 {fee['anthropic']}; 周额度 {quota['anthropic']}, 取自状态页对本机 Max 20x 套餐 2026-11-26 的读数). "
-                        f"Codex 用 $200 套餐 (每月 {usd(plans['openai']['monthlyUsd'])}, 每周 {fee['openai']}); 手头只有 $100 套餐, 所以周额度 {quota['openai']} 取 $100 套餐实测值的 2 倍 (按 $200 套餐是它的两倍计). "
-                        f"Gemini 用 $200 套餐 (每月 {usd(plans['google']['monthlyUsd'])}, 每周 {fee['google']}; 周额度 {quota['google']}, 由作者于 2026-11-26 提供). "
-                        f"DeepSeek 与 GLM 用 OpenCode Go (每月 {usd(plans['opencode']['monthlyUsd'])}, 每周 {fee['opencode']}); 它的周额度随模型而异 "
-                        f"(DeepSeek V4.1 Flash {usd(oc['deepseek-v4.1-flash'])}, GLM 5.3 {usd(oc['glm-5.3'])}, 即 OpenCode 公布的各模型月限额除以 30 再乘 7). "
+                        "费用 = 该次运行的 API 等价费用 ÷ 该套餐的月额度 (以 API 等价美元计) × 该套餐的月价. "
+                        f"Claude 用 Max 20x (每月 {fee['anthropic']}; 月额度 {quota['anthropic']} = 状态页对本机 Max 20x 套餐 2026-11-26 的周额度读数 $2,250.73 × 30 ÷ 7). "
+                        f"Codex 用 $200 套餐 (每月 {fee['openai']}); 手头只有 $100 套餐, 所以月额度 {quota['openai']} 取 $100 套餐周额度实测值 ($471.10) 的 2 倍再 × 30 ÷ 7 (按 $200 套餐是它的两倍计). "
+                        f"Gemini 用 $200 套餐 (每月 {fee['google']}; 月额度 {quota['google']} = 作者于 2026-11-26 提供的周额度 $2,104.97 × 30 ÷ 7). "
+                        f"DeepSeek 与 GLM 用 OpenCode Go (每月 {fee['opencode']}); 它的月额度随模型而异 "
+                        f"(DeepSeek V4.1 Flash {usd(oc['deepseek-v4.1-flash'])}, GLM 5.3 {usd(oc['glm-5.3'])}, 即 OpenCode 公布的各模型月限额). "
                         "每次运行都除以自己套餐的额度、乘自己套餐的费用, 所以各套餐的效率 (一美元 API 价格能换到多少套餐额度) 已包含在费用里, 不再另乘系数. "
                         "API 等价费用: Claude 按保存的逐请求 token 乘 Anthropic 标价 (缓存写入按一小时档, Haiku 提示超过 100,000 token 时按长提示档); "
                         "GPT 与 Gemini 按各厂商标价换算 token; DeepSeek 与 GLM 按逐请求标价 (DeepSeek 分峰谷价). "
-                        "周额度是对作者所用套餐的读数, 带有一定误差 (Claude 与 Codex 的读数约几个百分点), 所以厂商之间的小差别没有意义. "
+                        "额度是对作者所用套餐的读数, 带有一定误差 (Claude 与 Codex 的读数约几个百分点), 所以厂商之间的小差别没有意义. "
                         "Strata 按耗时 × (400 W × $0.174/kWh + 每小时维护费 $0.02) 计算, 不含硬件购置. "
                         f"价格与套餐费用已于 {checked} 核对."),
         "method_missing": "缺失值不是 0: 任务均值只用有数据的运行, 各图下方的说明会列出这些情况.",

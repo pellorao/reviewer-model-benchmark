@@ -4,7 +4,7 @@
   "checkedAt": "2026-11-26",
   "currency": "USD",
   "tokensPerUnit": 1000000,
-  "costBasis": "Per-instance cost averaged within each scenario, then across the four scenarios; not actual billing. Subscription-plan runs (Claude, GPT, Gemini, and DeepSeek V4.1 Flash and GLM 5.3 through OpenCode Go) are priced as the run's API-equivalent USD divided by that plan's weekly quota (in API-equivalent USD), times the plan's weekly price (planCost); Strata is at its local running cost",
+  "costBasis": "Per-instance cost averaged within each scenario, then across the four scenarios; not actual billing. Subscription-plan runs (Claude, GPT, Gemini, and DeepSeek V4.1 Flash and GLM 5.3 through OpenCode Go) are priced as the run's API-equivalent USD divided by that plan's monthly quota (in API-equivalent USD), times the plan's monthly price (planCost); Strata is at its local running cost",
   "instanceCost": {
     "anthropic": "Per-request tokens from the saved session (agent.json measurementFacts) at the anthropic rates below (cache writes at the 1-hour rate; Haiku by prompt length), API-equivalent USD; then the plan-fee conversion (planCost)",
     "openai": "Token counts at the openai rates below (API-equivalent USD); then the plan-fee conversion (planCost)",
@@ -170,30 +170,35 @@
     }
   },
   "planCost": {
-    "formula": "cost USD = API-equivalent USD of the run / weeklyApiUsd of the plan x weekly price of the plan, where weekly price = monthlyUsd / daysPerMonth x 7",
-    "daysPerMonth": 30,
+    "formula": "cost USD = API-equivalent USD of the run / monthly API-equivalent quota of the plan x monthly price of the plan",
     "checkedAt": "2026-11-26",
     "plans": {
       "anthropic": {
         "name": "Claude Max 20x",
         "monthlyUsd": 200,
         "monthlyUsdSource": "https://claude.com/pricing (Max 20x, checked 2026-11-26)",
-        "weeklyApiUsd": 2250.73,
-        "weeklyApiUsdSource": "Status-page quota card for the local Claude Max 20x plan, 2026-11-26: what 100% of the weekly quota is worth in API-priced USD (ledger rate over the latest sub-window of at least 10 percentage points). The earlier calibration on 2026-11-18 was about $2,146."
+        "weeklyReadingApiUsd": 2250.73,
+        "weeklyReadingApiUsdSource": "Status-page quota card for the local Claude Max 20x plan, 2026-11-26: what 100% of the weekly quota is worth in API-priced USD (ledger rate over the latest sub-window of at least 10 percentage points). The earlier calibration on 2026-11-18 was about $2,146.",
+        "monthlyApiUsd": 9645.99,
+        "monthlyApiUsdSource": "Weekly reading x 30 / 7 (weeklyReadingApiUsd above), rounded to cents"
       },
       "openai": {
         "name": "Codex $200 plan",
         "monthlyUsd": 200,
         "monthlyUsdSource": "https://learn.chatgpt.com/docs/pricing (plans at $100, $200 or $500 per month, checked 2026-11-26)",
-        "weeklyApiUsd": 942.2,
-        "weeklyApiUsdSource": "Twice the Codex $100 plan's weekly quota, because only the $100 plan is available locally and the $200 plan is taken as double (user 2026-11-26). The $100 plan's reading is $471.1 = $240.27 of API-priced ledger spend in the current week (22,243 calls, auto-review and compaction calls excluded) / 51% of the weekly quota used, 2026-11-26 (about +/-2% from the integer percentage; spend outside the ledger would make the quota larger). The status card's own sub-window figure ($0.81, from a 10-point sub-window with $0.08 of ledger spend) is not used. Cross-check: the Codex Plus card reads $45.90 a week, and 471.1 is about 10 times that."
+        "weeklyReadingApiUsd": 942.2,
+        "weeklyReadingApiUsdSource": "Twice the Codex $100 plan's weekly quota, because only the $100 plan is available locally and the $200 plan is taken as double (user 2026-11-26). The $100 plan's reading is $471.1 = $240.27 of API-priced ledger spend in the current week (22,243 calls, auto-review and compaction calls excluded) / 51% of the weekly quota used, 2026-11-26 (about +/-2% from the integer percentage; spend outside the ledger would make the quota larger). The status card's own sub-window figure ($0.81, from a 10-point sub-window with $0.08 of ledger spend) is not used. Cross-check: the Codex Plus card reads $45.90 a week, and 471.1 is about 10 times that.",
+        "monthlyApiUsd": 4038.0,
+        "monthlyApiUsdSource": "Weekly reading x 30 / 7 (weeklyReadingApiUsd above), rounded to cents"
       },
       "google": {
         "name": "Gemini $200 plan",
         "monthlyUsd": 200,
         "monthlyUsdSource": "user 2026-11-26",
-        "weeklyApiUsd": 2104.97,
-        "weeklyApiUsdSource": "Provided by the user on 2026-11-26 as the $200 plan's weekly quota in API-equivalent USD."
+        "weeklyReadingApiUsd": 2104.97,
+        "weeklyReadingApiUsdSource": "Provided by the user on 2026-11-26 as the $200 plan's weekly quota in API-equivalent USD.",
+        "monthlyApiUsd": 9021.3,
+        "monthlyApiUsdSource": "Weekly reading x 30 / 7 (weeklyReadingApiUsd above), rounded to cents"
       },
       "opencode": {
         "name": "OpenCode Go",
@@ -203,7 +208,7 @@
           "deepseek-v4.1-flash": 100.0,
           "glm-5.3": 200.0
         },
-        "weeklyApiUsdSource": "Per-model monthly allowance in API-equivalent USD at the model's list price (DeepSeek V4.1 Flash $100, GLM 5.3 $200; the monthly limits OpenCode publishes for Go, opencode-models.json on the status page, 2026-11-26), spread over the week as monthly / daysPerMonth x 7 (DeepSeek $23.33, GLM $46.67; user 2026-11-26). The measured weekly window (DeepSeek $50.0, GLM $100) is not used."
+        "monthlyApiUsdSource": "Per-model monthly allowance in API-equivalent USD at the model's list price (DeepSeek V4.1 Flash $100, GLM 5.3 $200; the monthly limits OpenCode publishes for Go, opencode-models.json on the status page, 2026-11-26), used as is; the measured weekly window (DeepSeek $50.0, GLM $100) is not used (user 2026-11-26)."
       }
     }
   }

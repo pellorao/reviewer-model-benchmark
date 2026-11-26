@@ -154,25 +154,23 @@ def instance_api_cost(instance, config, pricing):
     return rule(instance, config, pricing)
 
 
-def plan_weekly_api_usd(plan, model, days):
-    """Weekly quota of a v2 plan in API-equivalent USD; a per-model monthly allowance is spread as monthly / days x 7."""
-    if "monthlyApiUsdByModel" in plan:
-        return plan["monthlyApiUsdByModel"][model] / days * 7
-    return plan["weeklyApiUsd"]
+def plan_monthly_api_usd(plan, model):
+    """Monthly quota of a v2 plan in API-equivalent USD (per model where the plan lists one)."""
+    return plan["monthlyApiUsdByModel"][model] if "monthlyApiUsdByModel" in plan else plan["monthlyApiUsd"]
 
 
 def plan_cost_rule(pricing, config):
-    """v2 plan of the config's vendor as (monthly USD, weekly quota in API-equivalent USD), else None (no planCost, or no plan)."""
+    """v2 plan of the config's vendor as (monthly USD, monthly quota in API-equivalent USD), else None (no planCost, or no plan)."""
     plan = pricing.get("planCost", {}).get("plans", {}).get(config["vendor"])
     if plan is None:
         return None
-    return plan["monthlyUsd"], plan_weekly_api_usd(plan, config["model"], pricing["planCost"]["daysPerMonth"])
+    return plan["monthlyUsd"], plan_monthly_api_usd(plan, config["model"])
 
 
 def plan_cost(usd, config, pricing):
-    """Cost of `usd` API-equivalent dollars on the plan (v2): usd / weekly quota x weekly price (monthly / days x 7)."""
-    monthly, weekly = plan_cost_rule(pricing, config)
-    return usd / weekly * (monthly / pricing["planCost"]["daysPerMonth"] * 7)
+    """Cost of `usd` API-equivalent dollars on the plan (v2): usd / monthly quota x monthly price."""
+    monthly, quota = plan_cost_rule(pricing, config)
+    return usd / quota * monthly
 
 
 def plan_efficiency(pricing, vendor):

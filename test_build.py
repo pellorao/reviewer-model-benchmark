@@ -534,26 +534,30 @@ class V2Tests(unittest.TestCase):
         self.assertEqual([counts[key] for key in stats.V2_SPEED_KEYS], [5, 5])
         self.assertEqual((counts["engineOutput"], counts["engineInput"]), (0, 0))
 
-    def test_plan_run_cost_is_its_share_of_the_plans_own_weekly_quota_times_its_weekly_fee(self):
+    def test_plan_run_cost_is_its_share_of_the_plans_own_monthly_quota_times_its_monthly_fee(self):
         plans = self.pricing["planCost"]["plans"]
-        days = self.pricing["planCost"]["daysPerMonth"]
         for lane, vendor in (("opus", "anthropic"), ("sol", "openai"), ("neon", "google"), ("dsflash", "opencode"), ("glm", "opencode")):
             plan = plans[vendor]
             for record in (r for r in self.v2[0] if r["lane"] == lane):
                 self.assertIsNone(record["taskPoints"])
                 self.assertIsNone(record["efficiency"])
-                weekly = plan["monthlyApiUsdByModel"][record["model"]] / days * 7 if "monthlyApiUsdByModel" in plan else plan["weeklyApiUsd"]
+                quota = plan["monthlyApiUsdByModel"][record["model"]] if "monthlyApiUsdByModel" in plan else plan["monthlyApiUsd"]
                 self.assertGreater(record["apiCost"], 0)
-                self.assertAlmostEqual(record["cost"], record["apiCost"] / weekly * plan["monthlyUsd"] / days * 7)
+                self.assertAlmostEqual(record["cost"], record["apiCost"] / quota * plan["monthlyUsd"])
 
     def test_plan_cost_fixed_example(self):
         config = {"vendor": "opencode", "model": "glm-5.3", "key": "k"}
-        # $1 of GLM list price on a $10 plan whose GLM week holds $46.67 (= $200 / 30 x 7): 1/46.67 of a $2.33 week.
-        self.assertAlmostEqual(stats.plan_cost(1.0, config, self.pricing), 10 / 30 * 7 / (200 / 30 * 7))
+        # $1 of GLM list price on a $10 plan whose GLM month holds $200: 1/200 of $10.
+        self.assertAlmostEqual(stats.plan_cost(1.0, config, self.pricing), 10 / 200)
+        # Weekly-reading plans: monthly quota = weekly reading x 30 / 7 gives the same cost as weekly quota x weekly price.
+        plan = self.pricing["planCost"]["plans"]["google"]
+        self.assertAlmostEqual(plan["monthlyApiUsd"], plan["weeklyReadingApiUsd"] * 30 / 7, places=2)
+        self.assertAlmostEqual(stats.plan_cost(1.0, {"vendor": "google", "model": "m", "key": "k"}, self.pricing),
+                               1 / plan["weeklyReadingApiUsd"] * 200 / 30 * 7, places=6)
 
     def test_pricing_has_no_task_point_section(self):
         self.assertNotIn("taskPoints", self.pricing)
-        self.assertEqual(self.pricing["planCost"]["plans"]["google"]["weeklyApiUsd"], 2104.97)
+        self.assertEqual(self.pricing["planCost"]["plans"]["google"]["weeklyReadingApiUsd"], 2104.97)
 
     def test_page_prices_deepseek_and_glm_and_drops_the_efficiency_ratio(self):
         self.assertNotIn("efficiency ratio", self.html)
