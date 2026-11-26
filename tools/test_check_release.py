@@ -1,4 +1,5 @@
 """Offline release checks; no requests reach a network."""
+import io
 import json
 from pathlib import Path
 import subprocess
@@ -134,6 +135,33 @@ class ReleaseTests(unittest.TestCase):
             with self.assertRaisesRegex(release.CheckFailure, 'unit_tests:exit_1'):
                 release.build(self.root, self.root / 'site', Path('/caller/python'))
         self.assertEqual(run.call_count, 1)
+
+    def test_failing_unit_tests_print_only_test_ids(self):
+        (self.root / 'resources').mkdir()
+        stderr = ('ERROR: test_x (__main__.V2Tests.test_x)\nTraceback...\nSECRET body\n'
+                  'FAIL: test_y (__main__.SourcesTests.test_y)\nERROR: setUpClass (__main__.V2Tests)\n')
+        error = subprocess.CalledProcessError(1, 'test', stderr=stderr)
+        with patch.object(release.subprocess, 'run', side_effect=error), \
+                patch('sys.stderr', new_callable=io.StringIO) as out:
+            with self.assertRaisesRegex(release.CheckFailure, 'unit_tests:exit_1'):
+                release.build(self.root, self.root / 'site', Path('/caller/python'))
+        self.assertEqual(out.getvalue().splitlines(), [
+            'failed test: ERROR: test_x (__main__.V2Tests.test_x)',
+            'failed test: FAIL: test_y (__main__.SourcesTests.test_y)',
+            'failed test: ERROR: setUpClass (__main__.V2Tests)'])
+
+    def test_clean_copy_carries_every_input_the_unit_tests_read(self):
+        # Regression: v2 snapshots and pricing-v2.json were missing from the copy (unit_tests:exit_1).
+        sources = json.loads((Path(release.ROOT) / 'sources.json').read_text(encoding='utf-8'))
+        wanted = sorted({item['file'] for item in sources['snapshots']}
+                        | {'pricing-v2.json', 'snapshots/v2/export.json', 'snapshots/v2/supplement.json'})
+        def git_show(command, *, cwd, stdout, check):
+            stdout.write(b'x')
+        clean = self.root / 'clean'
+        with patch.object(release.subprocess, 'check_output', return_value='\n'.join(wanted)), \
+                patch.object(release.subprocess, 'run', side_effect=git_show):
+            release.copy_inputs(self.root, clean, 'a' * 40)
+        self.assertEqual(sorted(str(p.relative_to(clean)) for p in clean.rglob('*') if p.is_file()), wanted)
 
     def test_export_reads_commit_blobs_and_excludes_private_files(self):
         bundle = 'snapshots/arw/' + 'b' * 64 + '.tar.gz'

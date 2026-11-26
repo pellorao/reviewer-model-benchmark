@@ -83,6 +83,13 @@ def attempts(stage, commit, log, action, limit, delay, *, sleep=time.sleep):
     return False
 
 
+def report_failed_tests(stderr):
+    """Print only the test ids of a failing unittest run (its ERROR/FAIL header lines), never other output."""
+    for line in (stderr or '').splitlines():
+        if re.fullmatch(r'(ERROR|FAIL): [\w.]+ \([\w.]+\)', line):
+            print('failed test: ' + line, file=sys.stderr)
+
+
 def build(root, site, python):
     site.mkdir(parents=True, exist_ok=True)
     shutil.copytree(root / 'resources', site / 'resources', dirs_exist_ok=True)
@@ -91,8 +98,10 @@ def build(root, site, python):
             ('render', [str(python), 'build.py', 'benchmark-results.json', str(site / 'index.html')])):
         try:
             subprocess.run(command, cwd=root, check=True, stdout=subprocess.DEVNULL,
-                           stderr=subprocess.DEVNULL, timeout=600)
+                           stderr=subprocess.PIPE, text=True, timeout=600)
         except subprocess.CalledProcessError as error:
+            if label == 'unit_tests':
+                report_failed_tests(error.stderr)
             raise CheckFailure(label + ':exit_' + str(error.returncode)) from error
         except subprocess.TimeoutExpired as error:
             raise CheckFailure(label + ':timeout') from error
@@ -110,8 +119,10 @@ def copy_inputs(root, clean, commit):
         ['git', 'ls-tree', '-r', '--name-only', commit], cwd=root, text=True).splitlines()
     for name in names:
         # bench/v3/leakcheck.py is public detection logic that test_build.py imports.
-        if not (name in ('build.py', 'stats.py', 'test_build.py', 'pricing.json', 'sources.json',
-                         'bench/v3/leakcheck.py')
+        # snapshots/v2/*.json and pricing-v2.json are read by test_build.py's V2Tests.
+        if not (name in ('build.py', 'stats.py', 'test_build.py', 'pricing.json', 'pricing-v2.json',
+                         'sources.json', 'bench/v3/leakcheck.py')
+                or re.fullmatch(r'snapshots/v2/[^/]+\.json', name)
                 or re.fullmatch(r'benchmark-results[^/]*\.json', name)
                 or re.fullmatch(r'snapshots/arw/[0-9a-f]{64}\.tar\.gz', name)
                 or name.startswith('resources/')):
