@@ -52,13 +52,16 @@ def page_digest(body):
 
 
 def compare_pages(site, base_url, timeout, fetcher=fetch):
-    pages = sorted(site.glob('*.html'))
-    if not pages or not (site / 'index.html').is_file():
+    """Compare every page of the site (the v2 page and v1/index.html below it) with its URL."""
+    pages = sorted(site.rglob('*.html'))
+    if not (site / 'index.html').is_file():
         raise CheckFailure('missing_local_pages')
     for page in pages:
-        remote = fetcher(base_url.rstrip('/') + '/' + ('' if page.name == 'index.html' else page.name), timeout)
+        name = page.relative_to(site).as_posix()
+        path = '' if name == 'index.html' else name[:-len('index.html')] if name.endswith('/index.html') else name
+        remote = fetcher(base_url.rstrip('/') + '/' + path, timeout)
         if page_digest(remote) != page_digest(page.read_bytes()):
-            raise CheckFailure('content_mismatch:' + page.name)
+            raise CheckFailure('content_mismatch:' + name)
 
 
 def attempts(stage, commit, log, action, limit, delay, *, sleep=time.sleep):

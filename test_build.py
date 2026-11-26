@@ -1,13 +1,17 @@
 """Checks for the benchmark page's statistics, cost rules and page assembly."""
 
+import contextlib
 import copy
+import io
 import hashlib
 import json
 import math
 import re
+import shutil
 import statistics
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 import stats
@@ -569,6 +573,38 @@ class V2Tests(unittest.TestCase):
     def test_v1_page_links_to_v2_and_keeps_its_version(self):
         self.assertIn("archived v1 benchmark", PageTests.html)
         self.assertIn(f'content="{build.PAGE_VERSION}"', PageTests.html)
+
+
+class SiteBuildTests(unittest.TestCase):
+    """The command Cloudflare Pages runs (README "Publishing") publishes v2 at the root and v1 below it."""
+
+    def test_publishing_command_builds_both_pages_with_working_links(self):
+        # Two full page renders (about 0.7 s): the only way to prove the one published command.
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "reviewer-model-benchmark"
+            shutil.copytree(Path(__file__).with_name("resources"), root / "resources")
+            with contextlib.redirect_stdout(io.StringIO()):
+                build.main([str(Path(__file__).with_name("benchmark-results.json")), str(root / "index.html")])
+            v2, v1 = (root / "index.html").read_text(encoding="utf-8"), (root / "v1" / "index.html").read_text(encoding="utf-8")
+            self.assertIn('content="3.0.0"', v2)
+            self.assertIn('content="2.6.3"', v1)
+            # v2 links down to the archive, the archive's banner links up to v2.
+            self.assertIn('href="v1/"', v2)
+            self.assertIn('href="../" data-i18n="suite_link"', v1)
+            self.assertTrue((root / "v1" / "index.html").is_file())
+            # Each page loads the same resources directory from its own depth.
+            for page, prefix, html in ((root, "", v2), (root / "v1", "../", v1)):
+                for asset in ("favicon.svg", "fonts/fonts.css", "site.css"):
+                    self.assertIn('href="%sresources/%s"' % (prefix, asset), html)
+                    self.assertTrue((page / prefix / "resources" / asset).is_file(), asset)
+
+    def test_other_output_names_stay_a_single_v1_page(self):
+        with tempfile.TemporaryDirectory() as directory:
+            out = Path(directory) / "charts.html"
+            with contextlib.redirect_stdout(io.StringIO()):
+                build.main([str(Path(__file__).with_name("benchmark-results.json")), str(out)])
+            self.assertIn('content="2.6.3"', out.read_text(encoding="utf-8"))
+            self.assertFalse((Path(directory) / "v1").exists())
 
 
 if __name__ == "__main__":

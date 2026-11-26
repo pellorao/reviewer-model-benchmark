@@ -1284,8 +1284,8 @@ def v2_notes_html(meta, records, en):
             + table("v2_severity_title", "v2_severity_head", severity_rows, "v2_severity_note"))
 
 
-def page(results, pricing, supplements=(), v2=None):
-    """Render the page. `v2` is (records, meta) from stats.extract_v2; then `results` is unused and the page
+def page(results, pricing, supplements=(), v2=None, assets=""):
+    """Render the page. `assets` is the relative prefix of the resources/ directory (\"../\" one level down). `v2` is (records, meta) from stats.extract_v2; then `results` is unused and the page
     takes the v2 wording, the two task speeds and the extra data notes."""
     global SPEED_KEYS
     SPEED_KEYS = V2_SPEED_KEYS if v2 else V1_SPEED_KEYS
@@ -1393,8 +1393,8 @@ def page(results, pricing, supplements=(), v2=None):
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>Reviewer Model Benchmark</title>
 <meta name="benchmark-version" content="{V2_PAGE_VERSION if v2 else PAGE_VERSION}">
 <meta name="benchmark-scoring-version" content="{V2_SCORING_VERSION if v2 else SCORING_VERSION}">
-<link rel="icon" type="image/svg+xml" href="resources/favicon.svg">
-<link rel="stylesheet" href="resources/fonts/fonts.css"><link rel="stylesheet" href="resources/site.css"></head><body><div class="app-shell">
+<link rel="icon" type="image/svg+xml" href="{assets}resources/favicon.svg">
+<link rel="stylesheet" href="{assets}resources/fonts/fonts.css"><link rel="stylesheet" href="{assets}resources/site.css"></head><body><div class="app-shell">
 <aside class="sidebar"><div class="brand">{icon('brand', 'brand-mark')}{phrase('brand')}</div><div><div class="side-label" data-i18n="nav_label">{en['nav_label']}</div><nav class="side-nav" aria-label="Page sections">
 <a href="#overview" data-i18n="nav_overview" class="active">{en['nav_overview']}</a>
 <a href="#score" data-i18n="nav_score">{en['nav_score']}</a>
@@ -1572,7 +1572,13 @@ document.fonts.ready.then(() => requestAnimationFrame(() =>
 </script></body></html>"""
 
 
-if __name__ == "__main__":
+# Cloudflare Pages runs `build.py benchmark-results.json <dir>/index.html` (README "Publishing"; the dashboard
+# command cannot change). An output named index.html therefore builds the published site: the current v2 page
+# there and the archived v1 page in v1/ next to it, which reads the shared resources/ one level up.
+SITE_INDEX = "index.html"
+
+
+def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("results_json", nargs="?", type=Path,
                         default=Path(__file__).with_name("benchmark-results.json"))
@@ -1583,20 +1589,39 @@ if __name__ == "__main__":
     parser.add_argument("--v2", nargs=2, type=Path, metavar=("EXPORT", "SUPPLEMENT"),
                         help="build the v2 page from an ARW export and its supplement file (results_json is ignored)")
     parser.add_argument("--pricing", type=Path, help="pricing file (default pricing.json; pricing-v2.json with --v2)")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     supplements = args.supplement if args.supplement is not None else [
         path for path in [Path(__file__).with_name("benchmark-results-phase4.json")] if path.is_file()]
-    if args.v2:
-        pricing = load_pricing(args.pricing or Path(__file__).with_name("pricing-v2.json"))
-        export_bytes = args.v2[0].read_bytes()
-        v2 = extract_v2(json.loads(export_bytes), json.loads(args.v2[1].read_text(encoding="utf-8")), pricing,
+    here = Path(__file__).parent
+    site = not args.v2 and args.output.name == SITE_INDEX  # the published-site command, see SITE_INDEX
+
+    def build_v2(export_path, supplement_path):
+        pricing = load_pricing(args.pricing or here / "pricing-v2.json")
+        export_bytes = export_path.read_bytes()
+        v2 = extract_v2(json.loads(export_bytes), json.loads(supplement_path.read_text(encoding="utf-8")), pricing,
                         hashlib.sha256(export_bytes).hexdigest())
-        text = page(None, pricing, (), v2)
+        return page(None, pricing, (), v2)
+
+    def build_v1(assets=""):
+        return page(json.loads(args.results_json.read_text(encoding="utf-8")),
+                    load_pricing(*([args.pricing] if args.pricing else [])),
+                    [json.loads(path.read_text(encoding="utf-8")) for path in supplements], assets=assets)
+
+    if args.v2:
+        text = build_v2(*args.v2)
+    elif site:
+        text = build_v2(here / "snapshots/v2/export.json", here / "snapshots/v2/supplement.json")
+        v1_output = args.output.parent / "v1" / SITE_INDEX
+        v1_output.parent.mkdir(exist_ok=True)
+        v1_output.write_text(build_v1(assets="../"), encoding="utf-8")
     else:
-        text = page(json.loads(args.results_json.read_text(encoding="utf-8")), load_pricing(*([args.pricing] if args.pricing else [])),
-                    [json.loads(path.read_text(encoding="utf-8")) for path in supplements])
+        text = build_v1()
     args.output.write_text(text, encoding="utf-8")
     favicon_path = args.output.parent / "resources" / "favicon.svg"
     if favicon_path.parent.is_dir():  # the default output has resources/; elsewhere it is not created
         favicon_path.write_text(favicon_svg(), encoding="utf-8")
     print(args.output)
+
+
+if __name__ == "__main__":
+    main()

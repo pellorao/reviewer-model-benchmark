@@ -34,6 +34,21 @@ class ReleaseTests(unittest.TestCase):
         with self.assertRaisesRegex(release.CheckFailure, 'missing_local_pages'):
             release.compare_pages(self.root, 'https://example.org', 4, fetch)
 
+    def test_compare_checks_the_v1_page_below_the_site_root(self):
+        (self.root / 'v1').mkdir()
+        (self.root / 'v1' / 'index.html').write_bytes(b'<html>v1</html>')
+        pages = {'https://example.org/bench/': b'<html>benchmark</html>',
+                 'https://example.org/bench/v1/': b'<html>v1</html>'}
+        seen = []
+        def fetch(url, timeout):
+            seen.append(url)
+            return pages[url]
+        release.compare_pages(self.root, 'https://example.org/bench/', 4, fetch)
+        self.assertEqual(sorted(seen), sorted(pages))
+        pages['https://example.org/bench/v1/'] = b'old'
+        with self.assertRaisesRegex(release.CheckFailure, 'content_mismatch:v1/index.html'):
+            release.compare_pages(self.root, 'https://example.org/bench/', 4, fetch)
+
     def test_compare_ignores_only_the_footer_date(self):
         def page(en_date, zh_date, body='data'):
             return ('<footer><span class="footer-updated" data-i18n="footer_updated">Updated %s</span></footer>'
