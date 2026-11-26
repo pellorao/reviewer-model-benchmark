@@ -530,10 +530,13 @@ class V2Tests(unittest.TestCase):
         self.assertEqual([counts[key] for key in stats.V2_SPEED_KEYS], [5, 5])
         self.assertEqual((counts["engineOutput"], counts["engineInput"]), (0, 0))
 
-    def test_unpriced_plan_vendors_have_no_task_points_but_a_list_price_cost(self):
-        deepseek = next(r for r in self.v2[0] if r["lane"] == "dsflash")
-        self.assertIsNone(deepseek["taskPoints"])
-        self.assertGreater(deepseek["cost"], 0)
+    def test_opencode_plan_models_have_no_cost_and_no_task_points(self):
+        # statspec 2.7: a plan category without E stays off the shared cost axis.
+        for lane in ("dsflash", "glm"):
+            for record in (r for r in self.v2[0] if r["lane"] == lane):
+                self.assertIsNone(record["taskPoints"])
+                self.assertIsNone(record["cost"])
+                self.assertEqual(record["costCount"], 0)
 
     def test_a_cell_with_the_wrong_run_count_fails(self):
         export = copy.deepcopy(self.export)

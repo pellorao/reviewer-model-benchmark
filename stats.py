@@ -134,7 +134,13 @@ def _local_cost(instance, config, pricing):
     return seconds / 3600 * hourly, False
 
 
-API_COST_RULES = {"deepseek": _recorded_cost, "anthropic": _recorded_cost, "opencode": _recorded_cost,
+def _unpriced(instance, config, pricing):
+    # OpenCode Go is a subscription plan with no published per-token price and no measured E,
+    # so its runs have no place on the shared cost axis (statspec 2.7): cost stays unknown.
+    return None, False
+
+
+API_COST_RULES = {"deepseek": _recorded_cost, "anthropic": _recorded_cost, "opencode": _unpriced,
                   "openai": _token_cost("openai"), "google": _token_cost("google"), "strata": _local_cost}
 
 

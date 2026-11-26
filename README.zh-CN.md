@@ -270,7 +270,7 @@ python3 tools/v2_supplement.py --runs <v2 data>/runs --export <v2 data>/export-f
 .venv/bin/python build.py ignored.json charts-v2.html --v2 snapshots/v2/export.json snapshots/v2/supplement.json
 ```
 
-`pricing-v2.json` 存放 v2 的价格（Claude 逐请求、缓存写入按一小时档、Haiku 长提示档，DeepSeek 分峰谷，GLM，GPT 与 Gemini）。其中的 `taskPoints` 沿用 v1，尚未更新，所以套餐换算的费用是暂定值。v2 页只给两项任务速度，版本切换链接到 `v1/`（v1 页加一行存档提示并链回 v2），数据说明写明三批分池盲裁，Terra 的交接，Strata 所在机器与 Codex 版本，各组重跑次数以及各严重度的答案键分值。工具的测试在本目录运行 `cd tools && python3 -m unittest test_v2_supplement`。
+`pricing-v2.json` 存放 v2 的价格（Claude 逐请求、缓存写入按一小时档、Haiku 长提示档，DeepSeek 分峰谷，GLM，GPT 与 Gemini）。其中的 `taskPoints` 是发布时刷新的状态页测量快照（2026-11-26；套餐周点数沿用 2026-11-18 的校准）。DeepSeek 与 GLM 用 OpenCode Go 套餐，该套餐没有效率比 E，所以它们没有费用，费用图里不画（标价数字只留在补充文件里备查）。Terra 的 Code Spec 与 Code Standards 两格是用修正后的交接（ARW 068d885）重跑的，页面已注明。v2 页只给两项任务速度，版本切换链接到 `v1/`（v1 页加一行存档提示并链回 v2），数据说明写明三批分池盲裁，Terra 的交接，Strata 所在机器与 Codex 版本，各组重跑次数以及各严重度的答案键分值。工具的测试在本目录运行 `cd tools && python3 -m unittest test_v2_supplement`。
 
 ## 实现和维护
 

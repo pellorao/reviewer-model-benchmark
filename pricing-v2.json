@@ -4,12 +4,12 @@
   "checkedAt": "2026-11-26",
   "currency": "USD",
   "tokensPerUnit": 1000000,
-  "costBasis": "Per-instance cost averaged within each scenario, then across the four scenarios; not actual billing. Subscription-plan runs (Claude, GPT, Gemini) are priced as their share of the Claude $100 plan's weekly quota times that plan's weekly price (taskPoints); DeepSeek V4.1 Flash and GLM 5.3 (run through OpenCode Go) are at official API list prices in USD, and Strata at its local running cost",
+  "costBasis": "Per-instance cost averaged within each scenario, then across the four scenarios; not actual billing. Subscription-plan runs (Claude, GPT, Gemini) are priced as their share of the Claude $100 plan's weekly quota times that plan's weekly price (taskPoints); DeepSeek V4.1 Flash and GLM 5.3 (run through OpenCode Go, a plan with no efficiency ratio E) have no cost, and Strata is at its local running cost",
   "instanceCost": {
     "anthropic": "Per-request tokens from the saved session (agent.json measurementFacts) at the anthropic rates below (cache writes at the 1-hour rate; Haiku by prompt length), API-equivalent USD, times the Claude plan's E (1 by definition); then the plan-fee conversion",
     "openai": "Token counts at the openai rates below (API-equivalent USD) times the Codex plan's E, then the plan-fee conversion",
     "google": "Token counts at the google rates below (output includes thinking) times Gemini's estimated E, then the plan-fee conversion",
-    "opencode": "Per-request tokens at the official list price of the model (deepseek: peak/off-peak by request completion time; glm: one rate), USD. The runs used an OpenCode Go plan whose per-token prices are not published, so no plan conversion applies unless taskPoints.efficiency.opencode is added",
+    "opencode": "No cost is computed: the runs used an OpenCode Go plan whose per-token prices are not published and no E is applied (statspec 2.7: a plan category without E does not enter the shared cost axis). The supplement still holds per-request list-price USD for these runs for reference; the page does not use it. The list prices below document that figure only",
     "strata": "Local running cost from the instance work seconds and the localRunningCost settings below"
   },
   "openai": {
@@ -182,36 +182,37 @@
     },
     "formula": "cost USD = (equivalent task points of the run / plan.weeklyPoints) x weekly price of the plan, where weekly price = plan.monthlyUsd / plan.daysPerMonth x 7; equivalent task points = API-equivalent USD of the run x E of the plan category / pointUsd. Every plan run is multiplied by the same constant relative to API-equivalent USD x E, so ratios between plan runs equal the ratios of their task points.",
     "efficiencyMeaning": "E = Claude's historical cost of the same kind of finished work / this plan category's cost of it (taskpts.py); the category aggregate is used for every model of the plan, not each model's own E",
-    "checkedAt": "2026-11-18",
+    "checkedAt": "2026-11-26",
     "efficiency": {
       "anthropic": {
         "e": 1.0,
         "category": "Claude plan",
         "estimate": false,
-        "source": "taskpts.json scope claude (model null) on 2026-11-18 04:01; 1 by definition (coverage 80%, 28-day window)"
+        "source": "taskpts.json scope claude (model null) on 2026-11-26; 1 by definition (coverage 91%, 28-day window)"
       },
       "openai": {
-        "e": 1.8826,
+        "e": 2.4405,
         "category": "Codex plan",
         "estimate": false,
         "interval95": [
-          1.554,
-          2.335
+          1.9898,
+          3.0281
         ],
-        "coverage": 0.525,
-        "source": "taskpts.json scope codex (model null) on 2026-11-18 04:01 (28-day window, 146 covered finished items); used for Sol and Luna alike, Luna's own E is hidden by the page's coverage rule"
+        "coverage": 0.8723,
+        "source": "taskpts.json scope codex (model null) on 2026-11-26 (28-day window, 1659 covered finished items); used for Sol, Terra and Luna alike"
       },
       "google": {
-        "e": 1.19,
+        "e": 0.8979,
         "category": "Antigravity Gemini plan",
         "estimate": true,
-        "coverage": [
-          0.32,
-          0.48
+        "interval95": [
+          0.6745,
+          1.249
         ],
-        "source": "Estimate from .tasks/common/taskpts-boot-report-1116.md section 7 (Gemini aggregate, baseline weighted by Claude's real review counts: 1.19, coverage 48%; 1.08 to 1.15 under the other baselines). Below the status page's display threshold, and the Antigravity pipeline was removed on 2026-11-17, so it will not be updated."
+        "coverage": 0.253,
+        "source": "taskpts.json scope antigravity-gemini (model null) on 2026-11-26 (28-day window, 80 covered finished items, all Hydrogen; equals Hydrogen's own E, whose coverage is 100%). The category's coverage is below the status page's 30% display threshold, so it is an estimate; it is applied to Neon too, whose own E is not measured. The Antigravity pipeline was removed on 2026-11-17, so it will not be updated."
       }
     },
-    "provisionalNote": "Copied from the v1 snapshot of 2026-11-18; refresh once at publication (v2-publish, D5) and record the date"
+    "snapshotNote": "Refreshed once at publication (v2-publish, statspec D5) from the status page's taskpts.json (taken 2026-11-26, 28-day window ending that day); v1 keeps its own 2026-11-18 snapshot. plan.weeklyPoints keeps the 2026-11-18 calibration (taskpts.json holds no new calibration). The status page's opencode category (E about 5.6, scope-level, not per model) is not applied: DeepSeek and GLM have no cost on this page."
   }
 }

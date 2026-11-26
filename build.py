@@ -818,6 +818,8 @@ def partial_note(records, metric, language):
     en = language == "en"
     partial = []
     for record in records:
+        if metric == "cost" and record["vendor"] == "opencode":
+            continue  # no cost by design (data notes), not a gap in the data
         for key, name, _ in REVIEWERS:
             cell = record["cells"][key]
             if metric == "speed":
@@ -1101,16 +1103,19 @@ def v2_overrides(copy, records, meta, pricing):
                             "Its scores are not comparable with v1, whose judge was Claude Opus; the v1 page stays online as an archive."),
         "score_context": ("Effort labels are requested settings, not equal compute across models. The reports were judged "
                           "blind (the judge did not see which model wrote which report) by GPT-6.2 Sol at high effort, which is also "
-                          "a tested model; the judge's own agreement with a second reading of anchor pools was 1.0."),
+                          "a tested model; the judge's own agreement with a second reading of anchor pools was 1.0. GPT-6.1 Terra's "
+                          "Code Spec and Code Standards cells are reruns with a corrected handoff (ARW 068d885); every other model's "
+                          "two cells ran with the original handoff (see Data notes)."),
         "score_models": ("DeepSeek V4.1 Flash and GLM 5.3 ran through OpenCode Go in the Codex harness. Strata IQ3_XXS is a "
                          "3-bit quantization of Qwen3.8-Flash-Next run locally on one RTX 3080 Ti (12 GB), with only 20 runs (one effort, 5 per task)."),
         "cost_score_desc": ("Cost per run averages each task's per-run cost, then the four tasks. The bases differ by vendor "
                             "and none is an actual bill: for every subscription-plan run (Claude, GPT and Gemini models), the "
-                            f"share of the Claude $100 plan's weekly fee ({week}) that the run used up; for DeepSeek and GLM, "
-                            "their official per-token list prices; and for the local Strata model, estimated electricity and upkeep."),
+                            f"share of the Claude $100 plan's weekly fee ({week}) that the run used up; and for the local Strata model, estimated "
+                            "electricity and upkeep. DeepSeek and GLM have no cost here (see Data notes)."),
         "cost_score_read": ("Higher score is better; farther left is a lower cost per run. Hover a point for its values. "
-                            "Plan runs are a share of the plan fee, DeepSeek and GLM are list-price dollars and Strata is "
-                            "running cost, so compare across those groups with care. Use Linear / Log above the chart to switch the cost axis."),
+                            "Plan runs are a share of the plan fee and Strata is running cost, so compare across those groups with care. "
+                            "DeepSeek and GLM are not on this axis because their OpenCode Go plan has no efficiency ratio E "
+                            "(see Data notes). Use Linear / Log above the chart to switch the cost axis."),
         "time_score_read": ("Higher score is better; farther left is a shorter run. Work time excludes setup and loading. "
                             "Codex counts the agent's accumulated work time; Claude Code and Antigravity the session's wall time. "
                             "A void run (a harness fault or a time-limit stop) is rerun and not counted."),
@@ -1119,8 +1124,8 @@ def v2_overrides(copy, records, meta, pricing):
         "detail_token_read": ("Each bar stacks mean non-cached input, cached input and output tokens per run. Claude Code counts "
                               "cache writes as non-cached input; Strata on Codex includes its guardian requests. Hover for exact counts."),
         "detail_cost_read": ("Each bar is one task's mean cost per run. OpenAI, Claude and Gemini runs used subscriptions, so "
-                             "theirs are a share of the Claude $100 plan's weekly fee; DeepSeek and GLM are list-price dollars and "
-                             "Strata is running cost (see Data notes). Use Linear / Log above the chart to switch the cost axis."),
+                             "theirs are a share of the Claude $100 plan's weekly fee and Strata is running cost (see Data notes); DeepSeek "
+                             "and GLM have no cost bar. Use Linear / Log above the chart to switch the cost axis."),
         "detail_speed_read": ("A speed is total tokens divided by total seconds, never an average of per-run speeds. Task "
                               "speeds divide non-cached input or output tokens by work time: the speed a user perceives. "
                               "v2 reports only these two task speeds."),
@@ -1138,13 +1143,14 @@ def v2_overrides(copy, records, meta, pricing):
                         "weekly quota it uses, times the weekly fee. The share is found through equivalent task points "
                         f"(one point is $100 of Claude API spending; a plan week holds {pricing['taskPoints']['plan']['weeklyPoints']:g} points; "
                         "a plan category's efficiency ratio E is what Claude would have spent on the same kind of finished work divided "
-                        f"by what that plan spent). E is Claude {e['anthropic']}, Codex {e['openai']}, Gemini {e['google']}; "
-                        "these are carried over from the v1 measurement and not yet refreshed, so treat the plan-converted costs as "
-                        "provisional. The API-equivalent cost is, for Claude, each saved request's tokens at Anthropic's list price "
+                        f"by what that plan spent). E is Claude {e['anthropic']}, Codex {e['openai']}, Gemini {e['google']}, "
+                        f"a snapshot of the status page's measurement taken {pricing['taskPoints']['checkedAt']} (a rolling 28-day "
+                        "window; Gemini's is an estimate with low coverage). The weekly points of the plan are the 2026-11-18 "
+                        "calibration. The API-equivalent cost is, for Claude, each saved request's tokens at Anthropic's list price "
                         "(cache writes at the one-hour rate, Haiku above 100,000 prompt tokens at its long-prompt rate); for GPT and Gemini, token "
-                        "counts at the vendors' list prices. DeepSeek V4.1 Flash is priced per request at DeepSeek's list price "
-                        "(off-peak and peak hours) and GLM 5.3 at its list price; OpenCode Go is a subscription, so these are list "
-                        "prices rather than the amount paid. Strata uses work time × (400 W × $0.174 per kWh plus $0.02 per hour of "
+                        "counts at the vendors' list prices. DeepSeek V4.1 Flash and GLM 5.3 ran on an OpenCode Go subscription whose "
+                        "per-token prices are not published and for which no efficiency ratio E has been measured, so they have no "
+                        "cost on this page and are left off the cost charts; their scores, times and tokens are shown. Strata uses work time × (400 W × $0.174 per kWh plus $0.02 per hour of "
                         "upkeep), excluding hardware purchase. Prices were checked on 2026-11-26."),
         "method_missing": ("Missing values are not zero: a task mean uses only the runs with data, and the notes under each "
                            "chart list where that happens."),
@@ -1157,7 +1163,8 @@ def v2_overrides(copy, records, meta, pricing):
                      "lists were not reviewed by hand; the scores use them as the judge produced them."),
         "v2_gpt_title": "GPT-6.1 Terra handoff",
         "v2_gpt": ("GPT-6.1 Terra refused all 30 runs of Code Spec and Code Standards under the original handoff, which gave no request "
-                   "file. Its counted results for those two tasks come from a rerun with a completed handoff (ARW commit 068d885); "
+                   "file. Its counted results for those two tasks come from a rerun with a corrected handoff (ARW commit 068d885, the "
+                   "revcap-handoff fix applied on the 6ca23a9 pin; it is also in ARW 394029c); "
                    "all other cells use the original handoff (ARW commit 6ca23a9)."),
         "v2_strata_title": "Strata run.",
         "v2_strata": ("It ran on another machine with Codex 0.172.0, the other Codex arms with 0.171.0; its ARW commit is 104d038. "
@@ -1179,21 +1186,22 @@ def v2_overrides(copy, records, meta, pricing):
                             f"({V2_SCORING_VERSION}), 盲裁 (裁决者 GPT-6.2 Sol, high 强度, 它本身也是被测模型) 和新的模型 (GPT-6.2 Sol, "
                             "GPT-6.1 Terra, Gemini 4 Neon, GLM 5.3). 分数不能与 v1 比较 (v1 由 Claude Opus 裁决); v1 页面作为存档保留."),
         "score_context": ("推理强度标签是请求设置, 不代表不同模型使用了相同的计算量. 报告由 GPT-6.2 Sol (high 强度) 盲裁 (裁决者看不到报告出自哪个模型), "
-                          "它也是被测模型; 对锚点池的二次阅读, 裁决一致率为 1.0."),
+                          "它也是被测模型; 对锚点池的二次阅读, 裁决一致率为 1.0. GPT-6.1 Terra 的 Code Spec 与 Code Standards 两格是用修正后的交接 "
+                          "(ARW 068d885) 重跑的; 其他模型这两格用的是原交接 (见数据说明)."),
         "score_models": ("DeepSeek V4.1 Flash 与 GLM 5.3 通过 OpenCode Go 在 Codex 代理程序中运行. Strata IQ3_XXS 是 Qwen3.8-Flash-Next 的 "
                          "3 比特量化, 在一块 RTX 3080 Ti (12 GB) 上本地运行, 只有 20 次运行 (一个强度, 每项任务 5 次)."),
         "cost_score_desc": ("单次运行费用先对每项任务的单次费用求平均, 再对四项任务求平均. 各厂商口径不同, 都不是实际账单: 订阅套餐的运行 "
-                            f"(Claude, GPT 与 Gemini 模型) 是该运行用掉的 Claude $100 套餐周费用 ({week}) 的份额; DeepSeek 与 GLM 按官方标价逐 token 计; "
-                            "本地 Strata 模型按估算的电费与维护费计."),
-        "cost_score_read": ("分数越高越好, 越靠左单次费用越低. 悬停可看各点数值. 套餐运行是套餐费的份额, DeepSeek 与 GLM 是标价美元, "
-                            "Strata 是运行成本, 跨组比较要谨慎. 用图上方的 Linear / Log 切换费用轴."),
+                            f"(Claude, GPT 与 Gemini 模型) 是该运行用掉的 Claude $100 套餐周费用 ({week}) 的份额; "
+                            "本地 Strata 模型按估算的电费与维护费计. DeepSeek 与 GLM 在此没有费用 (见数据说明)."),
+        "cost_score_read": ("分数越高越好, 越靠左单次费用越低. 悬停可看各点数值. 套餐运行是套餐费的份额, Strata 是运行成本, 跨组比较要谨慎. "
+                            "DeepSeek 与 GLM 不在这条费用轴上, 因为它们用的 OpenCode Go 套餐没有效率比 E (见数据说明). 用图上方的 Linear / Log 切换费用轴."),
         "time_score_read": ("分数越高越好, 越靠左单次运行越短. 工作时间不含准备与加载. Codex 计代理累计的工作时间; Claude Code 与 Antigravity "
                             "计会话的墙钟时间. 作废的运行 (代理程序故障或触到时限) 会重跑, 不计入."),
         "time_cost_read": ("越靠左单次运行越短, 越低单次费用越低. 各厂商费用口径不同 (见费用对分数一图). 这张图不含质量, 请与分数图一起看."),
         "detail_token_read": ("每根柱叠加单次运行平均的未缓存输入, 缓存输入与输出 token. Claude Code 把缓存写入计作未缓存输入; "
                               "Codex 上的 Strata 含其 guardian 请求. 悬停可看精确数字."),
         "detail_cost_read": ("每根柱是一项任务的单次平均费用. OpenAI, Claude 与 Gemini 的运行用订阅, 所以按 Claude $100 套餐周费用的份额计; "
-                             "DeepSeek 与 GLM 是标价美元, Strata 是运行成本 (见数据说明). 用图上方的 Linear / Log 切换费用轴."),
+                             "Strata 是运行成本 (见数据说明); DeepSeek 与 GLM 没有费用柱. 用图上方的 Linear / Log 切换费用轴."),
         "detail_speed_read": ("速度是总 token 除以总秒数, 不对单次速度求平均. 任务速度用未缓存输入或输出 token 除以工作时间, 即用户感受到的速度. "
                               "v2 只给这两项任务速度."),
         "method_selection": (f"数据是 ARW 导出的逐次运行结果, 评分 {V2_SCORING_VERSION}. 各格计分运行数: {runs['zh_counts']}. 另有 {retries} 次运行因代理程序故障或作废重跑 "
@@ -1205,10 +1213,10 @@ def v2_overrides(copy, records, meta, pricing):
                         "一次运行的费用 = 它用掉的该套餐周额度的份额 × 周费用. 份额通过等效任务点求得 "
                         f"(1 点是 $100 的 Claude API 花费, 套餐一周有 {pricing['taskPoints']['plan']['weeklyPoints']:g} 点; "
                         "套餐类别的效率比 E 是 Claude 做同类已完成的活会花的钱除以该套餐实际花的钱). "
-                        f"E: Claude {e['anthropic']}, Codex {e['openai']}, Gemini {e['google']}; 这些沿用 v1 的测量, 尚未更新, 所以套餐换算的费用只是暂定值. "
+                        f"E: Claude {e['anthropic']}, Codex {e['openai']}, Gemini {e['google']}, 取自状态页测量在 {pricing['taskPoints']['checkedAt']} 的快照 (滚动 28 天窗口; Gemini 的是覆盖率低的估计); 套餐一周的点数沿用 2026-11-18 的校准. "
                         "API 等价费用: Claude 按保存的逐请求 token 乘 Anthropic 标价 (缓存写入按一小时档, Haiku 提示超过 100,000 token 时按长提示档); "
-                        "GPT 与 Gemini 按各厂商标价换算 token. DeepSeek V4.1 Flash 按 DeepSeek 标价逐请求计 (分平峰时段), GLM 5.3 按其标价计; "
-                        "OpenCode Go 是订阅, 所以这是标价, 不是实付金额. Strata 按耗时 × (400 W × $0.174/kWh + 每小时维护费 $0.02) 计算, "
+                        "GPT 与 Gemini 按各厂商标价换算 token. DeepSeek V4.1 Flash 与 GLM 5.3 在 OpenCode Go 订阅上运行, 该订阅的逐 token 价格未公布, 也没有测得效率比 E, "
+                        "所以本页不给它们费用, 费用图里不画它们; 它们的分数, 耗时与 token 照常显示. Strata 按耗时 × (400 W × $0.174/kWh + 每小时维护费 $0.02) 计算, "
                         "不含硬件购置. 价格已于 2026-11-26 核对."),
         "method_missing": "缺失值不是 0: 任务均值只用有数据的运行, 各图下方的说明会列出这些情况.",
         "v2_pools_title": "裁决分池",
@@ -1217,8 +1225,8 @@ def v2_overrides(copy, records, meta, pricing):
         "v2_lists_title": "发现列表",
         "v2_lists": "裁决者把各报告的发现分为有依据 (1184 条) 与有争议且无依据 (275 条). 这两张列表没有人工复核, 分数按裁决者给出的结果使用.",
         "v2_gpt_title": "GPT-6.1 Terra 的交接",
-        "v2_gpt": ("原交接没有给出请求文件, GPT-6.1 Terra 在 Code Spec 与 Code Standards 上拒审了全部 30 次. 它这两项任务计入的成绩来自补全交接后的重跑 "
-                   "(ARW 提交 068d885); 其余各格都用原交接 (ARW 提交 6ca23a9)."),
+        "v2_gpt": ("原交接没有给出请求文件, GPT-6.1 Terra 在 Code Spec 与 Code Standards 上拒审了全部 30 次. 它这两项任务计入的成绩来自修正交接后的重跑 "
+                   "(ARW 提交 068d885, 即 revcap-handoff 修正加在 6ca23a9 上, 同一修正也在 ARW 394029c 里); 其余各格都用原交接 (ARW 提交 6ca23a9)."),
         "v2_strata_title": "Strata 的运行.",
         "v2_strata": ("在另一台机器上用 Codex 0.172.0 运行, 其他 Codex 组为 0.171.0; 它的 ARW 提交是 104d038. "
                       "它的 11 次重跑中有 7 次不在驱动的作废记录里, 按保存的尝试序号补回."),
