@@ -154,13 +154,19 @@ def instance_api_cost(instance, config, pricing):
     return rule(instance, config, pricing)
 
 
+def plan_weekly_api_usd(plan, model, days):
+    """Weekly quota of a v2 plan in API-equivalent USD; a per-model monthly allowance is spread as monthly / days x 7."""
+    if "monthlyApiUsdByModel" in plan:
+        return plan["monthlyApiUsdByModel"][model] / days * 7
+    return plan["weeklyApiUsd"]
+
+
 def plan_cost_rule(pricing, config):
     """v2 plan of the config's vendor as (monthly USD, weekly quota in API-equivalent USD), else None (no planCost, or no plan)."""
     plan = pricing.get("planCost", {}).get("plans", {}).get(config["vendor"])
     if plan is None:
         return None
-    weekly = plan["weeklyApiUsdByModel"][config["model"]] if "weeklyApiUsdByModel" in plan else plan["weeklyApiUsd"]
-    return plan["monthlyUsd"], weekly
+    return plan["monthlyUsd"], plan_weekly_api_usd(plan, config["model"], pricing["planCost"]["daysPerMonth"])
 
 
 def plan_cost(usd, config, pricing):

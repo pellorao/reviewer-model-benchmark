@@ -199,11 +199,11 @@
         "name": "OpenCode Go",
         "monthlyUsd": 10,
         "monthlyUsdSource": "https://opencode.ai/go (Go $10 a month, checked 2026-11-26)",
-        "weeklyApiUsdByModel": {
-          "deepseek-v4.1-flash": 50.0,
-          "glm-5.3": 100.0
+        "monthlyApiUsdByModel": {
+          "deepseek-v4.1-flash": 100.0,
+          "glm-5.3": 200.0
         },
-        "weeklyApiUsdSource": "Weekly allowance per model in API-equivalent USD at the model's list price: half of the monthly limit OpenCode publishes per model for Go (DeepSeek V4.1 Flash $100, GLM 5.3 $200; opencode-models.json on the status page, 2026-11-26), the same figures the status card's weekly window uses. The card's measured weekly conversion for DeepSeek V4.1 Flash is $50.0 ($5.48 spent at 11% used)."
+        "weeklyApiUsdSource": "Per-model monthly allowance in API-equivalent USD at the model's list price (DeepSeek V4.1 Flash $100, GLM 5.3 $200; the monthly limits OpenCode publishes for Go, opencode-models.json on the status page, 2026-11-26), spread over the week as monthly / daysPerMonth x 7 (DeepSeek $23.33, GLM $46.67; user 2026-11-26). The measured weekly window (DeepSeek $50.0, GLM $100) is not used."
       }
     }
   }

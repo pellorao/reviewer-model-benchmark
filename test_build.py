@@ -542,14 +542,14 @@ class V2Tests(unittest.TestCase):
             for record in (r for r in self.v2[0] if r["lane"] == lane):
                 self.assertIsNone(record["taskPoints"])
                 self.assertIsNone(record["efficiency"])
-                weekly = plan["weeklyApiUsdByModel"][record["model"]] if "weeklyApiUsdByModel" in plan else plan["weeklyApiUsd"]
+                weekly = plan["monthlyApiUsdByModel"][record["model"]] / days * 7 if "monthlyApiUsdByModel" in plan else plan["weeklyApiUsd"]
                 self.assertGreater(record["apiCost"], 0)
                 self.assertAlmostEqual(record["cost"], record["apiCost"] / weekly * plan["monthlyUsd"] / days * 7)
 
     def test_plan_cost_fixed_example(self):
         config = {"vendor": "opencode", "model": "glm-5.3", "key": "k"}
-        # $1 of GLM list price on a $10 plan whose GLM week holds $100: 1/100 of a $2.33 week.
-        self.assertAlmostEqual(stats.plan_cost(1.0, config, self.pricing), 10 / 30 * 7 / 100)
+        # $1 of GLM list price on a $10 plan whose GLM week holds $46.67 (= $200 / 30 x 7): 1/46.67 of a $2.33 week.
+        self.assertAlmostEqual(stats.plan_cost(1.0, config, self.pricing), 10 / 30 * 7 / (200 / 30 * 7))
 
     def test_pricing_has_no_task_point_section(self):
         self.assertNotIn("taskPoints", self.pricing)

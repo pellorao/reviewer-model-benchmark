@@ -15,7 +15,7 @@ import plotly.io as pio
 
 from stats import (V2_SCORING_VERSION, V2_SPEED_KEYS, EFFORTS, HARNESS_NAMES, MODEL_NAMES, REVIEWERS, SCORING_VERSION, SPEED_KEYS,
                    TOKEN_KEYS,
-                   extract, extract_v2, load_pricing, plan_weekly_cost)
+                   extract, extract_v2, load_pricing, plan_weekly_api_usd, plan_weekly_cost)
 
 
 V1_SPEED_KEYS = SPEED_KEYS
@@ -1097,7 +1097,7 @@ def v2_overrides(copy, records, meta, pricing):
     days = pricing["planCost"]["daysPerMonth"]
     fee = {vendor: usd(round(plan["monthlyUsd"] / days * 7, 2)) for vendor, plan in plans.items()}
     quota = {vendor: usd(plan["weeklyApiUsd"]) for vendor, plan in plans.items() if "weeklyApiUsd" in plan}
-    oc = plans["opencode"]["weeklyApiUsdByModel"]
+    oc = {model: round(plan_weekly_api_usd(plans["opencode"], model, days), 2) for model in plans["opencode"]["monthlyApiUsdByModel"]}
     checked = pricing["planCost"]["checkedAt"]
     en, zh = copy["en"], copy["zh"]
     en.update({
@@ -1155,7 +1155,7 @@ def v2_overrides(copy, records, meta, pricing):
                         f"quota {quota['openai']} is twice the $100 plan's measured one (the $200 plan is taken as double). "
                         f"Gemini uses a $200 plan ({usd(plans['google']['monthlyUsd'])} a month, {fee['google']} a week; weekly quota {quota['google']}, provided by the author 2026-11-26). "
                         f"DeepSeek and GLM use OpenCode Go ({usd(plans['opencode']['monthlyUsd'])} a month, {fee['opencode']} a week); its weekly allowance depends on the model "
-                        f"(DeepSeek V4.1 Flash {usd(oc['deepseek-v4.1-flash'])}, GLM 5.3 {usd(oc['glm-5.3'])}, half the monthly limit OpenCode publishes for each). "
+                        f"(DeepSeek V4.1 Flash {usd(oc['deepseek-v4.1-flash'])}, GLM 5.3 {usd(oc['glm-5.3'])}, the monthly limit OpenCode publishes for each, divided by 30 and times 7). "
                         "Because every run is divided by its plan's quota and multiplied by its plan's fee, the efficiency of a plan (what a "
                         "dollar of API price buys of the plan) is built into the cost, and no further factor is applied. "
                         "The API-equivalent cost is, for Claude, each saved request's tokens at Anthropic's list price "
@@ -1228,7 +1228,7 @@ def v2_overrides(copy, records, meta, pricing):
                         f"Codex 用 $200 套餐 (每月 {usd(plans['openai']['monthlyUsd'])}, 每周 {fee['openai']}); 手头只有 $100 套餐, 所以周额度 {quota['openai']} 取 $100 套餐实测值的 2 倍 (按 $200 套餐是它的两倍计). "
                         f"Gemini 用 $200 套餐 (每月 {usd(plans['google']['monthlyUsd'])}, 每周 {fee['google']}; 周额度 {quota['google']}, 由作者于 2026-11-26 提供). "
                         f"DeepSeek 与 GLM 用 OpenCode Go (每月 {usd(plans['opencode']['monthlyUsd'])}, 每周 {fee['opencode']}); 它的周额度随模型而异 "
-                        f"(DeepSeek V4.1 Flash {usd(oc['deepseek-v4.1-flash'])}, GLM 5.3 {usd(oc['glm-5.3'])}, 即 OpenCode 公布的各模型月限额的一半). "
+                        f"(DeepSeek V4.1 Flash {usd(oc['deepseek-v4.1-flash'])}, GLM 5.3 {usd(oc['glm-5.3'])}, 即 OpenCode 公布的各模型月限额除以 30 再乘 7). "
                         "每次运行都除以自己套餐的额度、乘自己套餐的费用, 所以各套餐的效率 (一美元 API 价格能换到多少套餐额度) 已包含在费用里, 不再另乘系数. "
                         "API 等价费用: Claude 按保存的逐请求 token 乘 Anthropic 标价 (缓存写入按一小时档, Haiku 提示超过 100,000 token 时按长提示档); "
                         "GPT 与 Gemini 按各厂商标价换算 token; DeepSeek 与 GLM 按逐请求标价 (DeepSeek 分峰谷价). "
