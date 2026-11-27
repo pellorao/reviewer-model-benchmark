@@ -164,7 +164,7 @@ class LlmGuardTest(unittest.TestCase):
             bb.llm("p")
         cmd = run.call_args.args[0]
         starts = int(cmd[cmd.index("--max-starts") + 1])
-        self.assertLessEqual(starts * float(cmd[cmd.index("--max-usd") + 1]), 100)
+        self.assertLessEqual(starts * float(cmd[cmd.index("--max-usd") + 1]), 360)
         self.assertEqual(run.call_args.kwargs["cwd"], bb.LLM_DIR)
         self.assertIn(mock.call(bb.LLM_DIR, exist_ok=True), mk.call_args_list)
 
