@@ -22,7 +22,7 @@ MIN_LINES, MAX_LINES, MAX_COMMITS = 30, 800, 10
 CLEAN_AGE_DAYS = 7
 RESERVE_PERCENT = 40
 GUARD = Path.home() / ".claude" / "bin" / "claude-guard"
-LLM_DIR = str(ROOT / ".tmp" / "v3-bank")   # AGENTS.md: temporary files live in the repo's .tmp/
+LLM_DIR = "/tmp/reviewer-bench/v3-bank"   # deliberately outside the repo: the model call must not run where .bank is readable
 # Spend cap per window: a full bank build takes about 400 calls (v3-bank report), so MAX_STARTS=450 in PER_MIN minutes,
 # each call at most max_usd: 450 x 0.8 = about $360 worst case.
 MAX_STARTS, PER_MIN = 450, 600
@@ -97,7 +97,7 @@ def fix_pairs(by_commit):
 def llm(prompt, max_usd=0.8, effort="high"):
     """One claude -p call through claude-guard; returns the result text."""
     env = {**os.environ, "TMPDIR": os.environ.get("TMPDIR", LLM_DIR)}
-    for d in (LLM_DIR, env["TMPDIR"]):   # a missing cwd fails before the guard starts
+    for d in (LLM_DIR, env["TMPDIR"]):   # /tmp is cleared on reboot; a missing cwd fails before the guard starts
         os.makedirs(d, exist_ok=True)
     done = subprocess.run(
         [str(GUARD), "--label", "reviewer-bench/v3-bank", "--max-usd", str(max_usd),
