@@ -23,8 +23,9 @@ CLEAN_AGE_DAYS = 7
 RESERVE_PERCENT = 40
 GUARD = Path.home() / ".claude" / "bin" / "claude-guard"
 LLM_DIR = "/tmp/reviewer-bench/v3-bank"
-# Spend cap per window: MAX_STARTS calls in PER_MIN minutes, each at most max_usd (default 100 x 0.8 = $80).
-MAX_STARTS, PER_MIN = 100, 600
+# Spend cap per window: a full bank build takes about 400 calls (v3-bank report), so MAX_STARTS=450 in PER_MIN minutes,
+# each call at most max_usd: 450 x 0.8 = about $360 worst case.
+MAX_STARTS, PER_MIN = 450, 600
 
 
 def git(*args, ok=False, cwd=SRC):
