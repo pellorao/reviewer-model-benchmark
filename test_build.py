@@ -520,6 +520,11 @@ class V2Tests(unittest.TestCase):
         cls.v2 = stats.extract_v2(cls.export, cls.supplement, cls.pricing)
         cls.html = build.page(None, cls.pricing, (), cls.v2)
 
+    def test_page_has_no_bank_path_and_no_question_bank_material(self):
+        manifest, _ = leakcheck.load_manifest(Path(__file__).resolve().parent / ".bank" / "manifest")
+        self.assertNotIn(".bank", self.html)
+        self.assertEqual(leakcheck.scan_text(self.html, manifest), [])
+
     def test_every_cell_holds_five_scored_runs(self):
         records, meta = self.v2
         self.assertEqual(len(records), 35)
