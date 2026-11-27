@@ -22,6 +22,9 @@ MIN_LINES, MAX_LINES, MAX_COMMITS = 30, 800, 10
 CLEAN_AGE_DAYS = 7
 RESERVE_PERCENT = 40
 GUARD = Path.home() / ".claude" / "bin" / "claude-guard"
+LLM_DIR = "/tmp/reviewer-bench/v3-bank"
+# Spend cap per window: MAX_STARTS calls in PER_MIN minutes, each at most max_usd (default 100 x 0.8 = $80).
+MAX_STARTS, PER_MIN = 100, 600
 
 
 def git(*args, ok=False, cwd=SRC):
@@ -92,13 +95,15 @@ def fix_pairs(by_commit):
 
 def llm(prompt, max_usd=0.8, effort="high"):
     """One claude -p call through claude-guard; returns the result text."""
-    env = {**os.environ, "TMPDIR": os.environ.get("TMPDIR", "/tmp/reviewer-bench/v3-bank")}
+    env = {**os.environ, "TMPDIR": os.environ.get("TMPDIR", LLM_DIR)}
+    for d in (LLM_DIR, env["TMPDIR"]):   # /tmp is cleared on reboot; a missing cwd fails before the guard starts
+        os.makedirs(d, exist_ok=True)
     done = subprocess.run(
         [str(GUARD), "--label", "reviewer-bench/v3-bank", "--max-usd", str(max_usd),
-         "--max-starts", "1000", "--per-min", "600", "--", "-p", "--model", "sonnet",
+         "--max-starts", str(MAX_STARTS), "--per-min", str(PER_MIN), "--", "-p", "--model", "sonnet",
          "--effort", effort, "--output-format", "stream-json", "--verbose",
          "--permission-mode", "dontAsk"],
-        input=prompt, capture_output=True, text=True, cwd="/tmp/reviewer-bench/v3-bank", env=env)
+        input=prompt, capture_output=True, text=True, cwd=LLM_DIR, env=env)
     if done.returncode:
         raise RuntimeError(f"claude-guard rc={done.returncode}")
     result = None
@@ -115,13 +120,16 @@ def llm(prompt, max_usd=0.8, effort="high"):
 
 
 def json_from(text):
-    """First top-level JSON object in a model answer."""
-    start = text.find("{")
-    depth = 0
-    for i in range(start, len(text)):
-        depth += {"{": 1, "}": -1}.get(text[i], 0)
-        if depth == 0:
-            return json.loads(text[start:i + 1])
+    """First top-level JSON object in a model answer (braces inside strings are handled by the decoder)."""
+    decoder, start = json.JSONDecoder(), text.find("{")
+    while start >= 0:
+        try:
+            obj, _ = decoder.raw_decode(text, start)
+            if isinstance(obj, dict):
+                return obj
+        except ValueError:
+            pass
+        start = text.find("{", start + 1)
     raise ValueError("no JSON object")
 
 

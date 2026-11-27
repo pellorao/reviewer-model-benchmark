@@ -155,6 +155,29 @@ class LlmTest(unittest.TestCase):
         self.assertIn("failed", str(err))
 
 
+class LlmGuardTest(unittest.TestCase):
+    def test_start_cap_bounds_window_spend_and_dirs_are_made(self):
+        ok = json.dumps({"type": "result", "is_error": False, "result": "ok"})
+        done = subprocess.CompletedProcess([], 0, stdout=ok, stderr="")
+        with mock.patch.object(bb.subprocess, "run", return_value=done) as run, \
+                mock.patch.object(bb.os, "makedirs") as mk:
+            bb.llm("p")
+        cmd = run.call_args.args[0]
+        starts = int(cmd[cmd.index("--max-starts") + 1])
+        self.assertLessEqual(starts * float(cmd[cmd.index("--max-usd") + 1]), 100)
+        self.assertEqual(run.call_args.kwargs["cwd"], bb.LLM_DIR)
+        self.assertIn(mock.call(bb.LLM_DIR, exist_ok=True), mk.call_args_list)
+
+
+class JsonFromStringTest(unittest.TestCase):
+    def test_braces_inside_strings(self):
+        self.assertEqual(bb.json_from('x {"a": "}y", "b": 1} t'), {"a": "}y", "b": 1})
+        self.assertEqual(bb.json_from('{"a": "\\"}", "b": 2}'), {"a": '"}', "b": 2})
+
+    def test_skips_broken_prefix(self):
+        self.assertEqual(bb.json_from('{oops {"a": 1}'), {"a": 1})
+
+
 class GitWrapperTest(unittest.TestCase):
     def test_failure_raises_unless_ok(self):
         bad = subprocess.CompletedProcess([], 1, stdout="partial", stderr="")
